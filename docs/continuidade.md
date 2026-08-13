@@ -22,7 +22,8 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 - Os requisitos foram consolidados em `docs/03-requisitos.md`, e as cinco dúvidas levantadas nessa etapa foram resolvidas.
 - Dez especificações funcionais foram criadas em `docs/spec/`, uma por conjunto de funcionalidades.
 - O único tipo de usuário é o `Investidor`; os documentos distinguem somente seu estado autenticado ou não autenticado quando o fluxo exigir.
-- Próxima etapa: revisar/aprovar os requisitos e as especificações e então produzir `docs/04-arquitetura.md`.
+- A arquitetura foi proposta em `docs/04-arquitetura.md`, sem implementação da aplicação.
+- Próxima etapa: revisar/aprovar requisitos, especificações e arquitetura; depois produzir `docs/05-specs.md` ou avançar para o detalhamento das tarefas, conforme a organização documental escolhida.
 
 ## Decisões funcionais confirmadas
 
@@ -57,6 +58,8 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 - Frontend: React com JavaScript e Vite.
 - Backend: Java 17, Spring Boot 3.4.0 como ponto de partida e Maven Wrapper.
 - Arquitetura: monólito em camadas; portas/adapters apenas nas integrações externas.
+- Estrutura interna semelhante ao repositório-base, usando os pacotes `api`, `config`, `domain`, `infra`, `repository`, `service` e `scheduler`; o React permanece diretamente em `src/main/front` com `components`, `pages`, `services` e `styles`.
+- Um único processo Spring Boot e um único PostgreSQL; sem microsserviços, Redis, mensageria ou gateway.
 - Banco principal: PostgreSQL.
 - Banco para testes automatizados rápidos: H2.
 - MySQL não será suportado na primeira versão.
@@ -69,6 +72,9 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 - USD/BRL: AwesomeAPI por HTTP REST, uma vez ao dia.
 - As atualizações diárias de ativos norte-americanos e USD/BRL ocorrerão às 10h no horário de Brasília.
 - Cache de cotações: PostgreSQL, sem Redis.
+- Movimentações financeiras serão transações curtas e atômicas; chamadas externas ocorrerão antes da transação, seguidas de revalidação do estado.
+- Controllers tratarão apenas HTTP e delegarão regras aos casos de uso e ao domínio.
+- O frontend não será fonte de verdade para preços, saldo, preço médio ou resultados.
 - Dependências herdadas sem uso serão removidas, em especial Thymeleaf e Alpha Vantage.
 - Testes: JUnit/Mockito, Spring Boot Test, H2 para testes rápidos, PostgreSQL/Testcontainers nos fluxos críticos e mocks para APIs externas.
 
@@ -96,4 +102,4 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 
 ## Próximo passo
 
-Revisar e aprovar `docs/03-requisitos.md` e os arquivos de `docs/spec/`. Após a aprovação, produzir `docs/04-arquitetura.md` com base na visão, na pesquisa, nos requisitos e nas especificações. Só fazer nova pergunta se surgir um bloqueio que torne a implementação tecnicamente impossível.
+Revisar e aprovar `docs/03-requisitos.md`, os arquivos de `docs/spec/` e `docs/04-arquitetura.md`. Depois, consolidar o índice de especificações em `docs/05-specs.md` ou avançar para `docs/06-tarefas.md`, sem iniciar a aplicação antes da aprovação. Só fazer nova pergunta se surgir um bloqueio que torne a implementação tecnicamente impossível.
