@@ -23,7 +23,8 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 - Dez especificações funcionais foram criadas em `docs/spec/`, uma por conjunto de funcionalidades.
 - O único tipo de usuário é o `Investidor`; os documentos distinguem somente seu estado autenticado ou não autenticado quando o fluxo exigir.
 - A arquitetura foi proposta em `docs/04-arquitetura.md`, sem implementação da aplicação.
-- Próxima etapa: revisar/aprovar requisitos, especificações e arquitetura; depois produzir `docs/05-specs.md` ou avançar para o detalhamento das tarefas, conforme a organização documental escolhida.
+- O projeto foi dividido em 41 tarefas pequenas e ordenadas em `docs/06-tarefas.md`, incluindo provas técnicas, backend, frontend, testes, documentação e demonstração.
+- Próxima etapa: revisar/aprovar requisitos, especificações, arquitetura e tarefas antes de iniciar T01.
 
 ## Decisões funcionais confirmadas
 
@@ -102,4 +103,4 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 
 ## Próximo passo
 
-Revisar e aprovar `docs/03-requisitos.md`, os arquivos de `docs/spec/` e `docs/04-arquitetura.md`. Depois, consolidar o índice de especificações em `docs/05-specs.md` ou avançar para `docs/06-tarefas.md`, sem iniciar a aplicação antes da aprovação. Só fazer nova pergunta se surgir um bloqueio que torne a implementação tecnicamente impossível.
+Revisar e aprovar `docs/03-requisitos.md`, os arquivos de `docs/spec/`, `docs/04-arquitetura.md` e `docs/06-tarefas.md`. Após a aprovação, iniciar pela T01 e respeitar as dependências registradas. Só fazer nova pergunta se surgir um bloqueio que torne a implementação tecnicamente impossível.
