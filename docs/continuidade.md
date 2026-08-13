@@ -10,6 +10,8 @@ Este arquivo registra o ponto atual do trabalho para permitir sua continuação 
 
 Em caso de divergência, a decisão mais recente registrada nesta seção deve ser usada e o documento divergente deve ser corrigido antes de avançar.
 
+Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alteração de escopo, conclusão de etapa, criação de documento ou mudança no próximo passo do projeto.
+
 ## Estado atual
 
 - A entrevista de visão foi encerrada.
@@ -18,11 +20,13 @@ Em caso de divergência, a decisão mais recente registrada nesta seção deve s
 - A pesquisa foi revisada uma última vez e alinhada às decisões mais recentes.
 - Nenhum código da nova versão foi implementado nesta etapa.
 - Os requisitos foram consolidados em `docs/03-requisitos.md`, e as cinco dúvidas levantadas nessa etapa foram resolvidas.
-- Próxima etapa: revisar/aprovar os requisitos e então produzir `docs/04-arquitetura.md`.
+- Dez especificações funcionais foram criadas em `docs/spec/`, uma por conjunto de funcionalidades.
+- O único tipo de usuário é o `Investidor`; os documentos distinguem somente seu estado autenticado ou não autenticado quando o fluxo exigir.
+- Próxima etapa: revisar/aprovar os requisitos e as especificações e então produzir `docs/04-arquitetura.md`.
 
 ## Decisões funcionais confirmadas
 
-- O sistema é um simulador acadêmico para pessoa física, com um único perfil de usuário.
+- O sistema é um simulador acadêmico para pessoa física, com um único tipo de usuário: `Investidor`. Cadastro, login e reativação são realizados pelo investidor ainda não autenticado; as demais funções exigem autenticação.
 - Cada usuário terá conta individual, sem vínculo ou compartilhamento com outras contas.
 - Cadastro: nome, CPF, e-mail e senha. Não haverá confirmação de e-mail na primeira versão.
 - O saldo inicial será de R$ 10.000,00 e pertence à conta, sendo compartilhado por todas as corretoras cadastradas.
@@ -33,6 +37,8 @@ Em caso de divergência, a decisão mais recente registrada nesta seção deve s
 - Entradas inválidas, saldo insuficiente, venda ou transferência acima da posição serão rejeitados sem alteração parcial dos dados.
 - Transferências entre corretoras preservam quantidade, custo e histórico; não alteram saldo e não têm taxa ou liquidação.
 - O histórico é imutável e registra somente movimentações concluídas com sucesso.
+- O histórico terá 20 registros por página.
+- Pontos patrimoniais serão registrados somente após saldo inicial, aporte, compra, venda e transferência; atualizações isoladas de cotação não criarão pontos.
 - Ativos internacionais serão exibidos em dólar e em real, com conversão direta e sem taxa cambial.
 - A cotação USD/BRL será consultada diariamente na AwesomeAPI por HTTP REST; falhas usam o último valor. Após uma semana, será exibido aviso sem bloquear operações.
 - As cotações brasileiras em carteira serão atualizadas a cada cinco minutos; as norte-americanas, uma vez ao dia pela Twelve Data, enquanto backend e internet estiverem disponíveis.
@@ -61,6 +67,7 @@ Em caso de divergência, a decisão mais recente registrada nesta seção deve s
 - Cotações brasileiras: Brapi.
 - Cotações norte-americanas: Twelve Data, uma vez ao dia, sujeita a prova técnica de cobertura e campos.
 - USD/BRL: AwesomeAPI por HTTP REST, uma vez ao dia.
+- As atualizações diárias de ativos norte-americanos e USD/BRL ocorrerão às 10h no horário de Brasília.
 - Cache de cotações: PostgreSQL, sem Redis.
 - Dependências herdadas sem uso serão removidas, em especial Thymeleaf e Alpha Vantage.
 - Testes: JUnit/Mockito, Spring Boot Test, H2 para testes rápidos, PostgreSQL/Testcontainers nos fluxos críticos e mocks para APIs externas.
@@ -78,6 +85,7 @@ Em caso de divergência, a decisão mais recente registrada nesta seção deve s
 - Revalidação periódica da situação da corretora após o cadastro.
 - Identificação do tipo do ativo; bastam ticker, nome, mercado, moeda e cotação.
 - Atualização manual solicitada pelo usuário.
+- Comprovação de identidade adicional para reativação de conta; na primeira versão, a reativação não a exigirá.
 
 ## Validações técnicas futuras
 
@@ -88,4 +96,4 @@ Em caso de divergência, a decisão mais recente registrada nesta seção deve s
 
 ## Próximo passo
 
-Revisar e aprovar `docs/03-requisitos.md`. Após a aprovação, produzir `docs/04-arquitetura.md` com base na visão, na pesquisa e nos requisitos. Só fazer nova pergunta se surgir um bloqueio que torne a implementação tecnicamente impossível.
+Revisar e aprovar `docs/03-requisitos.md` e os arquivos de `docs/spec/`. Após a aprovação, produzir `docs/04-arquitetura.md` com base na visão, na pesquisa, nos requisitos e nas especificações. Só fazer nova pergunta se surgir um bloqueio que torne a implementação tecnicamente impossível.

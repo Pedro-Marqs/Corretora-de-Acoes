@@ -6,19 +6,15 @@ Este documento especifica a primeira versão da plataforma acadêmica de simula�
 
 ## 2. Atores do sistema
 
-### AT01 — Visitante
+### AT01 — Investidor
 
-Pessoa não autenticada que pode criar uma conta, entrar em uma conta ativa ou iniciar a reativação de uma conta inativa.
+Pessoa física que utiliza o sistema, estando autenticada ou não conforme o fluxo. Sem autenticação, pode criar uma conta, entrar em uma conta ativa ou iniciar a reativação de uma conta inativa. Com autenticação, administra exclusivamente sua própria conta, saldo fictício, corretoras, posições, movimentações e dashboards. Este é o único tipo de usuário da primeira versão.
 
-### AT02 — Investidor
-
-Pessoa física autenticada que administra exclusivamente sua própria conta, saldo fictício, corretoras, posições, movimentações e dashboards. Este é o único perfil autenticado da primeira versão.
-
-### AT03 — Agendador interno
+### AT02 — Agendador interno
 
 Componente do backend que inicia atualizações periódicas de cotações e câmbio sem intervenção do investidor.
 
-### AT04 — Serviços externos
+### AT03 — Serviços externos
 
 Sistemas consultados pelo backend para obter dados de CNPJ, CEP, registro CTVM na CVM, ativos, cotações e câmbio. Não são usuários da interface e não alteram diretamente os dados financeiros.
 
@@ -26,7 +22,7 @@ Sistemas consultados pelo backend para obter dados de CNPJ, CEP, registro CTVM n
 
 ### 3.1. Conta e autenticação
 
-- **RF01:** O sistema deve permitir ao visitante criar uma conta informando nome, CPF, e-mail e senha.
+- **RF01:** O sistema deve permitir ao investidor não autenticado criar uma conta informando nome, CPF, e-mail e senha.
 - **RF02:** O sistema deve rejeitar o cadastro quando faltar qualquer campo de RF01, o CPF for inválido, o e-mail tiver formato inválido ou a senha não cumprir RN04.
 - **RF03:** Ao concluir um cadastro válido, o sistema deve criar a conta com saldo de R$ 10.000,00 e registrar esse saldo inicial no histórico.
 - **RF04:** O sistema deve permitir login por e-mail e senha somente em conta ativa.
@@ -39,7 +35,7 @@ Sistemas consultados pelo backend para obter dados de CNPJ, CEP, registro CTVM n
 - **RF11:** O sistema deve impedir login em conta logicamente excluída pelo fluxo normal de autenticação.
 - **RF12:** O sistema deve permitir reativar uma conta inativa, recuperando o saldo, as corretoras, as posições e o histórico preservados.
 - **RF13:** Quando um CPF informado no cadastro pertencer a uma conta inativa, o sistema deve oferecer as alternativas de reativar essa conta ou criar uma nova conta.
-- **RF14:** Se o visitante criar nova conta usando CPF de conta inativa, o sistema deve manter a conta anterior excluída e inacessível e iniciar a nova conta conforme RF03.
+- **RF14:** Se o investidor não autenticado criar nova conta usando CPF de conta inativa, o sistema deve manter a conta anterior excluída e inacessível e iniciar a nova conta conforme RF03.
 
 ### 3.2. Saldo e aportes
 
@@ -175,7 +171,7 @@ Sistemas consultados pelo backend para obter dados de CNPJ, CEP, registro CTVM n
 
 ## 6. Histórias de usuário
 
-- **HU01:** Como visitante, quero criar uma conta com meus dados para iniciar uma simulação com R$ 10.000,00.
+- **HU01:** Como investidor não autenticado, quero criar uma conta com meus dados para iniciar uma simulação com R$ 10.000,00.
 - **HU02:** Como investidor, quero entrar e sair da minha conta para controlar o acesso aos meus dados.
 - **HU03:** Como investidor, quero alterar meu e-mail ou senha para manter minhas credenciais atualizadas.
 - **HU04:** Como investidor, quero excluir logicamente e reativar minha conta para interromper ou retomar o uso sem perder o histórico.
