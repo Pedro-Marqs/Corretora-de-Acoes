@@ -17,7 +17,8 @@ Em caso de divergência, a decisão mais recente registrada nesta seção deve s
 - A pesquisa técnica está em `docs/02-pesquisa.md`.
 - A pesquisa foi revisada uma última vez e alinhada às decisões mais recentes.
 - Nenhum código da nova versão foi implementado nesta etapa.
-- Próxima etapa: consolidar `docs/03-requisitos.md`, sem reabrir perguntas não críticas.
+- Os requisitos foram consolidados em `docs/03-requisitos.md`, e as cinco dúvidas levantadas nessa etapa foram resolvidas.
+- Próxima etapa: revisar/aprovar os requisitos e então produzir `docs/04-arquitetura.md`.
 
 ## Decisões funcionais confirmadas
 
@@ -33,9 +34,11 @@ Em caso de divergência, a decisão mais recente registrada nesta seção deve s
 - Transferências entre corretoras preservam quantidade, custo e histórico; não alteram saldo e não têm taxa ou liquidação.
 - O histórico é imutável e registra somente movimentações concluídas com sucesso.
 - Ativos internacionais serão exibidos em dólar e em real, com conversão direta e sem taxa cambial.
-- A cotação USD/BRL será atualizada diariamente; falhas usam o último valor. Após uma semana, será exibido aviso sem bloquear operações.
-- As cotações dos ativos em carteira serão atualizadas automaticamente a cada cinco minutos enquanto o backend estiver ativo e houver internet.
-- Pesquisas e confirmações de compra ou venda tentarão obter cotação atual antes de recorrer ao cache.
+- A cotação USD/BRL será consultada diariamente na AwesomeAPI por HTTP REST; falhas usam o último valor. Após uma semana, será exibido aviso sem bloquear operações.
+- As cotações brasileiras em carteira serão atualizadas a cada cinco minutos; as norte-americanas, uma vez ao dia pela Twelve Data, enquanto backend e internet estiverem disponíveis.
+- Pesquisas e confirmações de compra ou venda brasileiras tentarão obter cotação atual antes do cache; operações norte-americanas usarão a cotação diária armazenada.
+- Compras adicionais recalculam o preço médio por média ponderada; vendas parciais mantêm o preço médio unitário restante.
+- Valores externos serão arredondados para duas casas por `HALF_UP`.
 - Falhas de API usam a última cotação armazenada; sem cotação armazenada, a operação será bloqueada.
 - O dashboard terá saldo, posição, preço médio, lucro/prejuízo, gráficos históricos, distribuições por ação, corretora e mercado, e filtros de 4 semanas, 3 meses, 6 meses, 1 ano, 5 anos e máximo.
 - A interface React será responsiva e inspirada visualmente em Investidor10 e Rico, sem copiar identidade visual.
@@ -56,7 +59,8 @@ Em caso de divergência, a decisão mais recente registrada nesta seção deve s
 - Autenticação: Spring Security, sessão opaca em cookie seguro e senhas com bcrypt.
 - Cliente HTTP: Spring Cloud OpenFeign.
 - Cotações brasileiras: Brapi.
-- Cotações norte-americanas: Twelve Data, sujeita a prova técnica de cobertura, latência e limites.
+- Cotações norte-americanas: Twelve Data, uma vez ao dia, sujeita a prova técnica de cobertura e campos.
+- USD/BRL: AwesomeAPI por HTTP REST, uma vez ao dia.
 - Cache de cotações: PostgreSQL, sem Redis.
 - Dependências herdadas sem uso serão removidas, em especial Thymeleaf e Alpha Vantage.
 - Testes: JUnit/Mockito, Spring Boot Test, H2 para testes rápidos, PostgreSQL/Testcontainers nos fluxos críticos e mocks para APIs externas.
@@ -75,15 +79,13 @@ Em caso de divergência, a decisão mais recente registrada nesta seção deve s
 - Identificação do tipo do ativo; bastam ticker, nome, mercado, moeda e cotação.
 - Atualização manual solicitada pelo usuário.
 
-## Suposições reversíveis e validações futuras
+## Validações técnicas futuras
 
-- A regra de preço médio após venda ainda deverá ser confirmada com o professor; até lá, será mantido o preço médio anterior.
-- A fonte específica de USD/BRL continuará atrás de um adapter configurável.
-- Twelve Data somente será consolidada após prova técnica com os campos mínimos, dados em tempo real ou quase em tempo real e consumo compatível com consultas agrupadas.
-- A obtenção de dados oficiais da CVM deverá evitar automação de páginas protegidas; preferir dados abertos processados pelo backend.
+- Validar na Twelve Data os campos mínimos e a cobertura necessária antes da integração completa.
+- Priorizar dados abertos da CVM processáveis pelo backend e validar a fonte/formato antes do cadastro completo de corretora, evitando automação de páginas ou CAPTCHA.
 - A compatibilidade de Spring Boot 3.4.0 com as dependências mantidas será validada pelo build e pelos testes antes do desenvolvimento funcional.
 - Para dúvidas não críticas futuras, será adotada a alternativa mais simples e registrada como suposição reversível.
 
 ## Próximo passo
 
-Atualizar `docs/03-requisitos.md` a partir da visão aprovada e da pesquisa técnica, produzindo requisitos identificáveis, regras de negócio e critérios de aceitação verificáveis. Só fazer nova pergunta se surgir um bloqueio que torne a implementação tecnicamente impossível.
+Revisar e aprovar `docs/03-requisitos.md`. Após a aprovação, produzir `docs/04-arquitetura.md` com base na visão, na pesquisa e nos requisitos. Só fazer nova pergunta se surgir um bloqueio que torne a implementação tecnicamente impossível.

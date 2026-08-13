@@ -98,21 +98,24 @@ Permitir que cada usuário simule e acompanhe seus investimentos em diferentes c
 - A primeira versão não terá uma etapa de resumo prévio da operação.
 - O valor recebido em uma venda será acrescentado imediatamente ao saldo.
 - O lucro ou prejuízo realizado será calculado pela diferença entre o preço de venda e o preço médio, multiplicada pela quantidade vendida.
+- Compras adicionais do mesmo ativo na mesma corretora recalcularão o preço médio por média ponderada.
+- Uma venda parcial manterá o preço médio unitário da posição restante e reduzirá proporcionalmente seu custo total.
 - Uma operação concluída não poderá ser editada, cancelada ou estornada.
 
 ### 5.7. Ações norte-americanas e câmbio
 
 - Ativos norte-americanos serão apresentados em dólares e em reais.
 - A compra será debitada diretamente do saldo em reais, usando conversão USD/BRL sem taxa cambial.
-- A cotação cambial será atualizada diariamente.
+- A cotação cambial USD/BRL será obtida da AwesomeAPI por HTTP REST e atualizada diariamente.
 - Se a atualização falhar, será utilizada a última cotação cambial armazenada.
 - Câmbio armazenado há mais de uma semana exibirá um aviso, sem bloquear a operação.
 - A cotação cambial utilizada não precisará constar no histórico.
 
 ### 5.8. Cotações
 
-- As cotações dos ativos presentes nas carteiras serão atualizadas automaticamente a cada cinco minutos enquanto o backend estiver em execução, atendendo ao requisito acadêmico de atualização em tempo real ou quase em tempo real.
-- A pesquisa por ativo e a confirmação de compra ou venda sempre tentarão obter uma cotação atualizada.
+- As cotações dos ativos brasileiros presentes nas carteiras serão atualizadas automaticamente a cada cinco minutos enquanto o backend estiver em execução, atendendo ao requisito acadêmico de atualização em tempo real ou quase em tempo real.
+- As cotações dos ativos norte-americanos presentes nas carteiras serão atualizadas uma vez ao dia pela Twelve Data.
+- A pesquisa e a confirmação de compra ou venda de ativo brasileiro sempre tentarão obter uma cotação atualizada. Para ativo norte-americano, será usada a cotação obtida no ciclo diário ou a última cotação armazenada.
 - O sistema deverá agrupar consultas e respeitar os limites dos provedores externos; o horário da cotação será exibido ao usuário.
 - Se a API falhar ou atingir o limite de requisições, será utilizada a última cotação armazenada.
 - Cotações de ativos com mais de um dia exibirão um aviso, mas continuarão disponíveis para operações.
@@ -171,21 +174,17 @@ Permitir que cada usuário simule e acompanhe seus investimentos em diferentes c
 
 ## 6. Decisões ainda pendentes
 
-Estas decisões não impedem a continuação do projeto porque poderão ser isoladas por configuração ou seguir temporariamente as suposições da seção seguinte:
-
-1. Confirmar com o professor o tratamento exato do preço médio depois de uma venda parcial.
-2. Escolher a fonte específica da cotação USD/BRL.
+Não há decisões funcionais pendentes neste momento. A fonte de dados abertos da CVM e a cobertura das APIs deverão ser validadas tecnicamente antes da implementação das respectivas integrações.
 
 ## 7. Suposições reversíveis
 
 Para as dúvidas não críticas, serão adotadas inicialmente as alternativas mais simples:
 
-- Em uma venda parcial, o preço médio unitário da posição restante será mantido; apenas a quantidade e o custo total serão reduzidos.
-- A integração de ações norte-americanas utilizará Twelve Data, mantendo o provedor isolado para permitir substituição futura sem alterar as regras do sistema.
-- A fonte de USD/BRL será configurável e poderá ser substituída sem alterar as regras financeiras.
+- A integração de ações norte-americanas utilizará Twelve Data, com atualização uma vez ao dia e provedor isolado para permitir substituição futura.
+- A integração USD/BRL utilizará a AwesomeAPI por HTTP REST e permanecerá isolada para permitir substituição futura.
 - Dados válidos já armazenados não serão apagados quando uma API retornar uma resposta incompleta.
 - Nome e endereço de uma corretora serão atualizados quando ela for consultada novamente, sem uma verificação periódica de todas as corretoras.
-- Valores externos com mais de duas casas decimais serão arredondados de maneira uniforme antes de participarem dos cálculos do sistema.
+- Valores externos com mais de duas casas decimais serão arredondados para duas casas pelo modo `HALF_UP`: terceira casa de 0 a 4 arredonda para baixo e de 5 a 9 arredonda para cima.
 
 ## 8. Funcionalidades fora do escopo
 

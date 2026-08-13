@@ -240,7 +240,7 @@ JPA/PostgreSQL + adaptadores Brasil API, ViaCEP, CVM, Brapi e provedor EUA/USD
 
 ### 7.5. Cache e agendamentos
 
-**Recomendação:** usar tabelas de última cotação como cache persistente, sem Redis. Enquanto o backend estiver em execução, um agendamento do Spring atualizará a cada cinco minutos somente os tickers presentes em posições, agrupando símbolos quando a API permitir. Pesquisas e confirmações de compra ou venda também tentarão consultar a cotação atual antes de usar o cache.
+**Recomendação:** usar tabelas de última cotação como cache persistente, sem Redis. Enquanto o backend estiver em execução, um agendamento do Spring atualizará a cada cinco minutos os ativos brasileiros presentes em posições; os ativos norte-americanos serão atualizados uma vez ao dia. Pesquisas e confirmações de operações brasileiras também tentarão consultar a cotação atual antes de usar o cache.
 
 ## 8. Integrações externas
 
@@ -268,21 +268,21 @@ JPA/PostgreSQL + adaptadores Brasil API, ViaCEP, CVM, Brapi e provedor EUA/USD
 | Provedor | Plano gratuito verificado | Adequação ao projeto |
 |----------|---------------------------|----------------------|
 | Alpha Vantage | Até 25 requisições/dia; dados dos EUA em tempo real ou com 15 minutos de atraso são premium | Limite diário muito baixo |
-| Twelve Data | Plano Basic informa 8 créditos por minuto e 800 por dia; consumo depende do endpoint e do número de símbolos | Pode atender a atualização quase em tempo real apenas com agrupamento, cache e controle rigoroso de consumo |
+| Twelve Data | Plano Basic informa 8 créditos por minuto e 800 por dia; consumo depende do endpoint e do número de símbolos | Adequada ao ciclo diário definido para ativos norte-americanos, sujeito à validação de cobertura |
 
 Fontes: [Suporte Alpha Vantage](https://www.alphavantage.co/support/) e [Créditos Twelve Data](https://support.twelvedata.com/en/articles/5615854-credits).
 
-**Decisão:** usar Twelve Data na primeira versão e buscar atualização dos ativos em carteira a cada cinco minutos, além de atualizar sob demanda em pesquisas e confirmações de operações. Encapsular o provedor por uma interface para permitir troca futura. Antes da implementação completa, uma prova técnica deverá validar os campos exigidos, o caráter em tempo real ou quase em tempo real dos dados e o consumo de créditos para consultas agrupadas. Fonte adicional: [Preços Twelve Data](https://twelvedata.com/pricing).
+**Decisão:** usar Twelve Data na primeira versão e atualizar os ativos norte-americanos em carteira uma vez ao dia. Encapsular o provedor por uma interface para permitir troca futura. Antes da implementação completa, uma prova técnica deverá validar os campos exigidos, a cobertura dos ativos e o consumo de créditos. Fonte adicional: [Preços Twelve Data](https://twelvedata.com/pricing).
 
 ### 8.3. USD/BRL
 
-**Recomendação:** preferir uma fonte já adotada que ofereça USD/BRL, reduzindo o número de credenciais, desde que seu limite suporte a atualização diária. Manter um adaptador independente porque a fonte ainda é uma decisão reversível.
+**Decisão:** consultar USD/BRL pela AwesomeAPI por HTTP REST uma vez ao dia. A integração permanecerá em um adaptador independente para que uma eventual troca de fonte não altere as regras financeiras.
 
 ## 9. Riscos técnicos e de segurança
 
 | Risco | Impacto | Mitigação recomendada |
 |-------|---------|------------------------|
-| Limites de APIs externas | Cotações falham ou bloqueiam a chave | Ciclo de cinco minutos somente para posições, consulta agrupada, cache persistente e tratamento de `429` |
+| Limites de APIs externas | Cotações falham ou bloqueiam a chave | Ciclo de cinco minutos para ativos brasileiros, ciclo diário para norte-americanos, cache persistente e tratamento de `429` |
 | Cotação desatualizada | Operação distante do mercado | Mostrar data/hora e aviso destacado |
 | Manipulação do preço pelo frontend | Saldo e resultado incorretos | Backend obtém e define o preço; nunca aceita preço enviado livremente pelo cliente |
 | IDOR/acesso entre contas | Vazamento de CPF, carteira e histórico | Derivar conta da sessão, filtrar toda consulta por proprietário e testar identificadores de outra conta |
@@ -308,7 +308,7 @@ Fontes: [Suporte Alpha Vantage](https://www.alphavantage.co/support/) e [Crédit
 2. **Testes de integração:** movimentações, rollback, segurança e persistência com Spring Boot Test;
 3. **Teste com PostgreSQL real:** usar Testcontainers somente nos fluxos financeiros e constraints mais críticos;
 4. **Mocks das APIs externas:** cobrir sucesso, dados ausentes, timeout, `429` e erro `5xx`;
-5. **Teste do agendamento:** verificar o ciclo de cinco minutos, agrupamento de símbolos, prevenção de execuções sobrepostas e retomada após reinício.
+5. **Teste do agendamento:** verificar o ciclo brasileiro de cinco minutos, o ciclo norte-americano e cambial diário, a prevenção de execuções sobrepostas e a retomada após reinício.
 
 **Fato:** Spring Boot oferece integração oficial com Testcontainers, inclusive conexões a bancos JDBC e Flyway. Fonte: [Testcontainers — Spring Boot](https://docs.spring.io/spring-boot/reference/testing/testcontainers.html).
 
@@ -334,7 +334,7 @@ Fontes: [Vitest](https://vitest.dev/), [React Testing Library](https://testing-l
 - Compra norte-americana usa preço e câmbio definidos pelo backend;
 - Cotação antiga exibe aviso correto;
 - Limite de API usa cache sem apagar dados válidos;
-- Venda parcial mantém preço médio conforme a suposição vigente;
+- Venda parcial mantém o preço médio unitário da posição restante;
 - Posição zerada some da carteira e permanece no histórico;
 - Alteração de senha encerra as sessões.
 
@@ -364,7 +364,7 @@ Fontes: [Vitest](https://vitest.dev/), [React Testing Library](https://testing-l
 - As APIs externas continuam exigindo internet e chaves válidas;
 - Frontend e backend usarão portas locais distintas, exigindo CORS restrito ao endereço do frontend;
 - Cookies seguros precisam de configuração própria para desenvolvimento em `localhost`;
-- A atualização automática a cada cinco minutos só ocorrerá enquanto o backend estiver em execução e houver internet;
+- As atualizações automáticas — brasileiras a cada cinco minutos e norte-americanas/cambiais diariamente — só ocorrerão enquanto o backend estiver em execução e houver internet;
 - A implantação fica fora da primeira versão e poderá ser pesquisada novamente futuramente.
 
 ## 12. Decisões técnicas recomendadas
@@ -384,16 +384,15 @@ Fontes: [Vitest](https://vitest.dev/), [React Testing Library](https://testing-l
 | Autenticação | Sessão opaca em cookie seguro + CSRF | Média-alta |
 | Hash de senha | bcrypt | Alta |
 | API brasileira | Brapi | Alta para escopo acadêmico |
-| API norte-americana | Twelve Data, atualização a cada cinco minutos e sob demanda | Média; confirmar cobertura, latência e limite do plano |
-| USD/BRL | Adaptador configurável, preferindo provedor já usado | Média |
+| API norte-americana | Twelve Data, atualização uma vez ao dia | Alta; confirmar cobertura e campos em prova técnica |
+| USD/BRL | AwesomeAPI por HTTP REST, atualização diária | Alta |
 | Cache | Banco relacional, sem Redis inicialmente | Alta |
 | Teste de banco | Testcontainers apenas nos fluxos críticos | Média-alta |
 | Execução | Exclusivamente local | Alta; decisão do projeto |
 
 ## 13. Suposições técnicas reversíveis
 
-- Twelve Data oferecerá no plano disponível os ativos e campos mínimos exigidos; isso deverá ser validado por uma prova técnica antes de consolidar a escolha.
-- Consultas agrupadas e cache permitirão cumprir a atualização quase em tempo real sem exceder o plano disponível; se a prova técnica refutar isso, o provedor ou o intervalo precisará ser revisto com o professor.
+- Twelve Data oferecerá no plano disponível os ativos e campos mínimos exigidos; isso deverá ser validado por uma prova técnica antes de implementar a integração completa.
 - O cache persistente no PostgreSQL será suficiente para o volume acadêmico, sem Redis.
 - Uma única instância do backend executará os agendamentos durante a primeira versão.
 - A configuração de cookie e CORS em `localhost` será suficiente para a primeira versão.
@@ -409,7 +408,7 @@ Os maiores riscos não estão na renderização dos dashboards, mas em três ár
 2. Segurança e isolamento dos dados de cada usuário;
 3. Consistência financeira entre saldo, posição e histórico.
 
-Antes de desenvolver todas as telas, a primeira prova técnica deve validar Brapi, Twelve Data, CVM e USD/BRL com as contas gratuitas reais. Em paralelo, as regras financeiras devem receber testes unitários antes de serem conectadas à interface.
+Antes de desenvolver todas as telas, a primeira prova técnica deve validar Brapi, Twelve Data, os dados abertos da CVM e a AwesomeAPI com acesso real. Em paralelo, as regras financeiras devem receber testes unitários antes de serem conectadas à interface.
 
 ## 15. Referências principais
 
