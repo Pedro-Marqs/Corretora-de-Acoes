@@ -40,7 +40,7 @@ Será adotado um **monólito modular em camadas**:
 
 - um único processo Spring Boot;
 - um único banco PostgreSQL;
-- pacotes internos por camada, seguindo o formato do repositório-base;
+- pacotes internos próprios por camada, inspirados apenas na organização geral da referência;
 - comunicação direta por chamadas de método dentro do backend;
 - adapters somente para sistemas externos;
 - frontend React consumindo uma API REST JSON.
@@ -165,7 +165,7 @@ Responsabilidades:
 
 ## 4. Organização das camadas
 
-A organização seguirá de perto o repositório-base: pacotes `api`, `config`, `domain`, `infra`, `repository` e `service`. As funcionalidades serão identificadas pelos nomes das classes dentro dessas camadas, sem criar um módulo de primeiro nível para cada capacidade.
+A organização será criada no novo projeto com os pacotes `api`, `config`, `domain`, `infra`, `repository` e `service`. A referência externa orienta apenas essa separação geral, sem cópia de classes ou implementações. As funcionalidades serão identificadas pelos nomes das classes dentro dessas camadas, sem criar um módulo de primeiro nível para cada capacidade.
 
 | Pacote | Responsabilidade |
 |---|---|
@@ -205,7 +205,7 @@ O pacote `service` concentra a coordenação das funcionalidades, mas cálculos 
 
 ## 5. Estrutura de diretórios proposta
 
-A estrutura replica os principais diretórios existentes no repositório-base e acrescenta somente os elementos exigidos pela nova versão:
+A estrutura é própria e apenas se inspira na separação geral observada no repositório de referência, sem replicar ou copiar seu código:
 
 ```text
 meu-projeto/
@@ -561,9 +561,9 @@ Permite demonstrar separação de responsabilidades, arquitetura em camadas, seg
 
 Oferece transações, constraints, índices e tipos decimais adequados aos cálculos financeiros. Também armazena sessões e cache, evitando componentes adicionais.
 
-### Organização semelhante ao repositório-base
+### Organização própria inspirada na referência
 
-Manter os pacotes `api`, `config`, `domain`, `infra`, `repository` e `service`, além do frontend em `src/main/front`, reduz a adaptação do código já existente e facilita o trabalho de quem conhece o projeto anterior. A separação por camada é suficiente para o porte acadêmico; as funcionalidades continuam identificáveis pelos nomes de controllers, services, modelos e repositories.
+Criar os pacotes `api`, `config`, `domain`, `infra`, `repository` e `service`, além do frontend em `src/main/front`, oferece uma separação clara para o porte acadêmico. As funcionalidades continuam identificáveis pelos nomes de controllers, services, modelos e repositories. Nenhum código ou componente do repositório de referência será incorporado.
 
 ### Regras financeiras no backend
 
@@ -592,5 +592,5 @@ Não são decisões funcionais pendentes, mas provas técnicas necessárias:
 1. confirmar que a Twelve Data retorna ticker, nome, mercado, moeda e cotação para os ativos norte-americanos necessários;
 2. identificar e validar o formato oficial de dados abertos da CVM usado para verificar CTVM;
 3. validar o endpoint e os campos USD/BRL da AwesomeAPI;
-4. executar o build do repositório-base com Java 17 e Spring Boot 3.4.0 após remover dependências herdadas sem uso;
+4. criar a base própria com Java 17 e Spring Boot 3.4.0 e validar seu build sem dependências ou código herdados;
 5. validar as migrações e os fluxos financeiros críticos em PostgreSQL.

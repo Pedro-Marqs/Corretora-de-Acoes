@@ -23,7 +23,7 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 - Dez especificações funcionais foram criadas em `docs/spec/`, uma por conjunto de funcionalidades.
 - O único tipo de usuário é o `Investidor`; os documentos distinguem somente seu estado autenticado ou não autenticado quando o fluxo exigir.
 - A arquitetura foi proposta em `docs/04-arquitetura.md`, sem implementação da aplicação.
-- O projeto foi dividido em 41 tarefas pequenas e ordenadas em `docs/06-tarefas.md`, incluindo provas técnicas, backend, frontend, testes, documentação e demonstração.
+- O projeto foi dividido em 41 tarefas pequenas e ordenadas em `docs/05-tarefas.md`, incluindo provas técnicas, backend, frontend, testes, documentação e demonstração.
 - Próxima etapa: revisar/aprovar requisitos, especificações, arquitetura e tarefas antes de iniciar T01.
 
 ## Decisões funcionais confirmadas
@@ -55,11 +55,11 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 
 ## Decisões técnicas confirmadas
 
-- Base do projeto: `https://github.com/Os-Tops/Corretora-Acoes-Apiv2`, branch `dev` considerada na pesquisa.
+- Referência exclusivamente estrutural: `https://github.com/Os-Tops/Corretora-Acoes-Apiv2`, branch `dev` considerada na pesquisa. O código não será copiado, incorporado nem reproduzido.
 - Frontend: React com JavaScript e Vite.
 - Backend: Java 17, Spring Boot 3.4.0 como ponto de partida e Maven Wrapper.
 - Arquitetura: monólito em camadas; portas/adapters apenas nas integrações externas.
-- Estrutura interna semelhante ao repositório-base, usando os pacotes `api`, `config`, `domain`, `infra`, `repository`, `service` e `scheduler`; o React permanece diretamente em `src/main/front` com `components`, `pages`, `services` e `styles`.
+- Estrutura interna própria, apenas inspirada na organização observada no repositório de referência, usando os pacotes `api`, `config`, `domain`, `infra`, `repository`, `service` e `scheduler`; o React permanece diretamente em `src/main/front` com `components`, `pages`, `services` e `styles`.
 - Um único processo Spring Boot e um único PostgreSQL; sem microsserviços, Redis, mensageria ou gateway.
 - Banco principal: PostgreSQL.
 - Banco para testes automatizados rápidos: H2.
@@ -103,4 +103,6 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 
 ## Próximo passo
 
-Revisar e aprovar `docs/03-requisitos.md`, os arquivos de `docs/spec/`, `docs/04-arquitetura.md` e `docs/06-tarefas.md`. Após a aprovação, iniciar pela T01 e respeitar as dependências registradas. Só fazer nova pergunta se surgir um bloqueio que torne a implementação tecnicamente impossível.
+Revisar e aprovar `docs/03-requisitos.md`, os arquivos de `docs/spec/`, `docs/04-arquitetura.md` e `docs/05-tarefas.md`. Após a aprovação, iniciar pela T01 e respeitar as dependências registradas. Só fazer nova pergunta se surgir um bloqueio que torne a implementação tecnicamente impossível.
+
+A implementação deverá ocorrer estritamente uma tarefa por vez. O repositório de referência poderá orientar somente a estrutura; nenhuma tarefa poderá copiar código, importar a branch ou tentar reproduzir o projeto de referência.

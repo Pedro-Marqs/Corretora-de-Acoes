@@ -4,20 +4,20 @@
 
 As tarefas estão em ordem recomendada. Cada uma produz uma alteração pequena, testável e revisável. Uma tarefa só deve ser iniciada quando suas dependências estiverem concluídas.
 
-Os caminhos citados seguem a arquitetura de `docs/04-arquitetura.md` e a estrutura do repositório-base. Nomes exatos de classes podem ser ajustados durante a implementação, sem mudar a responsabilidade indicada.
+Os caminhos citados seguem a arquitetura própria definida em `docs/04-arquitetura.md`, inspirada somente em aspectos estruturais do repositório de referência. Nenhum código será copiado ou incorporado. Nomes exatos de classes podem ser ajustados durante a implementação, sem mudar a responsabilidade indicada.
 
-## T01 — Incorporar e sanear o repositório-base
+## T01 — Criar e validar a estrutura inicial própria
 
 ### Objetivo
 
-Usar o projeto `Corretora-Acoes-Apiv2` como base compilável, removendo somente dependências e integrações confirmadas como fora da nova versão.
+Criar do zero uma base compilável para o novo projeto, usando o `Corretora-Acoes-Apiv2` somente como referência visual de organização de diretórios, sem copiar arquivos, código ou configuração.
 
 ### Arquivos ou componentes envolvidos
 
 - `pom.xml`, Maven Wrapper e `.gitignore`;
 - `src/main/java/com/projeto/gestao/`;
 - `src/main/front/`;
-- integração Alpha Vantage e Thymeleaf herdados.
+- configurações iniciais próprias do backend e do frontend.
 
 ### Dependências
 
@@ -25,17 +25,17 @@ Usar o projeto `Corretora-Acoes-Apiv2` como base compilável, removendo somente 
 
 ### Passos de implementação
 
-- Incorporar a branch `dev` do repositório-base à estrutura atual.
-- Preservar a organização `api`, `config`, `domain`, `infra`, `repository` e `service`.
-- Remover Alpha Vantage, Thymeleaf e código sem uso associado.
-- Manter Java 17, Spring Boot 3.4.0, Maven Wrapper e frontend React/Vite.
+- Criar a estrutura inicial sem importar ou incorporar qualquer branch do repositório de referência.
+- Criar de forma própria a organização `api`, `config`, `domain`, `infra`, `repository` e `service`.
+- Adicionar somente as dependências iniciais previstas para esta tarefa, sem herdar Alpha Vantage ou Thymeleaf.
+- Configurar Java 17, Spring Boot 3.4.0, Maven Wrapper e frontend React/Vite no novo projeto.
 - Registrar qualquer incompatibilidade encontrada sem adicionar funcionalidade nova.
 
 ### Testes necessários
 
 - Executar o build limpo do backend.
 - Executar instalação e build do frontend.
-- Executar os testes herdados ainda aplicáveis.
+- Executar os testes iniciais criados para a nova base.
 
 ### Concluída quando
 

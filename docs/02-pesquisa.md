@@ -16,12 +16,12 @@ As conclusões usam três classificações:
 
 Adotar uma aplicação web com:
 
-- Frontend SPA em **React + JavaScript + Vite**, seguindo o repositório-base;
+- Frontend SPA próprio em **React + JavaScript + Vite**, usando a referência apenas para orientação estrutural;
 - Backend em **Java + Spring Boot**, usando Spring MVC, Spring Security e Spring Data JPA;
 - Build do backend com **Maven Wrapper**;
 - Banco principal **PostgreSQL local**;
 - **H2 opcional** para testes rápidos, sem substituir os testes finais com PostgreSQL;
-- Arquitetura de **monólito em camadas**, preservando `domain/port` e `infra/adapter` do repositório-base para APIs externas;
+- Arquitetura própria de **monólito em camadas**, adotando `domain/port` e `infra/adapter` para APIs externas;
 - Autenticação por sessão em **cookie `HttpOnly`, `Secure` e `SameSite`**, evitando tokens no armazenamento web;
 - Migrações de banco com **Flyway** antes da entrega final;
 - Testes com JUnit, Mockito, Spring Boot Test e React Testing Library; Testcontainers e Playwright ficam restritos aos cenários críticos;
@@ -31,15 +31,15 @@ Essa combinação atende às exigências acadêmicas, mantém baixa complexidade
 
 ### 2.1. Repositório-base
 
-**Decisão:** a evolução será baseada no repositório [Os-Tops/Corretora-Acoes-Apiv2](https://github.com/Os-Tops/Corretora-Acoes-Apiv2), considerando sua branch padrão `dev` na data desta pesquisa.
+**Decisão:** o repositório [Os-Tops/Corretora-Acoes-Apiv2](https://github.com/Os-Tops/Corretora-Acoes-Apiv2), considerando sua branch padrão `dev` na data desta pesquisa, será usado exclusivamente como referência de organização estrutural. O novo projeto terá implementação própria e não copiará nem incorporará seu código.
 
 **Fato:** o repositório-base utiliza Maven Wrapper, Java 17, Spring Boot 3.4.0, Spring Data JPA, H2, PostgreSQL, Spring Cloud OpenFeign e testes do Spring Boot. Sua estrutura já separa controllers, services, repositories, portas de domínio, clientes HTTP e adapters. Fontes: [`pom.xml`](https://github.com/Os-Tops/Corretora-Acoes-Apiv2/blob/dev/pom.xml) e [código Java](https://github.com/Os-Tops/Corretora-Acoes-Apiv2/tree/dev/src/main/java/com/projeto/gestao).
 
 **Fato:** o frontend existente usa React com JavaScript e Vite dentro de `src/main/front`. Fonte: [`package.json`](https://github.com/Os-Tops/Corretora-Acoes-Apiv2/blob/dev/src/main/front/package.json).
 
-**Recomendação:** reutilizar a organização e os componentes úteis, mas não copiar automaticamente decisões incompatíveis com a nova visão. A nova versão precisará acrescentar autenticação, usuários, validação CVM/CTVM, saldo, movimentações, transferências, histórico e dashboards completos.
+**Recomendação:** aproveitar somente ideias gerais de organização, sem reutilizar ou copiar componentes e implementações. O novo projeto deverá implementar de forma própria autenticação, usuários, validação CVM/CTVM, saldo, movimentações, transferências, histórico e dashboards completos.
 
-**Decisão:** manter Java 17 e Spring Boot 3.4.0 como ponto de partida do repositório-base. Antes da implementação, remover dependências e código herdados que não atendem à nova visão, especialmente Thymeleaf e a integração Alpha Vantage; a compatibilidade das versões restantes deverá ser confirmada pelo build e pelos testes.
+**Decisão:** adotar Java 17 e Spring Boot 3.4.0 no projeto próprio. Não haverá dependências nem código herdados do repositório de referência; somente as dependências necessárias serão adicionadas por tarefa, e sua compatibilidade deverá ser confirmada pelo build e pelos testes.
 
 ## 3. Soluções semelhantes
 
@@ -98,11 +98,11 @@ Essa combinação atende às exigências acadêmicas, mantém baixa complexidade
 | HTTP Service Client | Interfaces declarativas sobre cliente HTTP | Boa alternativa para reduzir código repetitivo |
 | `WebClient` | Não bloqueante, reativo e adequado a streaming/alta concorrência | Útil apenas se o grupo dominar Reactor |
 | `RestTemplate` | Cliente síncrono antigo | Evitar em projeto novo |
-| OpenFeign | Declarativo e já utilizado pelo repositório-base | **Recomendado para preservar a base existente** |
+| OpenFeign | Cliente declarativo adequado às integrações previstas | **Recomendado para o projeto próprio** |
 
 **Fato:** a documentação atual do Spring apresenta `RestClient`, `WebClient` e HTTP Service Clients; `RestTemplate` está depreciado no Spring Framework 7 em favor de `RestClient`. Fonte: [REST Clients — Spring Framework](https://docs.spring.io/spring-framework/reference/integration/rest-clients.html).
 
-**Decisão:** manter OpenFeign porque ele já está configurado e utilizado no repositório-base. Cada cliente Feign continuará encapsulado por uma porta de domínio e um adapter, evitando que services dependam diretamente dos contratos externos.
+**Decisão:** adotar OpenFeign no novo projeto. Cada cliente Feign será encapsulado por uma porta de domínio e um adapter, evitando que services dependam diretamente dos contratos externos.
 
 **Recomendação:** não misturar OpenFeign, `RestClient` e `WebClient` na primeira versão.
 
@@ -110,7 +110,7 @@ Essa combinação atende às exigências acadêmicas, mantém baixa complexidade
 
 | Alternativa | Vantagens | Desvantagens | Avaliação |
 |-------------|-----------|--------------|-----------|
-| React + JavaScript + Vite | Já utilizado pelo repositório-base e não exige migração | Não oferece verificação estática completa | **Recomendado** |
+| React + JavaScript + Vite | Atende ao frontend planejado com baixa complexidade inicial | Não oferece verificação estática completa | **Recomendado** |
 | React + TypeScript + Vite | Acrescenta verificação estática aos contratos do frontend | Exige migrar o frontend existente | Alternativa futura |
 | React com framework full-stack | Roteamento e recursos integrados | Sobreposição com o backend Spring e maior complexidade | Desnecessário |
 | Thymeleaf | Integração direta com Spring e deploy único | Não atende à decisão confirmada de React | Rejeitado |
@@ -119,7 +119,7 @@ Essa combinação atende às exigências acadêmicas, mantém baixa complexidade
 
 **Fato:** TypeScript adiciona verificação estática de tipos ao JavaScript, e o Vite oferece um template oficial `react-ts`. Fontes: [TypeScript](https://www.typescriptlang.org/docs/) e [Vite](https://vite.dev/guide/).
 
-**Recomendação:** manter React com JavaScript e Vite, como no repositório-base, evitando uma migração para TypeScript durante a ampliação funcional. Usar React Router para navegação e não adicionar uma biblioteca de estado/cache na primeira etapa. Fonte: [React Router](https://reactrouter.com/).
+**Recomendação:** adotar React com JavaScript e Vite no novo projeto, sem TypeScript nesta etapa. Usar React Router para navegação e não adicionar uma biblioteca de estado/cache na primeira etapa. Fonte: [React Router](https://reactrouter.com/).
 
 ### 4.4. Gráficos e componentes visuais
 
@@ -186,7 +186,7 @@ Essa combinação atende às exigências acadêmicas, mantém baixa complexidade
 
 **Fato:** a OWASP recomenda não guardar tokens, identificadores de sessão, JWTs ou credenciais em `localStorage`/`sessionStorage`, preferindo cookies `HttpOnly`, `Secure` e `SameSite` ou padrão BFF. Fonte: [Session Management Cheat Sheet — OWASP](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html).
 
-**Decisão:** acrescentar Spring Security e Spring Session JDBC ao repositório-base. O projeto atual ainda não contém autenticação, e Spring Session JDBC permite persistir `HttpSession` e localizar sessões por usuário sem desenvolver tokens próprios. Fonte: [Spring Session JDBC](https://docs.spring.io/spring-session/reference/configuration/jdbc.html).
+**Decisão:** adicionar Spring Security e Spring Session JDBC ao novo projeto. Spring Session JDBC permite persistir `HttpSession` e localizar sessões por usuário sem desenvolver tokens próprios. Fonte: [Spring Session JDBC](https://docs.spring.io/spring-session/reference/configuration/jdbc.html).
 
 **Recomendação:** usar cookie `HttpOnly` e `SameSite`, proteção CSRF e CORS limitado ao frontend local. O atributo `Secure` será ativado quando houver HTTPS; em desenvolvimento HTTP local, ficará desativado por perfil.
 
@@ -200,7 +200,7 @@ Essa combinação atende às exigências acadêmicas, mantém baixa complexidade
 
 ### 7.1. Estilo recomendado
 
-**Recomendação:** manter o monólito em camadas e o recorte já existente no repositório-base. Portas e adapters serão usados somente nas integrações externas; repositories JPA continuarão diretos, sem portas adicionais.
+**Recomendação:** criar um monólito em camadas próprio. Portas e adapters serão usados somente nas integrações externas; repositories JPA continuarão diretos, sem portas adicionais.
 
 ```text
 React SPA
