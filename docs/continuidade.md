@@ -18,13 +18,14 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 - A visão consolidada está em `docs/01-visao.md`.
 - A pesquisa técnica está em `docs/02-pesquisa.md`.
 - A pesquisa foi revisada uma última vez e alinhada às decisões mais recentes.
-- Nenhum código da nova versão foi implementado nesta etapa.
+- A T01 foi concluída: a base própria do backend Spring Boot e do frontend React/Vite foi criada, sem copiar ou incorporar código do repositório de referência.
 - Os requisitos foram consolidados em `docs/03-requisitos.md`, e as cinco dúvidas levantadas nessa etapa foram resolvidas.
 - Dez especificações funcionais foram criadas em `docs/spec/`, uma por conjunto de funcionalidades.
 - O único tipo de usuário é o `Investidor`; os documentos distinguem somente seu estado autenticado ou não autenticado quando o fluxo exigir.
-- A arquitetura foi proposta em `docs/04-arquitetura.md`, sem implementação da aplicação.
+- A arquitetura foi proposta em `docs/04-arquitetura.md`, e sua estrutura inicial foi materializada pela T01.
 - O projeto foi dividido em 41 tarefas pequenas e ordenadas em `docs/05-tarefas.md`, incluindo provas técnicas, backend, frontend, testes, documentação e demonstração.
-- Próxima etapa: revisar/aprovar requisitos, especificações, arquitetura e tarefas antes de iniciar T01.
+- A T01 passou em build limpo, testes iniciais, análise estática e auditoria de dependências, e recebeu revisão final do Atlas sem achados restantes.
+- Próxima tarefa elegível: T02, ainda não iniciada.
 
 ## Decisões funcionais confirmadas
 
@@ -98,11 +99,11 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 
 - Validar na Twelve Data os campos mínimos e a cobertura necessária antes da integração completa.
 - Priorizar dados abertos da CVM processáveis pelo backend e validar a fonte/formato antes do cadastro completo de corretora, evitando automação de páginas ou CAPTCHA.
-- A compatibilidade de Spring Boot 3.4.0 com as dependências mantidas será validada pelo build e pelos testes antes do desenvolvimento funcional.
+- A base com Spring Boot 3.4.0 e Java 17 foi validada pelo build e pelo teste inicial na T01; novas dependências continuarão sendo validadas em suas respectivas tarefas.
 - Para dúvidas não críticas futuras, será adotada a alternativa mais simples e registrada como suposição reversível.
 
 ## Próximo passo
 
-Revisar e aprovar `docs/03-requisitos.md`, os arquivos de `docs/spec/`, `docs/04-arquitetura.md` e `docs/05-tarefas.md`. Após a aprovação, iniciar pela T01 e respeitar as dependências registradas. Só fazer nova pergunta se surgir um bloqueio que torne a implementação tecnicamente impossível.
+Iniciar a T02 somente quando solicitado, respeitando as dependências e o escopo definidos em `docs/05-tarefas.md`. Só fazer nova pergunta se surgir um bloqueio que torne a implementação tecnicamente impossível.
 
 A implementação deverá ocorrer estritamente uma tarefa por vez. O repositório de referência poderá orientar somente a estrutura; nenhuma tarefa poderá copiar código, importar a branch ou tentar reproduzir o projeto de referência.

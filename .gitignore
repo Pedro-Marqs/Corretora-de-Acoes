@@ -1,0 +1,36 @@
+HELP.md
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+### IntelliJ IDEA ###
+.idea/
+*.iws
+*.iml
+*.ipr
+
+### Eclipse ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### Visual Studio Code ###
+.vscode/
+
+### Frontend ###
+src/main/front/node_modules/
+src/main/front/dist/
+src/main/front/coverage/
+
+### Local configuration and secrets ###
+.env
+.env.*
+!.env.example
+application-local.properties
+
+### Operating systems ###
+.DS_Store
+Thumbs.db
