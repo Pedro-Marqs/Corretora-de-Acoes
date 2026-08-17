@@ -31,6 +31,8 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 - Na T03, 14 testes executáveis passaram; os dois testes PostgreSQL/Testcontainers foram ignorados por indisponibilidade de Docker, mantendo pendente a validação integral no banco principal.
 - A execução local foi validada no PostgreSQL 9.4.26 instalado na máquina: a aplicação conectou, o Flyway aplicou as migrações V1 e V2, o Hibernate validou o modelo JPA e o backend iniciou com sucesso. Foram criadas 12 tabelas no esquema.
 - O PostgreSQL 9.4 pode ser usado no desenvolvimento local, mas Flyway e Hibernate emitiram avisos de versão sem suporte oficial; a validação planejada com PostgreSQL 16/Testcontainers continua pendente enquanto Docker não estiver disponível.
+- A T04 foi concluída: `FinancialAmount` centraliza valores com `BigDecimal`, escala de duas casas e `HALF_UP`, incluindo soma, multiplicação e conversão USD/BRL; `TimeConfiguration` fornece um `Clock` injetável no fuso `America/Sao_Paulo`.
+- A validação final da T04 passou em `mvnw clean verify`: 34 testes sem falhas, sendo 32 executados e os mesmos dois testes Testcontainers ignorados por Docker indisponível. O build e a análise do compilador com `-Xlint:all -Werror` também passaram. O agente Revisor não encontrou problemas funcionais; as lacunas de cobertura apontadas por ele foram implementadas pelo agente Programador e revalidadas pelo Orquestrador.
 
 ## Decisões funcionais confirmadas
 
@@ -48,6 +50,7 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 - O histórico terá 20 registros por página.
 - Pontos patrimoniais serão registrados somente após saldo inicial, aporte, compra, venda e transferência; atualizações isoladas de cotação não criarão pontos.
 - Ativos internacionais serão exibidos em dólar e em real, com conversão direta e sem taxa cambial.
+- Na documentação e nos resumos, usar `cotação USD/BRL` para o fator de conversão e evitar chamá-lo de `taxa cambial`. A primeira versão não cobra tarifa de câmbio, spread, comissão ou qualquer outro custo; a conversão é exclusivamente `valor em USD × cotação USD/BRL`.
 - A cotação USD/BRL será consultada diariamente na AwesomeAPI por HTTP REST; falhas usam o último valor. Após uma semana, será exibido aviso sem bloquear operações.
 - As cotações brasileiras em carteira serão atualizadas a cada cinco minutos; as norte-americanas, uma vez ao dia pela Twelve Data, enquanto backend e internet estiverem disponíveis.
 - Pesquisas e confirmações de compra ou venda brasileiras tentarão obter cotação atual antes do cache; operações norte-americanas usarão a cotação diária armazenada.
@@ -111,6 +114,10 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 
 ## Próximo passo
 
-O PostgreSQL local está funcional e pode ser utilizado nas próximas tarefas. Antes de cada execução, verificar a conexão e criar o banco `gestao_acoes` somente se ele ainda não existir. Para encerrar integralmente a matriz planejada da T03, ainda falta disponibilizar Docker e executar os testes Testcontainers com PostgreSQL 16.
+Implementar somente a T05 — padronizar erros da API. O PostgreSQL local está funcional e deve ter sua conexão verificada antes das execuções; criar o banco `gestao_acoes` somente se ele ainda não existir. A validação Testcontainers com PostgreSQL 16 permanece pendente enquanto Docker não estiver disponível.
 
 A implementação deverá ocorrer estritamente uma tarefa por vez. O repositório de referência poderá orientar somente a estrutura; nenhuma tarefa poderá copiar código, importar a branch ou tentar reproduzir o projeto de referência.
+
+O trabalho deve ser coordenado pelo agente Orquestrador, usando os perfis disponíveis em `C:\Users\Arklok\.codex\agents`: Planejador para análise, Programador para backend e testes, Front-end Designer para interface e Revisor de código para auditoria independente. Delegações devem ter escopo específico, agentes não devem editar simultaneamente os mesmos arquivos e o Orquestrador deve consolidar e validar toda entrega.
+
+Ao concluir cada tarefa, o Orquestrador deve sempre apresentar ao usuário um resumo contendo: objetivo da tarefa, comportamento implementado, arquivos criados ou alterados, verificações e testes executados, comparação com os critérios de conclusão e limitações ou pendências restantes.
