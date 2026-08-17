@@ -27,6 +27,8 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 - A T01 passou em build limpo, testes iniciais, análise estática e auditoria de dependências, e recebeu revisão final do Atlas sem achados restantes.
 - A T02 foi implementada: perfis `local`/`dev` com PostgreSQL e `test` com H2, configurações externas por ambiente, Compose local e instruções de inicialização.
 - A validação automatizada da T02 passou com cinco testes e build limpo; a conexão com uma instância PostgreSQL real ainda depende de Docker ou PostgreSQL disponível na máquina.
+- A T03 foi implementada e aprovada tecnicamente pelo Revisor: migrações Flyway, nove entidades JPA, repositories, tabelas Spring Session e constraints do esquema foram criados.
+- Na T03, 14 testes executáveis passaram; os dois testes PostgreSQL/Testcontainers foram ignorados por indisponibilidade de Docker, mantendo pendente a validação integral no banco principal.
 
 ## Decisões funcionais confirmadas
 
@@ -105,6 +107,6 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 
 ## Próximo passo
 
-Validar a inicialização do perfil `local` contra o PostgreSQL do `compose.yaml` quando Docker ou PostgreSQL estiver disponível. Depois dessa validação, encerrar formalmente a T02 e considerar a T03 elegível.
+Disponibilizar Docker ou PostgreSQL, iniciar o banco do `compose.yaml` e executar os testes Testcontainers para encerrar formalmente as validações da T02 e da T03. Somente depois considerar a T04 integralmente elegível.
 
 A implementação deverá ocorrer estritamente uma tarefa por vez. O repositório de referência poderá orientar somente a estrutura; nenhuma tarefa poderá copiar código, importar a branch ou tentar reproduzir o projeto de referência.
