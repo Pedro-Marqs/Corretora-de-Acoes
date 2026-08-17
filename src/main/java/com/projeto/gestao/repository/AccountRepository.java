@@ -9,5 +9,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface AccountRepository extends JpaRepository<Account, UUID> {
     Optional<Account> findByEmailIgnoreCaseAndStatus(String email, AccountStatus status);
+    boolean existsByEmailIgnoreCaseAndStatus(String email, AccountStatus status);
     boolean existsByCpfAndStatus(String cpf, AccountStatus status);
 }

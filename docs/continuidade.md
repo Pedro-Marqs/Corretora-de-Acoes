@@ -46,6 +46,20 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 - Foi criado, sem apagar ou modificar o banco principal, o banco local isolado `gestao_acoes_test`. O teste opt-in confirmou no PostgreSQL local a gravação e a recuperação de uma sessão JDBC.
 - A validação final da T06 passou com 60 testes backend, sem falhas ou erros: 58 foram executados, incluindo o teste no PostgreSQL local, e dois testes Testcontainers antigos permaneceram ignorados. Compilação com `-Xlint:all -Werror`, empacotamento JAR, teste frontend, ESLint e build Vite também passaram.
 - A proteção contra fixação de sessão será comprovada na T08, quando existir o fluxo real de login; não foi criado um login artificial apenas para testá-la na T06.
+- A T07 foi concluída e aprovada pelo agente Revisor: `POST /api/accounts` cria uma conta `ACTIVE`, com saldo de R$ 10.000,00, movimentação `INITIAL_BALANCE` e primeiro ponto patrimonial na mesma transação.
+- O cadastro valida os campos obrigatórios, CPF nos formatos de 11 dígitos ou `ddd.ddd.ddd-dd`, e-mail e a composição confirmada da senha. CPF e e-mail são normalizados, e a unicidade é aplicada somente entre contas ativas.
+- O cadastro retorna HTTP 201 com identificador, nome, saldo e estado. CPF, e-mail, senha e hash não são retornados; o cadastro não autentica automaticamente e continua exigindo CSRF.
+- Para aceitar senhas que cumpram RN04 mesmo acima do limite de entrada do bcrypt, o `PasswordEncoder` aplica SHA-256 em UTF-8 antes do bcrypt. Somente o hash bcrypt salgado é persistido. O futuro login deve usar o mesmo encoder.
+- A validação final da T07 passou com 70 testes backend, sem falhas ou erros. Os testes no PostgreSQL local `gestao_acoes_test` comprovaram o cadastro completo, os três registros correlatos e a constraint de CPF ativo, com rollback automático e sem dados residuais. Dois testes Testcontainers antigos permaneceram ignorados; Docker não foi usado.
+- Teste frontend, ESLint e build Vite também passaram no fechamento da T07.
+- A pedido do usuário, foi criada antecipadamente uma interface mínima para testar o cadastro da T07, sem implementar a fundação completa da T11 nem os demais fluxos da T12. A tela não inclui login, área da conta, rotas privadas ou dashboard.
+- A tela pública obtém o token em `GET /api/csrf`, envia `POST /api/accounts` com cookie e cabeçalho CSRF, bloqueia reenvios, mostra erros gerais e por campo e confirma o saldo inicial sem exibir CPF, e-mail, senha ou identificador técnico.
+- O frontend de cadastro é responsivo, usa o breakpoint de 860px para evitar rolagem horizontal, executa em `http://localhost:5173` com porta estrita e aceita `VITE_API_BASE_URL` configurada em `src/main/front/.env` a partir do exemplo local.
+- A validação da interface passou com nove testes, ESLint sem avisos e build Vite. O agente Revisor aprovou a entrega após a correção do breakpoint responsivo.
+- Após um cadastro concluído, o frontend agora troca o formulário por uma tela inicial transitória da conta, exibindo somente o nome, o saldo devolvido pela API e o estado `Ativa`. A tela não persiste dados e volta ao cadastro se a página for recarregada.
+- Essa tela inicial ainda não representa uma sessão autenticada: login, dados privados, carteira, corretoras, ativos e histórico continuam aguardando suas tarefas próprias. O aviso na interface informa explicitamente essa limitação.
+- A tela inicial pós-cadastro foi aprovada pelo agente Revisor após ajuste específico para 320px. A validação passou com 11 testes frontend, ESLint e build Vite.
+- Na execução local desta máquina, o Maven pode resolver incorretamente o repositório para `C:\.m2\repository` e falhar por permissão. Quando isso ocorrer, iniciar o backend com `-Dmaven.repo.local=C:\Users\Arklok\.m2\repository`. Esse parâmetro corrige somente o caminho do cache e não altera a aplicação.
 
 ## Decisões funcionais confirmadas
 
@@ -127,7 +141,7 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 
 ## Próximo passo
 
-Implementar somente a T07 — cadastro de conta e saldo inicial. O PostgreSQL local está funcional e deve ter sua conexão verificada antes das execuções; criar o banco `gestao_acoes` somente se ele ainda não existir. Não usar Docker ou Testcontainers nas próximas validações; testes de integração devem utilizar PostgreSQL local e o banco separado `gestao_acoes_test` quando precisarem alterar dados.
+Implementar somente a T08 — login e logout. O PostgreSQL local está funcional e deve ter sua conexão verificada antes das execuções; criar o banco `gestao_acoes` somente se ele ainda não existir. Não usar Docker ou Testcontainers nas próximas validações; testes de integração devem utilizar PostgreSQL local e o banco separado `gestao_acoes_test` quando precisarem alterar dados.
 
 A implementação deverá ocorrer estritamente uma tarefa por vez. O repositório de referência poderá orientar somente a estrutura; nenhuma tarefa poderá copiar código, importar a branch ou tentar reproduzir o projeto de referência.
 

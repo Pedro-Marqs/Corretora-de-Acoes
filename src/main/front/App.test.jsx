@@ -1,14 +1,90 @@
 import '@testing-library/jest-dom/vitest'
-import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App.jsx'
+import { AccountApiError, createAccount } from './api/accounts.js'
 
-describe('App', () => {
-  it('renders the project title', () => {
+vi.mock('./api/accounts.js', async (importOriginal) => {
+  const original = await importOriginal()
+  return { ...original, createAccount: vi.fn() }
+})
+
+afterEach(cleanup)
+
+function fillForm() {
+  fireEvent.change(screen.getByLabelText('Nome completo'), { target: { value: 'Ana Silva' } })
+  fireEvent.change(screen.getByLabelText('CPF'), { target: { value: '52998224725' } })
+  fireEvent.change(screen.getByLabelText('E-mail'), { target: { value: 'ana@example.com' } })
+  fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'Senha@123' } })
+}
+
+describe('Cadastro', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('exibe todos os campos e a informação do saldo inicial', () => {
     render(<App />)
+    expect(screen.getByRole('heading', { name: 'Comece a organizar sua carteira.' })).toBeInTheDocument()
+    expect(screen.getByText('R$ 10.000,00')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Criar minha conta' })).toBeEnabled()
+  })
 
-    expect(
-      screen.getByRole('heading', { name: 'Gestão de Ações e Corretoras' }),
-    ).toBeInTheDocument()
+  it('envia os dados e apresenta a tela inicial apenas com o retorno público', async () => {
+    createAccount.mockResolvedValue({ name: 'Ana Silva', balance: 10000, status: 'ACTIVE' })
+    render(<App />)
+    fillForm()
+    fireEvent.click(screen.getByRole('button', { name: 'Criar minha conta' }))
+
+    await screen.findByRole('heading', { name: 'Olá, Ana Silva.' })
+    expect(createAccount).toHaveBeenCalledWith({ name: 'Ana Silva', cpf: '529.982.247-25', email: 'ana@example.com', password: 'Senha@123' })
+    expect(screen.getByText('R$ 10.000,00')).toBeInTheDocument()
+    expect(screen.getByText('Ativa')).toBeInTheDocument()
+    expect(screen.getByText(/Esta tela usa somente os dados retornados/)).toBeInTheDocument()
+    expect(screen.queryByText('529.982.247-25')).not.toBeInTheDocument()
+    expect(screen.queryByText('ana@example.com')).not.toBeInTheDocument()
+    expect(screen.queryByText(/corretora/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/histórico/i)).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /entrar|login|comprar|vender/i })).not.toBeInTheDocument()
+  })
+
+  it('usa mensagens seguras quando saldo e status retornados são desconhecidos', async () => {
+    createAccount.mockResolvedValue({ name: 'Ana Silva', balance: 'inválido', status: 'UNKNOWN' })
+    render(<App />)
+    fillForm()
+    fireEvent.click(screen.getByRole('button', { name: 'Criar minha conta' }))
+
+    expect(await screen.findByText('Saldo indisponível')).toBeInTheDocument()
+    expect(screen.getByText('Status indisponível')).toBeInTheDocument()
+  })
+
+  it('permite voltar ao formulário sem persistir o retorno da conta', async () => {
+    createAccount.mockResolvedValue({ name: 'Ana Silva', balance: 10000, status: 'ACTIVE' })
+    render(<App />)
+    fillForm()
+    fireEvent.click(screen.getByRole('button', { name: 'Criar minha conta' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Cadastrar outra conta' }))
+
+    expect(screen.getByRole('button', { name: 'Criar minha conta' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Nome completo')).toHaveValue('')
+  })
+
+  it('mostra múltiplos erros nos campos e permite corrigi-los', async () => {
+    createAccount.mockRejectedValue(new AccountApiError('Os dados informados são inválidos.', { cpf: ['CPF inválido.'], email: ['E-mail inválido.'] }))
+    render(<App />)
+    fillForm()
+    fireEvent.click(screen.getByRole('button', { name: 'Criar minha conta' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Os dados informados são inválidos.')
+    expect(screen.getByText('CPF inválido.')).toBeInTheDocument()
+    expect(screen.getByText('E-mail inválido.')).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('CPF'), { target: { value: '123' } })
+    await waitFor(() => expect(screen.queryByText('CPF inválido.')).not.toBeInTheDocument())
+  })
+
+  it('bloqueia reenvio enquanto aguarda a API', async () => {
+    createAccount.mockReturnValue(new Promise(() => {}))
+    render(<App />)
+    fillForm()
+    fireEvent.click(screen.getByRole('button', { name: 'Criar minha conta' }))
+    expect(screen.getByRole('button', { name: 'Criando conta…' })).toBeDisabled()
   })
 })

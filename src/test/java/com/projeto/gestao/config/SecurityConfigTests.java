@@ -111,8 +111,17 @@ class SecurityConfigTests {
         CsrfCredentials csrf = csrfCredentials();
         mockMvc.perform(post("/api/accounts")
                         .cookie(csrf.cookie())
-                        .header("X-XSRF-TOKEN", csrf.token()))
-                .andExpect(status().isOk());
+                        .header("X-XSRF-TOKEN", csrf.token())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "Investidor Teste",
+                                  "cpf": "52998224725",
+                                  "email": "security-config@example.com",
+                                  "password": "SenhaSegura1!"
+                                }
+                                """))
+                .andExpect(status().isCreated());
     }
 
     @Test
@@ -246,7 +255,7 @@ class SecurityConfigTests {
     @RestController
     @RequestMapping("/api")
     static class TestEndpoints {
-        @PostMapping({"/accounts", "/auth/login", "/accounts/reactivation"})
+        @PostMapping({"/auth/login", "/accounts/reactivation"})
         void publicMutation() {
         }
 

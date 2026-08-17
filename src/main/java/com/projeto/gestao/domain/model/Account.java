@@ -28,6 +28,21 @@ public class Account {
 
     protected Account() { }
 
+    public static Account create(
+            UUID id, String name, String cpf, String email, String passwordHash,
+            BigDecimal balance, OffsetDateTime createdAt) {
+        Account account = new Account();
+        account.id = id;
+        account.name = name;
+        account.cpf = cpf;
+        account.email = email;
+        account.passwordHash = passwordHash;
+        account.balance = balance;
+        account.status = AccountStatus.ACTIVE;
+        account.createdAt = createdAt;
+        return account;
+    }
+
     public UUID getId() { return id; }
     public String getName() { return name; }
     public String getCpf() { return cpf; }

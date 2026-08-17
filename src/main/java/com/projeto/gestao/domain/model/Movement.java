@@ -37,6 +37,19 @@ public class Movement {
 
     protected Movement() { }
 
+    public static Movement initialBalance(
+            UUID id, Account account, BigDecimal amount, OffsetDateTime occurredAt) {
+        Movement movement = new Movement();
+        movement.id = id;
+        movement.account = account;
+        movement.movementType = MovementType.INITIAL_BALANCE;
+        movement.totalAmount = amount;
+        movement.currency = Currency.BRL;
+        movement.occurredAt = occurredAt;
+        movement.remainingBalance = amount;
+        return movement;
+    }
+
     public UUID getId() { return id; }
     public Account getAccount() { return account; }
     public MovementType getMovementType() { return movementType; }

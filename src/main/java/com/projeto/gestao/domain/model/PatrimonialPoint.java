@@ -24,6 +24,18 @@ public class PatrimonialPoint {
 
     protected PatrimonialPoint() { }
 
+    public static PatrimonialPoint initial(
+            UUID id, Account account, Movement movement,
+            BigDecimal patrimonyBrl, OffsetDateTime recordedAt) {
+        PatrimonialPoint point = new PatrimonialPoint();
+        point.id = id;
+        point.account = account;
+        point.movement = movement;
+        point.patrimonyBrl = patrimonyBrl;
+        point.recordedAt = recordedAt;
+        return point;
+    }
+
     public UUID getId() { return id; }
     public Account getAccount() { return account; }
     public Movement getMovement() { return movement; }
