@@ -2,6 +2,7 @@ package com.projeto.gestao.api.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -21,6 +22,7 @@ import com.projeto.gestao.security.AccountPrincipal;
 import jakarta.servlet.http.Cookie;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +41,7 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -92,6 +95,14 @@ class LocalPostgreSqlAuthenticationTests {
                 OffsetDateTime.parse("2026-01-01T10:00:00-03:00")));
     }
 
+    @AfterEach
+    void cleanupAccount() {
+        if (accountId != null && accountRepository.existsById(accountId)) {
+            jdbcTemplate.update("DELETE FROM SPRING_SESSION WHERE PRINCIPAL_NAME = ?", accountId.toString());
+            accountRepository.deleteById(accountId);
+        }
+    }
+
     @Test
     void persistsAndRecoversMinimalPrincipalInExclusivePostgreSqlTestDatabase() throws Exception {
         CsrfCredentials csrf = csrf();
@@ -116,6 +127,39 @@ class LocalPostgreSqlAuthenticationTests {
         mockMvc.perform(get("/api/t08/postgres/private").cookie(session))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accountId").value(accountId.toString()));
+    }
+
+    @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    void changesCredentialAndRevokesEverySessionInExclusivePostgreSqlTestDatabase() throws Exception {
+        Cookie first = login();
+        Cookie second = login();
+        CsrfCredentials csrf = csrf();
+
+        mockMvc.perform(patch("/api/accounts/me/email").cookie(first, csrf.cookie())
+                        .header("X-XSRF-TOKEN", csrf.token()).contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "newEmail", "t09-postgres-new@example.com",
+                                "currentPassword", PASSWORD))))
+                .andExpect(status().isNoContent());
+
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT email FROM account WHERE id = ?", String.class, accountId))
+                .isEqualTo("t09-postgres-new@example.com");
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM SPRING_SESSION WHERE PRINCIPAL_NAME = ?",
+                Integer.class, accountId.toString())).isZero();
+        mockMvc.perform(get("/api/t08/postgres/private").cookie(second))
+                .andExpect(status().isUnauthorized());
+    }
+
+    private Cookie login() throws Exception {
+        CsrfCredentials csrf = csrf();
+        return mockMvc.perform(post("/api/auth/login").cookie(csrf.cookie())
+                        .header("X-XSRF-TOKEN", csrf.token()).contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                Map.of("email", EMAIL, "password", PASSWORD))))
+                .andExpect(status().isNoContent()).andReturn().getResponse().getCookie("SESSION");
     }
 
     private CsrfCredentials csrf() throws Exception {

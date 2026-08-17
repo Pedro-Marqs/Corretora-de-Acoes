@@ -43,6 +43,14 @@ public class Account {
         return account;
     }
 
+    public void changeEmail(String newEmail) {
+        this.email = newEmail;
+    }
+
+    public void changePasswordHash(String newPasswordHash) {
+        this.passwordHash = newPasswordHash;
+    }
+
     public UUID getId() { return id; }
     public String getName() { return name; }
     public String getCpf() { return cpf; }

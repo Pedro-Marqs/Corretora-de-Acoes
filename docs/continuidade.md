@@ -71,6 +71,12 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 - Como ainda não existe endpoint de consulta da conta, recarregar a página não restaura o estado visual da sessão, embora o cookie do backend possa continuar válido. Essa limitação será resolvida pelas tarefas de consulta da conta e fundação completa do frontend.
 - A interface de login/logout foi aprovada pelo agente Revisor e passou com 21 testes frontend, ESLint e build Vite.
 - O backend local foi reiniciado após a interface de login e está executando a versão da T08 na porta 8080; os logs dessa execução ficam em `target/backend-local.log` e `target/backend-local-error.log`.
+- A T09 foi concluída e aprovada pelo agente Revisor: `GET /api/accounts/me` consulta somente a conta derivada do UUID da sessão e retorna nome, CPF mascarado como `529.***.***-25` e e-mail como `m***@domínio`, sem identificador ou credenciais.
+- `PATCH /api/accounts/me/email` e `PATCH /api/accounts/me/password` exigem senha atual, CSRF e conta ativa. E-mail é normalizado e único entre contas ativas; a nova senha segue exatamente RN04. Nome e CPF não possuem endpoints nem métodos de alteração.
+- Após alteração válida de e-mail ou senha, todas as sessões da conta são revogadas, inclusive a atual. A revogação usa um único `DELETE` parametrizado por `PRINCIPAL_NAME` na mesma transação da alteração, com remoção dos atributos por `ON DELETE CASCADE`.
+- O rollback foi comprovado após a execução real da revogação: se ocorrer falha, a credencial volta ao valor anterior e duas sessões simultâneas permanecem existentes e utilizáveis. Erros de validação, conflito, senha incorreta ou CSRF também não revogam sessões.
+- A validação final da T09 passou com 85 testes backend, sem falhas ou erros, incluindo PostgreSQL local `gestao_acoes_test`; dois testes Testcontainers antigos permaneceram ignorados. O frontend existente passou com 21 testes, ESLint e build Vite.
+- A T09 não implementou sua interface de consulta/alteração; isso permanece na tarefa de frontend correspondente.
 
 ## Decisões funcionais confirmadas
 
@@ -152,7 +158,7 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 
 ## Próximo passo
 
-Implementar somente a T09 — consulta e alteração de credenciais. O PostgreSQL local está funcional e deve ter sua conexão verificada antes das execuções; criar o banco `gestao_acoes` somente se ele ainda não existir. Não usar Docker ou Testcontainers nas próximas validações; testes de integração devem utilizar PostgreSQL local e o banco separado `gestao_acoes_test` quando precisarem alterar dados.
+Implementar somente a T10 — exclusão lógica e reativação. O PostgreSQL local está funcional e deve ter sua conexão verificada antes das execuções; criar o banco `gestao_acoes` somente se ele ainda não existir. Não usar Docker ou Testcontainers nas próximas validações; testes de integração devem utilizar PostgreSQL local e o banco separado `gestao_acoes_test` quando precisarem alterar dados.
 
 A implementação deverá ocorrer estritamente uma tarefa por vez. O repositório de referência poderá orientar somente a estrutura; nenhuma tarefa poderá copiar código, importar a branch ou tentar reproduzir o projeto de referência.
 
