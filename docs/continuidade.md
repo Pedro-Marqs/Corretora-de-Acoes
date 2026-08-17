@@ -30,9 +30,15 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 - A T03 foi implementada e aprovada tecnicamente pelo Revisor: migrações Flyway, nove entidades JPA, repositories, tabelas Spring Session e constraints do esquema foram criados.
 - Na T03, 14 testes executáveis passaram; os dois testes PostgreSQL/Testcontainers foram ignorados por indisponibilidade de Docker, mantendo pendente a validação integral no banco principal.
 - A execução local foi validada no PostgreSQL 9.4.26 instalado na máquina: a aplicação conectou, o Flyway aplicou as migrações V1 e V2, o Hibernate validou o modelo JPA e o backend iniciou com sucesso. Foram criadas 12 tabelas no esquema.
-- O PostgreSQL 9.4 pode ser usado no desenvolvimento local, mas Flyway e Hibernate emitiram avisos de versão sem suporte oficial; a validação planejada com PostgreSQL 16/Testcontainers continua pendente enquanto Docker não estiver disponível.
+- O PostgreSQL 9.4 pode ser usado no desenvolvimento local, mas Flyway e Hibernate emitiram avisos de versão sem suporte oficial.
+- Docker não será utilizado em nenhuma etapa do projeto. O banco de desenvolvimento e das validações de integração será sempre o PostgreSQL instalado localmente e administrado pelo pgAdmin.
+- Os dois testes atuais baseados em Testcontainers deverão ser substituídos, em tarefa própria, por testes de integração opt-in contra um banco PostgreSQL local exclusivo para testes. Esses testes nunca poderão apagar, recriar ou limpar automaticamente o banco principal `gestao_acoes`.
 - A T04 foi concluída: `FinancialAmount` centraliza valores com `BigDecimal`, escala de duas casas e `HALF_UP`, incluindo soma, multiplicação e conversão USD/BRL; `TimeConfiguration` fornece um `Clock` injetável no fuso `America/Sao_Paulo`.
 - A validação final da T04 passou em `mvnw clean verify`: 34 testes sem falhas, sendo 32 executados e os mesmos dois testes Testcontainers ignorados por Docker indisponível. O build e a análise do compilador com `-Xlint:all -Werror` também passaram. O agente Revisor não encontrou problemas funcionais; as lacunas de cobertura apontadas por ele foram implementadas pelo agente Programador e revalidadas pelo Orquestrador.
+- A T05 foi concluída: a API possui contrato uniforme de erro com `errorId`, `code`, `message`, `fieldErrors` e `timestamp`, manipulador global e as categorias validação, autenticação, autorização, conflito, regra de negócio, dependência externa e erro interno.
+- Exceções funcionais não aceitam mensagens públicas arbitrárias. Mensagens específicas usam entradas tipadas e controladas, como saldo solicitado/disponível com `FinancialAmount` e conflito de corretora duplicada. JSON malformado ou incompatível retorna validação HTTP 400.
+- Respostas e logs não expõem stack trace, SQL, classes internas, CPF, e-mail, senha, cookie, autorização ou chaves. Cada resposta recebe um UUID `errorId`; ocorrências registradas usam o mesmo identificador no log, junto somente do código e da classe técnica controlada.
+- A T05 foi aprovada pelo agente Revisor após três ciclos. A validação final passou com 45 testes backend sem falhas (43 executados e dois Testcontainers ignorados por Docker indisponível), compilação `-Xlint:all -Werror`, JAR, teste frontend, ESLint e build Vite. O `npm audit` executado pelo `npm ci` não encontrou vulnerabilidades.
 
 ## Decisões funcionais confirmadas
 
@@ -114,7 +120,7 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 
 ## Próximo passo
 
-Implementar somente a T05 — padronizar erros da API. O PostgreSQL local está funcional e deve ter sua conexão verificada antes das execuções; criar o banco `gestao_acoes` somente se ele ainda não existir. A validação Testcontainers com PostgreSQL 16 permanece pendente enquanto Docker não estiver disponível.
+Implementar somente a T06 — configurar segurança, CORS e sessão. O PostgreSQL local está funcional e deve ter sua conexão verificada antes das execuções; criar o banco `gestao_acoes` somente se ele ainda não existir. Não usar Docker ou Testcontainers nas próximas validações; testes de integração devem utilizar PostgreSQL local e um banco separado quando precisarem alterar dados.
 
 A implementação deverá ocorrer estritamente uma tarefa por vez. O repositório de referência poderá orientar somente a estrutura; nenhuma tarefa poderá copiar código, importar a branch ou tentar reproduzir o projeto de referência.
 
