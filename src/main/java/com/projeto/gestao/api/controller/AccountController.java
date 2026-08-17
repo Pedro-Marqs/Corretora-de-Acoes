@@ -15,6 +15,7 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -65,6 +66,26 @@ public class AccountController {
             HttpServletRequest servletRequest, HttpServletResponse servletResponse) {
         managementService.changePassword(principal.accountId(), request);
         clearCurrentSession(servletRequest, servletResponse);
+    }
+
+    @DeleteMapping("/me")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    void delete(@AuthenticationPrincipal AccountPrincipal principal,
+            @Valid @RequestBody DeleteAccountRequest request,
+            HttpServletRequest servletRequest, HttpServletResponse servletResponse) {
+        managementService.inactivate(principal.accountId(), request);
+        clearCurrentSession(servletRequest, servletResponse);
+    }
+
+    @PostMapping("/reactivation/check")
+    ReactivationCheckResponse checkReactivation(@Valid @RequestBody ReactivationRequest request) {
+        return managementService.checkReactivation(request);
+    }
+
+    @PostMapping("/reactivation")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    void reactivate(@Valid @RequestBody ReactivationRequest request) {
+        managementService.reactivate(request);
     }
 
     private void clearCurrentSession(HttpServletRequest request, HttpServletResponse response) {

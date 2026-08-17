@@ -46,6 +46,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/accounts").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/accounts/reactivation").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/accounts/reactivation/check").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/csrf").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(errors -> errors

@@ -3,6 +3,7 @@ package com.projeto.gestao.api.controller;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -87,6 +88,36 @@ class AccountManagementRollbackTests {
                 .andExpect(status().isOk());
         mockMvc.perform(get("/api/accounts/me").cookie(secondSession))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void rollsBackInactivationAndBothSessionsWhenRevocationFails() throws Exception {
+        accountId = UUID.randomUUID();
+        accountRepository.saveAndFlush(Account.create(accountId, "Rollback", "52998224725", EMAIL,
+                passwordEncoder.encode(PASSWORD), new BigDecimal("10000.00"),
+                OffsetDateTime.parse("2026-01-01T10:00:00-03:00")));
+        Cookie firstSession = login();
+        Cookie secondSession = login();
+        assertThat(sessionRepository.findByPrincipalName(accountId.toString())).hasSize(2);
+        org.mockito.Mockito.doAnswer(invocation -> {
+            invocation.callRealMethod();
+            throw new IllegalStateException("falha simulada após revogação");
+        }).when(sessionRevocationRepository).revokeAll(any(UUID.class));
+        CsrfCredentials csrf = csrf();
+
+        mockMvc.perform(delete("/api/accounts/me").cookie(firstSession, csrf.cookie())
+                        .header("X-XSRF-TOKEN", csrf.token()).contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "email", EMAIL, "password", PASSWORD, "confirmation", "Excluir"))))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.code").value("INTERNAL_ERROR"));
+
+        assertThat(accountRepository.findById(accountId).orElseThrow().getStatus())
+                .isEqualTo(com.projeto.gestao.domain.model.AccountStatus.ACTIVE);
+        assertThat(accountRepository.findById(accountId).orElseThrow().getInactivatedAt()).isNull();
+        assertThat(sessionRepository.findByPrincipalName(accountId.toString())).hasSize(2);
+        mockMvc.perform(get("/api/accounts/me").cookie(firstSession)).andExpect(status().isOk());
+        mockMvc.perform(get("/api/accounts/me").cookie(secondSession)).andExpect(status().isOk());
     }
 
     private Cookie login() throws Exception {

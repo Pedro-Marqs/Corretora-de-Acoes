@@ -129,7 +129,15 @@ class SecurityConfigTests {
                         .content("{}"))
                 .andExpect(status().isBadRequest());
         mockMvc.perform(post("/api/accounts/reactivation").cookie(csrf.cookie())
-                        .header("X-XSRF-TOKEN", csrf.token())).andExpect(status().isOk());
+                        .header("X-XSRF-TOKEN", csrf.token())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"cpf\":\"52998224725\"}"))
+                .andExpect(status().isConflict());
+        mockMvc.perform(post("/api/accounts/reactivation/check").cookie(csrf.cookie())
+                        .header("X-XSRF-TOKEN", csrf.token())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"cpf\":\"52998224725\"}"))
+                .andExpect(status().isConflict());
         mockMvc.perform(get("/api/accounts")).andExpect(status().isUnauthorized());
         mockMvc.perform(get("/api/auth/login")).andExpect(status().isUnauthorized());
         mockMvc.perform(post("/api/accounts/extra").cookie(csrf.cookie())
@@ -245,10 +253,6 @@ class SecurityConfigTests {
     @RestController
     @RequestMapping("/api")
     static class TestEndpoints {
-        @PostMapping("/accounts/reactivation")
-        void publicMutation() {
-        }
-
         @GetMapping("/test/private")
         Map<String, String> privateRoute(@AuthenticationPrincipal UserDetails user) {
             return Map.of("user", user.getUsername());

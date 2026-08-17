@@ -2,6 +2,7 @@ package com.projeto.gestao.api.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -151,6 +152,39 @@ class LocalPostgreSqlAuthenticationTests {
                 Integer.class, accountId.toString())).isZero();
         mockMvc.perform(get("/api/t08/postgres/private").cookie(second))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    void inactivatesAndReactivatesPreservedAccountInExclusivePostgreSqlTestDatabase() throws Exception {
+        Cookie first = login();
+        Cookie second = login();
+        CsrfCredentials csrf = csrf();
+
+        mockMvc.perform(delete("/api/accounts/me").cookie(first, csrf.cookie())
+                        .header("X-XSRF-TOKEN", csrf.token()).contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "email", EMAIL, "password", PASSWORD, "confirmation", "Excluir"))))
+                .andExpect(status().isNoContent());
+
+        assertThat(jdbcTemplate.queryForObject("SELECT status FROM account WHERE id=?", String.class, accountId))
+                .isEqualTo("INACTIVE");
+        assertThat(jdbcTemplate.queryForObject("SELECT balance FROM account WHERE id=?", BigDecimal.class, accountId))
+                .isEqualByComparingTo("10000.00");
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM SPRING_SESSION WHERE PRINCIPAL_NAME=?", Integer.class, accountId.toString()))
+                .isZero();
+        mockMvc.perform(get("/api/t08/postgres/private").cookie(second)).andExpect(status().isUnauthorized());
+
+        csrf = csrf();
+        mockMvc.perform(post("/api/accounts/reactivation").cookie(csrf.cookie())
+                        .header("X-XSRF-TOKEN", csrf.token()).contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("cpf", "52998224725"))))
+                .andExpect(status().isNoContent());
+        assertThat(jdbcTemplate.queryForObject("SELECT status FROM account WHERE id=?", String.class, accountId))
+                .isEqualTo("ACTIVE");
+        assertThat(jdbcTemplate.queryForObject("SELECT inactivated_at FROM account WHERE id=?", Object.class, accountId))
+                .isNull();
     }
 
     private Cookie login() throws Exception {

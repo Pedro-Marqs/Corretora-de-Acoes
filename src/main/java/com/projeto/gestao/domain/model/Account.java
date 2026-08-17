@@ -51,6 +51,22 @@ public class Account {
         this.passwordHash = newPasswordHash;
     }
 
+    public void inactivate(OffsetDateTime occurredAt) {
+        if (status != AccountStatus.ACTIVE) {
+            throw new IllegalStateException("Only an active account can be inactivated");
+        }
+        status = AccountStatus.INACTIVE;
+        inactivatedAt = occurredAt;
+    }
+
+    public void reactivate() {
+        if (status != AccountStatus.INACTIVE) {
+            throw new IllegalStateException("Only an inactive account can be reactivated");
+        }
+        status = AccountStatus.ACTIVE;
+        inactivatedAt = null;
+    }
+
     public UUID getId() { return id; }
     public String getName() { return name; }
     public String getCpf() { return cpf; }

@@ -1,11 +1,17 @@
 package com.projeto.gestao.service;
 
+import java.time.Clock;
+import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
 import com.projeto.gestao.api.controller.AccountDetailsResponse;
 import com.projeto.gestao.api.controller.ChangeEmailRequest;
 import com.projeto.gestao.api.controller.ChangePasswordRequest;
+import com.projeto.gestao.api.controller.DeleteAccountRequest;
+import com.projeto.gestao.api.controller.ReactivationCheckResponse;
+import com.projeto.gestao.api.controller.ReactivationRequest;
 import com.projeto.gestao.api.exception.AuthenticationException;
 import com.projeto.gestao.api.exception.ConflictException;
 import com.projeto.gestao.domain.model.Account;
@@ -23,14 +29,17 @@ public class AccountManagementService {
     private final AccountRepository accountRepository;
     private final PasswordEncoder passwordEncoder;
     private final SessionRevocationRepository sessionRevocationRepository;
+    private final Clock clock;
 
     public AccountManagementService(
             AccountRepository accountRepository,
             PasswordEncoder passwordEncoder,
-            SessionRevocationRepository sessionRevocationRepository) {
+            SessionRevocationRepository sessionRevocationRepository,
+            Clock clock) {
         this.accountRepository = accountRepository;
         this.passwordEncoder = passwordEncoder;
         this.sessionRevocationRepository = sessionRevocationRepository;
+        this.clock = clock;
     }
 
     @Transactional(readOnly = true)
@@ -64,6 +73,54 @@ public class AccountManagementService {
         account.changePasswordHash(passwordEncoder.encode(request.newPassword()));
         accountRepository.saveAndFlush(account);
         revokeAllSessions(accountId);
+    }
+
+    @Transactional
+    public void inactivate(UUID accountId, DeleteAccountRequest request) {
+        Account account = activeAccount(accountId);
+        if (!account.getEmail().equalsIgnoreCase(request.email())
+                || !passwordEncoder.matches(request.password(), account.getPasswordHash())) {
+            throw new AuthenticationException();
+        }
+        account.inactivate(OffsetDateTime.now(clock));
+        accountRepository.saveAndFlush(account);
+        revokeAllSessions(accountId);
+    }
+
+    @Transactional(readOnly = true)
+    public ReactivationCheckResponse checkReactivation(ReactivationRequest request) {
+        reactivationCandidate(normalizeCpf(request.cpf()));
+        return new ReactivationCheckResponse(true);
+    }
+
+    @Transactional
+    public void reactivate(ReactivationRequest request) {
+        Account account = reactivationCandidate(normalizeCpf(request.cpf()));
+        account.reactivate();
+        try {
+            accountRepository.saveAndFlush(account);
+        } catch (DataIntegrityViolationException exception) {
+            throw ConflictException.reactivationUnavailable();
+        }
+    }
+
+    private Account reactivationCandidate(String cpf) {
+        if (accountRepository.existsByCpfAndStatus(cpf, AccountStatus.ACTIVE)) {
+            throw ConflictException.reactivationUnavailable();
+        }
+        List<Account> candidates = accountRepository.findAllByCpfAndStatus(cpf, AccountStatus.INACTIVE);
+        if (candidates.size() != 1) {
+            throw ConflictException.reactivationUnavailable();
+        }
+        Account candidate = candidates.get(0);
+        if (accountRepository.existsByEmailIgnoreCaseAndStatus(candidate.getEmail(), AccountStatus.ACTIVE)) {
+            throw ConflictException.reactivationUnavailable();
+        }
+        return candidate;
+    }
+
+    private String normalizeCpf(String cpf) {
+        return cpf.replaceAll("\\D", "");
     }
 
     private Account activeAccount(UUID accountId) {

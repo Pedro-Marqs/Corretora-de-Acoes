@@ -18,6 +18,10 @@ public final class ConflictException extends ApiException {
         return new ConflictException("Já existe uma conta ativa com o CPF ou e-mail informado.");
     }
 
+    public static ConflictException reactivationUnavailable() {
+        return new ConflictException("A conta não pode ser reativada com os dados informados.");
+    }
+
     @Override
     public String publicMessage() {
         return message;

@@ -77,6 +77,13 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 - O rollback foi comprovado após a execução real da revogação: se ocorrer falha, a credencial volta ao valor anterior e duas sessões simultâneas permanecem existentes e utilizáveis. Erros de validação, conflito, senha incorreta ou CSRF também não revogam sessões.
 - A validação final da T09 passou com 85 testes backend, sem falhas ou erros, incluindo PostgreSQL local `gestao_acoes_test`; dois testes Testcontainers antigos permaneceram ignorados. O frontend existente passou com 21 testes, ESLint e build Vite.
 - A T09 não implementou sua interface de consulta/alteração; isso permanece na tarefa de frontend correspondente.
+- A T10 foi concluída e aprovada pelo agente Revisor: `DELETE /api/accounts/me` exige e-mail atual, senha atual e a palavra exata `Excluir`, altera a conta de `ACTIVE` para `INACTIVE`, registra o horário de Brasília e revoga atomicamente todas as sessões.
+- A exclusão da T10 é somente lógica. Saldo, nome, CPF, e-mail, hash, criação, corretoras, posições, movimentações e pontos patrimoniais permanecem associados ao mesmo UUID; nenhuma movimentação ou ponto novo é criado.
+- `POST /api/accounts/reactivation/check` informa apenas a disponibilidade por CPF e `POST /api/accounts/reactivation` reativa uma única conta `INACTIVE`, sem criar sessão. O estado `DELETED` ficou reservado como terminal e não é produzido nem reativado pela T10.
+- Se o CPF tiver nenhuma ou mais de uma conta inativa, se já existir conta ativa com o CPF ou e-mail, ou se a candidata estiver `DELETED`, a reativação é rejeitada sem expor dados pessoais. A existência de múltiplas inativas não é resolvida por escolha arbitrária.
+- A reativação restaura a mesma conta e limpa `inactivated_at`, preservando todos os dados. O cadastro alternativo continua podendo criar uma nova conta com CPF/e-mail usados somente por conta inativa, sem alterar a antiga.
+- A validação final da T10 passou com 93 testes backend sem falhas ou erros, incluindo PostgreSQL local `gestao_acoes_test`; dois testes Testcontainers antigos permaneceram ignorados. O frontend existente passou com 21 testes, ESLint e build Vite.
+- A T10 não implementou telas de exclusão e reativação; elas permanecem na tarefa de frontend correspondente.
 
 ## Decisões funcionais confirmadas
 
@@ -158,7 +165,7 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 
 ## Próximo passo
 
-Implementar somente a T10 — exclusão lógica e reativação. O PostgreSQL local está funcional e deve ter sua conexão verificada antes das execuções; criar o banco `gestao_acoes` somente se ele ainda não existir. Não usar Docker ou Testcontainers nas próximas validações; testes de integração devem utilizar PostgreSQL local e o banco separado `gestao_acoes_test` quando precisarem alterar dados.
+Implementar somente a T11 — fundação do frontend. O PostgreSQL local está funcional e deve ter sua conexão verificada antes das execuções; criar o banco `gestao_acoes` somente se ele ainda não existir. Não usar Docker ou Testcontainers nas próximas validações; testes de integração devem utilizar PostgreSQL local e o banco separado `gestao_acoes_test` quando precisarem alterar dados.
 
 A implementação deverá ocorrer estritamente uma tarefa por vez. O repositório de referência poderá orientar somente a estrutura; nenhuma tarefa poderá copiar código, importar a branch ou tentar reproduzir o projeto de referência.
 

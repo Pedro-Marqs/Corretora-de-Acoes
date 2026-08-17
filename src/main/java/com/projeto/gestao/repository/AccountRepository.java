@@ -1,5 +1,6 @@
 package com.projeto.gestao.repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -13,4 +14,5 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
     boolean existsByEmailIgnoreCaseAndStatus(String email, AccountStatus status);
     boolean existsByEmailIgnoreCaseAndStatusAndIdNot(String email, AccountStatus status, UUID id);
     boolean existsByCpfAndStatus(String cpf, AccountStatus status);
+    List<Account> findAllByCpfAndStatus(String cpf, AccountStatus status);
 }
