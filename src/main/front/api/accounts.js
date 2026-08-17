@@ -1,10 +1,26 @@
-import { API_BASE_URL, getCsrfToken, groupFieldErrors, parseJson } from './http.js'
+import { API_BASE_URL, ApiError, getCsrfToken, groupFieldErrors, parseJson } from './http.js'
 
-export class AccountApiError extends Error {
+export class AccountApiError extends ApiError {
   constructor(message, fieldErrors = {}) {
-    super(message)
+    super(message, fieldErrors)
     this.name = 'AccountApiError'
-    this.fieldErrors = fieldErrors
+  }
+}
+
+export async function getCurrentAccount() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/accounts/me`, { credentials: 'include' })
+    const body = await parseJson(response)
+    if (!response.ok) {
+      const error = new AccountApiError(body?.message ?? 'Não foi possível consultar a conta.')
+      error.status = response.status
+      throw error
+    }
+    if (!body) throw new AccountApiError('A resposta da conta não pôde ser processada.')
+    return body
+  } catch (error) {
+    if (error instanceof AccountApiError) throw error
+    throw new AccountApiError('Não foi possível conectar ao servidor. Verifique se a aplicação está em execução.')
   }
 }
 

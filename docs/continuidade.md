@@ -84,6 +84,13 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 - A reativação restaura a mesma conta e limpa `inactivated_at`, preservando todos os dados. O cadastro alternativo continua podendo criar uma nova conta com CPF/e-mail usados somente por conta inativa, sem alterar a antiga.
 - A validação final da T10 passou com 93 testes backend sem falhas ou erros, incluindo PostgreSQL local `gestao_acoes_test`; dois testes Testcontainers antigos permaneceram ignorados. O frontend existente passou com 21 testes, ESLint e build Vite.
 - A T10 não implementou telas de exclusão e reativação; elas permanecem na tarefa de frontend correspondente.
+- A T11 foi concluída e aprovada pelo agente Revisor. O frontend agora possui rotas reais `/cadastro`, `/login`, `/app` e `/404`, com proteção das páginas públicas e privadas conforme o estado da sessão.
+- A sessão é restaurada por `GET /api/accounts/me`: durante a verificação há estado de carregamento; resposta `401` conduz ao fluxo público; sessão válida direciona à área privada; falhas de rede ou servidor exibem erro seguro com nova tentativa.
+- O cliente HTTP comum envia cookies com `credentials: include`, obtém e aplica o token CSRF nas mutações e normaliza as respostas de erro da API sem expor corpo HTML, stack trace ou dados sensíveis.
+- Foram criados layouts e estados reutilizáveis de carregamento, vazio, erro e mensagem, além de formatadores de moeda em reais e data/hora no fuso de Brasília. O envio de formulários e o logout impedem solicitações duplicadas.
+- A identidade visual própria `Carteira Clara` usa padrões gerais de interfaces financeiras modernas e permanece responsiva desde 320 px, sem copiar marcas, textos, imagens ou elementos proprietários da Rico ou XP.
+- O React Router foi atualizado para `7.18.2`. A validação final da T11 passou com 32 testes frontend, ESLint e build Vite; `npm audit` não encontrou vulnerabilidades. O backend não foi alterado pela T11.
+- A T11 não implementou as telas completas da conta nem operações financeiras; essas funções permanecem nas tarefas seguintes.
 
 ## Decisões funcionais confirmadas
 
@@ -165,7 +172,7 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 
 ## Próximo passo
 
-Implementar somente a T11 — fundação do frontend. O PostgreSQL local está funcional e deve ter sua conexão verificada antes das execuções; criar o banco `gestao_acoes` somente se ele ainda não existir. Não usar Docker ou Testcontainers nas próximas validações; testes de integração devem utilizar PostgreSQL local e o banco separado `gestao_acoes_test` quando precisarem alterar dados.
+Implementar somente a T12 — telas de cadastro, login e conta. A fundação de rotas, sessão, cliente HTTP, estados comuns e formatação criada na T11 deve ser reutilizada. O PostgreSQL local está funcional e deve ter sua conexão verificada antes das execuções; criar o banco `gestao_acoes` somente se ele ainda não existir. Não usar Docker ou Testcontainers nas próximas validações; testes de integração devem utilizar PostgreSQL local e o banco separado `gestao_acoes_test` quando precisarem alterar dados.
 
 A implementação deverá ocorrer estritamente uma tarefa por vez. O repositório de referência poderá orientar somente a estrutura; nenhuma tarefa poderá copiar código, importar a branch ou tentar reproduzir o projeto de referência.
 

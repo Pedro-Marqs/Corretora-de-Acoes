@@ -1,8 +1,14 @@
 import { useState } from 'react'
+import { BrowserRouter, Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import { createAccount } from './api/accounts.js'
 import AccountHome from './components/AccountHome.jsx'
-import LoginForm from './components/LoginForm.jsx'
-import SessionHome from './components/SessionHome.jsx'
+import { AuthProvider } from './context/AuthContext.jsx'
+import PrivateRoute from './routing/PrivateRoute.jsx'
+import PublicRoute from './routing/PublicRoute.jsx'
+import AppLayout from './layout/AppLayout.jsx'
+import LoginPage from './pages/LoginPage.jsx'
+import HomePage from './pages/HomePage.jsx'
+import NotFoundPage from './pages/NotFoundPage.jsx'
 
 const initialForm = { name: '', cpf: '', email: '', password: '' }
 
@@ -11,13 +17,13 @@ function formatCpf(value) {
     .replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3').replace(/\.(\d{3})(\d)/, '.$1-$2')
 }
 
-export default function App() {
+function RegisterPage() {
+  const navigate = useNavigate()
   const [form, setForm] = useState(initialForm)
   const [fieldErrors, setFieldErrors] = useState({})
   const [message, setMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [createdAccount, setCreatedAccount] = useState(null)
-  const [screen, setScreen] = useState('register')
 
   function updateField(event) {
     const { name, value } = event.target
@@ -49,16 +55,9 @@ export default function App() {
 
   function showLogin() {
     restart()
-    setScreen('login')
+    navigate('/login')
   }
 
-  function showRegister() {
-    restart()
-    setScreen('register')
-  }
-
-  if (screen === 'session') return <SessionHome onLoggedOut={() => setScreen('login')} />
-  if (screen === 'login') return <LoginForm onAuthenticated={() => setScreen('session')} onRegister={showRegister} />
   if (createdAccount) return <AccountHome account={createdAccount} onRestart={restart} onGoToLogin={showLogin} />
 
   return (
@@ -109,6 +108,17 @@ export default function App() {
       </section>
     </main>
   )
+}
+
+export default function App() {
+  return <BrowserRouter><AuthProvider><Routes>
+    <Route path="/" element={<Navigate to="/cadastro" replace />} />
+    <Route path="/cadastro" element={<PublicRoute><RegisterPage /></PublicRoute>} />
+    <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+    <Route path="/app" element={<PrivateRoute><AppLayout /></PrivateRoute>}><Route index element={<HomePage />} /></Route>
+    <Route path="/404" element={<NotFoundPage />} />
+    <Route path="*" element={<Navigate to="/404" replace />} />
+  </Routes></AuthProvider></BrowserRouter>
 }
 
 function FormField({ label, name, error, hint, children }) {

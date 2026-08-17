@@ -2,17 +2,18 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App.jsx'
-import { AccountApiError, createAccount } from './api/accounts.js'
+import { AccountApiError, createAccount, getCurrentAccount } from './api/accounts.js'
 import { AuthApiError, login, logout } from './api/auth.js'
 
 vi.mock('./api/accounts.js', async (importOriginal) => {
   const original = await importOriginal()
-  return { ...original, createAccount: vi.fn() }
+  return { ...original, createAccount: vi.fn(), getCurrentAccount: vi.fn() }
 })
 vi.mock('./api/auth.js', async (importOriginal) => {
   const original = await importOriginal()
   return { ...original, login: vi.fn(), logout: vi.fn() }
 })
+vi.mock('./routing/PublicRoute.jsx', () => ({ default: ({ children }) => children }))
 
 afterEach(cleanup)
 
@@ -24,7 +25,11 @@ function fillForm() {
 }
 
 describe('Cadastro', () => {
-  beforeEach(() => vi.clearAllMocks())
+  beforeEach(() => {
+    vi.clearAllMocks()
+    window.history.replaceState({}, '', '/cadastro')
+    getCurrentAccount.mockResolvedValue({ name: 'Ana Silva', cpf: '529.***.***-25', email: 'a***@example.com' })
+  })
 
   it('exibe todos os campos e a informação do saldo inicial', () => {
     render(<App />)
@@ -102,7 +107,7 @@ describe('Cadastro', () => {
     fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'Senha@123' } })
     fireEvent.click(screen.getByRole('button', { name: 'Entrar' }))
 
-    expect(await screen.findByRole('heading', { name: 'Login realizado.' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Olá, Ana Silva.' })).toBeInTheDocument()
     expect(login).toHaveBeenCalledWith({ email: 'ana@example.com', password: 'Senha@123' })
     expect(screen.queryByText(/saldo disponível/i)).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Sair da conta' }))
@@ -118,7 +123,7 @@ describe('Cadastro', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Entrar' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Sair da conta' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível encerrar a sessão.')
-    expect(screen.getByRole('heading', { name: 'Login realizado.' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Olá, Ana Silva.' })).toBeInTheDocument()
   })
 
   it('remove o estado visual autenticado quando logout retorna 401', async () => {
@@ -131,7 +136,7 @@ describe('Cadastro', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Sair da conta' }))
 
     expect(await screen.findByRole('heading', { name: 'Bem-vindo de volta.' })).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'Login realizado.' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Olá, Ana Silva.' })).not.toBeInTheDocument()
   })
 
   it('limpa o formulário de cadastro ao alternar para login e voltar', () => {
@@ -162,5 +167,19 @@ describe('Cadastro', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Já tenho uma conta' }))
     fireEvent.click(screen.getByRole('button', { name: 'Entrar' }))
     expect(screen.getByRole('button', { name: 'Entrando…' })).toBeDisabled()
+  })
+
+  it('impede requisições duplicadas no logout', async () => {
+    login.mockResolvedValue(); getCurrentAccount.mockResolvedValue({ name: 'Ana Silva', cpf: '529.***.***-25', email: 'a***@example.com' })
+    logout.mockReturnValue(new Promise(() => {}))
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Já tenho uma conta' }))
+    fireEvent.change(screen.getByLabelText('E-mail'), { target: { value: 'ana@example.com' } })
+    fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'Senha@123' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Entrar' }))
+    const button = await screen.findByRole('button', { name: 'Sair da conta' })
+    fireEvent.click(button); fireEvent.click(button)
+    expect(logout).toHaveBeenCalledTimes(1)
+    expect(screen.getByRole('button', { name: 'Saindo…' })).toBeDisabled()
   })
 })

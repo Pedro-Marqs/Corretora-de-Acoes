@@ -1,11 +1,9 @@
-import { API_BASE_URL, getCsrfToken, groupFieldErrors, parseJson } from './http.js'
+import { API_BASE_URL, ApiError, getCsrfToken, groupFieldErrors, parseJson } from './http.js'
 
-export class AuthApiError extends Error {
+export class AuthApiError extends ApiError {
   constructor(message, fieldErrors = {}, status) {
-    super(message)
+    super(message, fieldErrors, status)
     this.name = 'AuthApiError'
-    this.fieldErrors = fieldErrors
-    this.status = status
   }
 }
 

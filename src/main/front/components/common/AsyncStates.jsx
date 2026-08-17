@@ -1,0 +1,4 @@
+export function LoadingState({ message = 'Carregando…' }) { return <div className="common-state" role="status"><span className="state-spinner" aria-hidden="true" />{message}</div> }
+export function EmptyState({ title = 'Nenhum dado disponível', description }) { return <div className="common-state empty-state"><strong>{title}</strong>{description && <p>{description}</p>}</div> }
+export function ErrorState({ message, onRetry }) { return <div className="common-state error-state" role="alert"><strong>Não foi possível carregar.</strong><p>{message}</p>{onRetry && <button className="secondary-button" type="button" onClick={onRetry}>Tentar novamente</button>}</div> }
+export function Message({ children, kind = 'info' }) { return <div className={`message message-${kind}`} role={kind === 'error' ? 'alert' : 'status'}>{children}</div> }
