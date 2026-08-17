@@ -91,6 +91,14 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 - A identidade visual própria `Carteira Clara` usa padrões gerais de interfaces financeiras modernas e permanece responsiva desde 320 px, sem copiar marcas, textos, imagens ou elementos proprietários da Rico ou XP.
 - O React Router foi atualizado para `7.18.2`. A validação final da T11 passou com 32 testes frontend, ESLint e build Vite; `npm audit` não encontrou vulnerabilidades. O backend não foi alterado pela T11.
 - A T11 não implementou as telas completas da conta nem operações financeiras; essas funções permanecem nas tarefas seguintes.
+- A T12 foi concluída e aprovada pelo agente Revisor. A rota privada `/app/conta` apresenta nome, CPF e e-mail da própria conta, mantendo CPF e e-mail parcialmente ocultados conforme a resposta de `GET /api/accounts/me`.
+- Nome e CPF são exibidos somente para leitura. A interface não oferece controles nem envia payloads capazes de alterá-los.
+- A interface permite alterar e-mail por `PATCH /api/accounts/me/email` e senha por `PATCH /api/accounts/me/password`, reutilizando cookies, CSRF e o contrato uniforme de erros. Os formulários são independentes, inclusive no estado e na associação acessível dos erros.
+- Uma alteração concluída revoga as sessões no backend, limpa o estado autenticado do frontend e direciona ao login com uma mensagem explicativa. Em uma resposta `401`, a interface consulta `/api/accounts/me`: somente uma nova resposta `401` confirma a sessão encerrada; falhas de rede ou servidor preservam a tela e oferecem nova tentativa.
+- O logout passou a ser uma ação compartilhada do layout privado. A navegação contém somente destinos funcionais: `Início` e `Minha conta`.
+- Os quatro campos de alteração são identificados como obrigatórios, possuem associação `aria-invalid`/`aria-describedby`, mensagens por campo e proteção síncrona contra envio duplicado.
+- A validação final da T12 passou com 40 testes frontend, ESLint e build Vite; `npm audit` não encontrou vulnerabilidades. O backend e o banco não foram alterados pela T12.
+- Exclusão e reativação não foram adicionadas à interface na T12 e permanecem reservadas para a T13.
 
 ## Decisões funcionais confirmadas
 
@@ -172,7 +180,7 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 
 ## Próximo passo
 
-Implementar somente a T12 — telas de cadastro, login e conta. A fundação de rotas, sessão, cliente HTTP, estados comuns e formatação criada na T11 deve ser reutilizada. O PostgreSQL local está funcional e deve ter sua conexão verificada antes das execuções; criar o banco `gestao_acoes` somente se ele ainda não existir. Não usar Docker ou Testcontainers nas próximas validações; testes de integração devem utilizar PostgreSQL local e o banco separado `gestao_acoes_test` quando precisarem alterar dados.
+Implementar somente a T13 — telas de exclusão e reativação. As rotas, a sessão, o cliente HTTP e a área da conta consolidados nas T11 e T12 devem ser reutilizados. O PostgreSQL local está funcional e deve ter sua conexão verificada antes das execuções; criar o banco `gestao_acoes` somente se ele ainda não existir. Não usar Docker ou Testcontainers nas próximas validações; testes de integração devem utilizar PostgreSQL local e o banco separado `gestao_acoes_test` quando precisarem alterar dados.
 
 A implementação deverá ocorrer estritamente uma tarefa por vez. O repositório de referência poderá orientar somente a estrutura; nenhuma tarefa poderá copiar código, importar a branch ou tentar reproduzir o projeto de referência.
 

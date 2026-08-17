@@ -1,8 +1,8 @@
 import { API_BASE_URL, ApiError, getCsrfToken, groupFieldErrors, parseJson } from './http.js'
 
 export class AccountApiError extends ApiError {
-  constructor(message, fieldErrors = {}) {
-    super(message, fieldErrors)
+  constructor(message, fieldErrors = {}, status) {
+    super(message, fieldErrors, status)
     this.name = 'AccountApiError'
   }
 }
@@ -45,3 +45,17 @@ export async function createAccount(account) {
     throw new AccountApiError('Não foi possível conectar ao servidor. Verifique se a aplicação está em execução.')
   }
 }
+
+async function changeCredential(path, payload) {
+  try {
+    const token = await getCsrfToken(AccountApiError, 'Não foi possível iniciar a alteração. Tente novamente.')
+    const response = await fetch(`${API_BASE_URL}${path}`, { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': token }, body: JSON.stringify(payload) })
+    const body = await parseJson(response)
+    if (!response.ok) throw new AccountApiError(body?.message ?? 'Não foi possível alterar os dados.', groupFieldErrors(body?.fieldErrors), response.status)
+  } catch (error) {
+    if (error instanceof AccountApiError) throw error
+    throw new AccountApiError('Não foi possível conectar ao servidor. Verifique se a aplicação está em execução.')
+  }
+}
+export function changeEmail(payload) { return changeCredential('/api/accounts/me/email', payload) }
+export function changePassword(payload) { return changeCredential('/api/accounts/me/password', payload) }

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { createAccount } from './accounts.js'
+import { changeEmail, changePassword, createAccount } from './accounts.js'
 
 function response(body, status = 200) {
   return { ok: status >= 200 && status < 300, headers: new Headers({ 'content-type': 'application/json' }), json: vi.fn().mockResolvedValue(body) }
@@ -39,5 +39,14 @@ describe('createAccount', () => {
       json: vi.fn(),
     })
     await expect(createAccount({})).rejects.toMatchObject({ message: 'Não foi possível criar a conta. Tente novamente.', fieldErrors: {} })
+  })
+
+  it('altera e-mail e senha por PATCH com CSRF', async () => {
+    fetch.mockResolvedValueOnce(response({ token: 'csrf' })).mockResolvedValueOnce(response(null, 204))
+      .mockResolvedValueOnce(response({ token: 'csrf-2' })).mockResolvedValueOnce(response(null, 204))
+    await changeEmail({ newEmail: 'novo@example.com', currentPassword: 'Atual@123' })
+    await changePassword({ currentPassword: 'Atual@123', newPassword: 'Nova@123' })
+    expect(fetch).toHaveBeenNthCalledWith(2, 'http://localhost:8080/api/accounts/me/email', expect.objectContaining({ method: 'PATCH', credentials: 'include' }))
+    expect(fetch).toHaveBeenNthCalledWith(4, 'http://localhost:8080/api/accounts/me/password', expect.objectContaining({ method: 'PATCH', credentials: 'include' }))
   })
 })

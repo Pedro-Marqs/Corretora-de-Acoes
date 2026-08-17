@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { login } from '../api/auth.js'
 
-export default function LoginForm({ onAuthenticated, onRegister }) {
+export default function LoginForm({ onAuthenticated, onRegister, notice }) {
   const [credentials, setCredentials] = useState({ email: '', password: '' })
   const [fieldErrors, setFieldErrors] = useState({})
   const [message, setMessage] = useState('')
@@ -31,6 +31,7 @@ export default function LoginForm({ onAuthenticated, onRegister }) {
       <section className="login-card" aria-labelledby="login-title">
         <a className="brand brand-dark" href="/" aria-label="Carteira Clara — início"><span className="brand-mark" aria-hidden="true">C</span><span>Carteira Clara</span></a>
         <header className="form-header login-header"><p className="eyebrow">Acesse sua conta</p><h1 id="login-title">Bem-vindo de volta.</h1><p>Entre com o e-mail e a senha cadastrados.</p></header>
+        {notice && <div className="message" role="status">{notice}</div>}
         {message && <div className="error-banner" role="alert">{message}</div>}
         <form onSubmit={submit} noValidate>
           <LoginField label="E-mail" name="email" errors={fieldErrors.email}><input id="login-email" name="email" type="email" autoComplete="email" value={credentials.email} onChange={update} required aria-invalid={Boolean(fieldErrors.email)} aria-describedby={fieldErrors.email ? 'login-email-error' : undefined} /></LoginField>

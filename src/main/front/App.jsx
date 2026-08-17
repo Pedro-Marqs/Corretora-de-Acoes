@@ -9,6 +9,7 @@ import AppLayout from './layout/AppLayout.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import HomePage from './pages/HomePage.jsx'
 import NotFoundPage from './pages/NotFoundPage.jsx'
+import AccountPage from './pages/AccountPage.jsx'
 
 const initialForm = { name: '', cpf: '', email: '', password: '' }
 
@@ -115,7 +116,7 @@ export default function App() {
     <Route path="/" element={<Navigate to="/cadastro" replace />} />
     <Route path="/cadastro" element={<PublicRoute><RegisterPage /></PublicRoute>} />
     <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
-    <Route path="/app" element={<PrivateRoute><AppLayout /></PrivateRoute>}><Route index element={<HomePage />} /></Route>
+    <Route path="/app" element={<PrivateRoute><AppLayout /></PrivateRoute>}><Route index element={<HomePage />} /><Route path="conta" element={<AccountPage />} /></Route>
     <Route path="/404" element={<NotFoundPage />} />
     <Route path="*" element={<Navigate to="/404" replace />} />
   </Routes></AuthProvider></BrowserRouter>
