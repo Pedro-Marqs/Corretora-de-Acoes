@@ -39,6 +39,13 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 - Exceções funcionais não aceitam mensagens públicas arbitrárias. Mensagens específicas usam entradas tipadas e controladas, como saldo solicitado/disponível com `FinancialAmount` e conflito de corretora duplicada. JSON malformado ou incompatível retorna validação HTTP 400.
 - Respostas e logs não expõem stack trace, SQL, classes internas, CPF, e-mail, senha, cookie, autorização ou chaves. Cada resposta recebe um UUID `errorId`; ocorrências registradas usam o mesmo identificador no log, junto somente do código e da classe técnica controlada.
 - A T05 foi aprovada pelo agente Revisor após três ciclos. A validação final passou com 45 testes backend sem falhas (43 executados e dois Testcontainers ignorados por Docker indisponível), compilação `-Xlint:all -Werror`, JAR, teste frontend, ESLint e build Vite. O `npm audit` executado pelo `npm ci` não encontrou vulnerabilidades.
+- A T06 foi concluída e aprovada pelo agente Revisor: a API usa Spring Security com sessão opaca persistida pelo Spring Session JDBC, CSRF, CORS restrito à origem configurada, bcrypt e respostas 401/403 no contrato uniforme da T05.
+- As rotas públicas foram limitadas, por método e caminho, a cadastro, login, reativação e obtenção do token CSRF. Todas as demais rotas exigem autenticação. A T06 não implementou os fluxos funcionais dessas rotas.
+- O cookie `SESSION` é `HttpOnly`, `SameSite=Lax` e seguro por padrão; somente os perfis locais HTTP e de teste desativam `Secure`. O cookie técnico `XSRF-TOKEN` é legível pelo React, usa `SameSite=Lax` e segue a mesma política de `Secure`.
+- A criação automática do usuário e da senha temporários do Spring Boot foi desativada sem remover a cadeia de segurança nem o codificador bcrypt. A autenticação real será implementada nas tarefas posteriores.
+- Foi criado, sem apagar ou modificar o banco principal, o banco local isolado `gestao_acoes_test`. O teste opt-in confirmou no PostgreSQL local a gravação e a recuperação de uma sessão JDBC.
+- A validação final da T06 passou com 60 testes backend, sem falhas ou erros: 58 foram executados, incluindo o teste no PostgreSQL local, e dois testes Testcontainers antigos permaneceram ignorados. Compilação com `-Xlint:all -Werror`, empacotamento JAR, teste frontend, ESLint e build Vite também passaram.
+- A proteção contra fixação de sessão será comprovada na T08, quando existir o fluxo real de login; não foi criado um login artificial apenas para testá-la na T06.
 
 ## Decisões funcionais confirmadas
 
@@ -120,7 +127,7 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 
 ## Próximo passo
 
-Implementar somente a T06 — configurar segurança, CORS e sessão. O PostgreSQL local está funcional e deve ter sua conexão verificada antes das execuções; criar o banco `gestao_acoes` somente se ele ainda não existir. Não usar Docker ou Testcontainers nas próximas validações; testes de integração devem utilizar PostgreSQL local e um banco separado quando precisarem alterar dados.
+Implementar somente a T07 — cadastro de conta e saldo inicial. O PostgreSQL local está funcional e deve ter sua conexão verificada antes das execuções; criar o banco `gestao_acoes` somente se ele ainda não existir. Não usar Docker ou Testcontainers nas próximas validações; testes de integração devem utilizar PostgreSQL local e o banco separado `gestao_acoes_test` quando precisarem alterar dados.
 
 A implementação deverá ocorrer estritamente uma tarefa por vez. O repositório de referência poderá orientar somente a estrutura; nenhuma tarefa poderá copiar código, importar a branch ou tentar reproduzir o projeto de referência.
 
