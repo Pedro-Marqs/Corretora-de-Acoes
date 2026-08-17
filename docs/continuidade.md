@@ -29,6 +29,8 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 - A validação automatizada da T02 passou com cinco testes e build limpo; a conexão com uma instância PostgreSQL real ainda depende de Docker ou PostgreSQL disponível na máquina.
 - A T03 foi implementada e aprovada tecnicamente pelo Revisor: migrações Flyway, nove entidades JPA, repositories, tabelas Spring Session e constraints do esquema foram criados.
 - Na T03, 14 testes executáveis passaram; os dois testes PostgreSQL/Testcontainers foram ignorados por indisponibilidade de Docker, mantendo pendente a validação integral no banco principal.
+- A execução local foi validada no PostgreSQL 9.4.26 instalado na máquina: a aplicação conectou, o Flyway aplicou as migrações V1 e V2, o Hibernate validou o modelo JPA e o backend iniciou com sucesso. Foram criadas 12 tabelas no esquema.
+- O PostgreSQL 9.4 pode ser usado no desenvolvimento local, mas Flyway e Hibernate emitiram avisos de versão sem suporte oficial; a validação planejada com PostgreSQL 16/Testcontainers continua pendente enquanto Docker não estiver disponível.
 
 ## Decisões funcionais confirmadas
 
@@ -66,6 +68,8 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 - Estrutura interna própria, apenas inspirada na organização observada no repositório de referência, usando os pacotes `api`, `config`, `domain`, `infra`, `repository`, `service` e `scheduler`; o React permanece diretamente em `src/main/front` com `components`, `pages`, `services` e `styles`.
 - Um único processo Spring Boot e um único PostgreSQL; sem microsserviços, Redis, mensageria ou gateway.
 - Banco principal: PostgreSQL.
+- Antes de iniciar ou validar o backend localmente, sempre verificar a conexão com o PostgreSQL. Se o banco `gestao_acoes` não existir, criá-lo antes de executar a aplicação; se já existir, preservá-lo e apenas aplicar as migrações Flyway pendentes. Nunca recriar, apagar ou sobrescrever um banco existente automaticamente.
+- Para o ambiente local atual, usar o usuário exclusivo `gestao_acoes`; credenciais devem permanecer em variáveis de ambiente ou no arquivo `.env` não versionado.
 - Banco para testes automatizados rápidos: H2.
 - MySQL não será suportado na primeira versão.
 - Persistência: Spring Data JPA/Hibernate; valores exatos com `BigDecimal` e `NUMERIC/DECIMAL`.
@@ -107,6 +111,6 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 
 ## Próximo passo
 
-Disponibilizar Docker ou PostgreSQL, iniciar o banco do `compose.yaml` e executar os testes Testcontainers para encerrar formalmente as validações da T02 e da T03. Somente depois considerar a T04 integralmente elegível.
+O PostgreSQL local está funcional e pode ser utilizado nas próximas tarefas. Antes de cada execução, verificar a conexão e criar o banco `gestao_acoes` somente se ele ainda não existir. Para encerrar integralmente a matriz planejada da T03, ainda falta disponibilizar Docker e executar os testes Testcontainers com PostgreSQL 16.
 
 A implementação deverá ocorrer estritamente uma tarefa por vez. O repositório de referência poderá orientar somente a estrutura; nenhuma tarefa poderá copiar código, importar a branch ou tentar reproduzir o projeto de referência.
