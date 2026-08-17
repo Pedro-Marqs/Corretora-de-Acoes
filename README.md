@@ -13,6 +13,28 @@ O projeto é implementado incrementalmente, uma tarefa por vez. O repositório e
 
 ## Backend
 
+Copie `.env.example` para `.env` e substitua os valores de exemplo. O arquivo `.env` é local e ignorado pelo Git.
+
+Inicie o PostgreSQL:
+
+```powershell
+docker compose up -d postgres
+```
+
+Carregue as variáveis do `.env` no terminal e inicie o backend com o perfil local:
+
+```powershell
+Get-Content .env | ForEach-Object {
+    if ($_ -match '^[^#][^=]*=') {
+        $name, $value = $_ -split '=', 2
+        Set-Item -Path "Env:$name" -Value $value
+    }
+}
+.\mvnw.cmd spring-boot:run
+```
+
+Execute os testes rápidos com H2:
+
 ```powershell
 .\mvnw.cmd clean verify
 ```

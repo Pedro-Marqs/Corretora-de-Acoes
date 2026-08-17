@@ -25,7 +25,8 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 - A arquitetura foi proposta em `docs/04-arquitetura.md`, e sua estrutura inicial foi materializada pela T01.
 - O projeto foi dividido em 41 tarefas pequenas e ordenadas em `docs/05-tarefas.md`, incluindo provas técnicas, backend, frontend, testes, documentação e demonstração.
 - A T01 passou em build limpo, testes iniciais, análise estática e auditoria de dependências, e recebeu revisão final do Atlas sem achados restantes.
-- Próxima tarefa elegível: T02, ainda não iniciada.
+- A T02 foi implementada: perfis `local`/`dev` com PostgreSQL e `test` com H2, configurações externas por ambiente, Compose local e instruções de inicialização.
+- A validação automatizada da T02 passou com cinco testes e build limpo; a conexão com uma instância PostgreSQL real ainda depende de Docker ou PostgreSQL disponível na máquina.
 
 ## Decisões funcionais confirmadas
 
@@ -104,6 +105,6 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 
 ## Próximo passo
 
-Iniciar a T02 somente quando solicitado, respeitando as dependências e o escopo definidos em `docs/05-tarefas.md`. Só fazer nova pergunta se surgir um bloqueio que torne a implementação tecnicamente impossível.
+Validar a inicialização do perfil `local` contra o PostgreSQL do `compose.yaml` quando Docker ou PostgreSQL estiver disponível. Depois dessa validação, encerrar formalmente a T02 e considerar a T03 elegível.
 
 A implementação deverá ocorrer estritamente uma tarefa por vez. O repositório de referência poderá orientar somente a estrutura; nenhuma tarefa poderá copiar código, importar a branch ou tentar reproduzir o projeto de referência.

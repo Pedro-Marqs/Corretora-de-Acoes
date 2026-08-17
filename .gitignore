@@ -29,7 +29,6 @@ src/main/front/coverage/
 .env
 .env.*
 !.env.example
-application-local.properties
 
 ### Operating systems ###
 .DS_Store
