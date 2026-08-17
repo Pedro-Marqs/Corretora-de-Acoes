@@ -15,8 +15,12 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.session.ChangeSessionIdAuthenticationStrategy;
+import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.session.web.http.DefaultCookieSerializer;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -32,7 +36,9 @@ public class SecurityConfig {
         http
                 .cors(cors -> { })
                 .csrf(csrf -> csrf.csrfTokenRepository(csrfTokenRepository))
-                .securityContext(context -> context.requireExplicitSave(false))
+                .securityContext(context -> context
+                        .securityContextRepository(securityContextRepository())
+                        .requireExplicitSave(true))
                 .requestCache(cache -> cache.disable())
                 .formLogin(login -> login.disable())
                 .httpBasic(basic -> basic.disable())
@@ -109,5 +115,15 @@ public class SecurityConfig {
     @Bean
     PasswordEncoder passwordEncoder() {
         return new PreHashingBCryptPasswordEncoder();
+    }
+
+    @Bean
+    SecurityContextRepository securityContextRepository() {
+        return new HttpSessionSecurityContextRepository();
+    }
+
+    @Bean
+    SessionAuthenticationStrategy sessionAuthenticationStrategy() {
+        return new ChangeSessionIdAuthenticationStrategy();
     }
 }

@@ -14,7 +14,7 @@ function formatStatus(status) {
   return status === 'ACTIVE' ? 'Ativa' : 'Status indisponível'
 }
 
-export default function AccountHome({ account, onRestart }) {
+export default function AccountHome({ account, onRestart, onGoToLogin }) {
   return (
     <main className="account-home">
       <header className="account-header">
@@ -30,7 +30,7 @@ export default function AccountHome({ account, onRestart }) {
           <h1 id="account-title">Olá, {account.name}.</h1>
           <p>Este é o ponto de partida da sua simulação de investimentos.</p>
         </div>
-        <button className="secondary-button" type="button" onClick={onRestart}>Cadastrar outra conta</button>
+        <div className="home-actions"><button className="primary-button" type="button" onClick={onGoToLogin}>Ir para login</button><button className="secondary-button" type="button" onClick={onRestart}>Cadastrar outra conta</button></div>
       </section>
 
       <section className="balance-card" aria-labelledby="balance-title">
@@ -43,7 +43,7 @@ export default function AccountHome({ account, onRestart }) {
 
       <aside className="account-notice" role="note">
         <span aria-hidden="true">i</span>
-        <p><strong>Visualização inicial</strong>Esta tela usa somente os dados retornados na criação da conta. O acesso autenticado e as demais funcionalidades serão disponibilizados nas próximas etapas.</p>
+        <p><strong>Visualização inicial</strong>Esta tela usa somente os dados retornados na criação da conta. Os dados e recursos privados não são apresentados aqui.</p>
       </aside>
     </main>
   )

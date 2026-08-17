@@ -10,6 +10,7 @@ import java.util.Map;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
@@ -21,6 +22,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -86,17 +89,26 @@ class LocalPostgreSqlSessionTests {
     @TestConfiguration
     static class EndpointConfiguration {
         @Bean
-        SessionEndpoint sessionEndpoint() {
-            return new SessionEndpoint();
+        SessionEndpoint sessionEndpoint(SecurityContextRepository securityContextRepository) {
+            return new SessionEndpoint(securityContextRepository);
         }
     }
 
     @RestController
     static class SessionEndpoint {
+        private final SecurityContextRepository securityContextRepository;
+
+        SessionEndpoint(SecurityContextRepository securityContextRepository) {
+            this.securityContextRepository = securityContextRepository;
+        }
+
         @GetMapping("/api/integration/session")
         Map<String, String> session(
-                @AuthenticationPrincipal UserDetails user, HttpServletRequest request) {
+                @AuthenticationPrincipal UserDetails user, HttpServletRequest request,
+                HttpServletResponse response) {
             request.getSession(true);
+            securityContextRepository.saveContext(
+                    SecurityContextHolder.getContext(), request, response);
             return Map.of("user", user.getUsername());
         }
     }

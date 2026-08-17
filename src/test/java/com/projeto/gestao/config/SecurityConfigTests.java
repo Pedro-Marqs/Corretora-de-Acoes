@@ -23,7 +23,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.MediaType;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -51,9 +50,6 @@ class SecurityConfigTests {
 
     @Autowired
     private MockMvc mockMvc;
-
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -128,7 +124,10 @@ class SecurityConfigTests {
     void publicMatchersAreExactByMethodAndPath() throws Exception {
         CsrfCredentials csrf = csrfCredentials();
         mockMvc.perform(post("/api/auth/login").cookie(csrf.cookie())
-                        .header("X-XSRF-TOKEN", csrf.token())).andExpect(status().isOk());
+                        .header("X-XSRF-TOKEN", csrf.token())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest());
         mockMvc.perform(post("/api/accounts/reactivation").cookie(csrf.cookie())
                         .header("X-XSRF-TOKEN", csrf.token())).andExpect(status().isOk());
         mockMvc.perform(get("/api/accounts")).andExpect(status().isUnauthorized());
@@ -218,17 +217,8 @@ class SecurityConfigTests {
     }
 
     @Test
-    void authenticatedSecurityContextIsPersistedAndRecoveredFromJdbcSession() throws Exception {
-        MvcResult first = mockMvc.perform(get("/api/test/session").with(user("investidor")))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.user").value("investidor"))
-                .andReturn();
-        Cookie session = first.getResponse().getCookie("SESSION");
-        assertThat(session).isNotNull();
-        Integer persisted = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM SPRING_SESSION", Integer.class);
-        assertThat(persisted).isPositive();
-
-        mockMvc.perform(get("/api/test/private").cookie(session))
+    void authenticatedMockUserCanAccessPrivateRoute() throws Exception {
+        mockMvc.perform(get("/api/test/session").with(user("investidor")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.user").value("investidor"));
     }
@@ -255,7 +245,7 @@ class SecurityConfigTests {
     @RestController
     @RequestMapping("/api")
     static class TestEndpoints {
-        @PostMapping({"/auth/login", "/accounts/reactivation"})
+        @PostMapping("/accounts/reactivation")
         void publicMutation() {
         }
 

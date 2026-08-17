@@ -60,6 +60,17 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 - Essa tela inicial ainda não representa uma sessão autenticada: login, dados privados, carteira, corretoras, ativos e histórico continuam aguardando suas tarefas próprias. O aviso na interface informa explicitamente essa limitação.
 - A tela inicial pós-cadastro foi aprovada pelo agente Revisor após ajuste específico para 320px. A validação passou com 11 testes frontend, ESLint e build Vite.
 - Na execução local desta máquina, o Maven pode resolver incorretamente o repositório para `C:\.m2\repository` e falhar por permissão. Quando isso ocorrer, iniciar o backend com `-Dmaven.repo.local=C:\Users\Arklok\.m2\repository`. Esse parâmetro corrige somente o caminho do cache e não altera a aplicação.
+- A T08 foi concluída e aprovada pelo agente Revisor: `POST /api/auth/login` autentica por e-mail e senha somente contas ativas, e `POST /api/auth/logout` encerra apenas a sessão atual. Ambos retornam HTTP 204 e exigem CSRF.
+- Senha incorreta, e-mail inexistente e contas `INACTIVE` ou `DELETED` retornam o mesmo erro neutro HTTP 401. A busca ausente também executa uma comparação com hash dummy para reduzir diferenças observáveis de processamento.
+- A sessão armazena um `AccountPrincipal` serializável contendo somente o UUID da conta; nome, CPF, e-mail, saldo, senha, hash e entidade JPA não são serializados no contexto de segurança.
+- O login troca o identificador de uma sessão preexistente para impedir fixação e persiste explicitamente o contexto no Spring Session JDBC. O logout invalida o cookie e a linha da sessão atual, preservando outras sessões válidas da mesma conta.
+- A validação final da T08 passou com 77 testes backend, sem falhas ou erros, incluindo autenticação e sessão no PostgreSQL local `gestao_acoes_test`; dois testes Testcontainers antigos permaneceram ignorados. O frontend existente também passou em 11 testes, ESLint e build Vite.
+- A T08 não criou interface de login nem consulta da conta. Esses comportamentos continuam nas tarefas de frontend e na T09, respectivamente.
+- A pedido do usuário, foi adicionada antecipadamente a interface mínima de login e logout da T08. O frontend alterna entre cadastro e login, usa CSRF e cookie de sessão, limpa credenciais ao trocar de tela e apresenta somente um estado transitório de sessão iniciada, sem inventar dados privados.
+- O logout bem-sucedido volta ao login. Se o backend responder 401, a interface também remove o estado visual autenticado; falhas ambíguas de rede, 403 ou 5xx mantêm a tela da sessão para permitir nova tentativa.
+- Como ainda não existe endpoint de consulta da conta, recarregar a página não restaura o estado visual da sessão, embora o cookie do backend possa continuar válido. Essa limitação será resolvida pelas tarefas de consulta da conta e fundação completa do frontend.
+- A interface de login/logout foi aprovada pelo agente Revisor e passou com 21 testes frontend, ESLint e build Vite.
+- O backend local foi reiniciado após a interface de login e está executando a versão da T08 na porta 8080; os logs dessa execução ficam em `target/backend-local.log` e `target/backend-local-error.log`.
 
 ## Decisões funcionais confirmadas
 
@@ -141,7 +152,7 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 
 ## Próximo passo
 
-Implementar somente a T08 — login e logout. O PostgreSQL local está funcional e deve ter sua conexão verificada antes das execuções; criar o banco `gestao_acoes` somente se ele ainda não existir. Não usar Docker ou Testcontainers nas próximas validações; testes de integração devem utilizar PostgreSQL local e o banco separado `gestao_acoes_test` quando precisarem alterar dados.
+Implementar somente a T09 — consulta e alteração de credenciais. O PostgreSQL local está funcional e deve ter sua conexão verificada antes das execuções; criar o banco `gestao_acoes` somente se ele ainda não existir. Não usar Docker ou Testcontainers nas próximas validações; testes de integração devem utilizar PostgreSQL local e o banco separado `gestao_acoes_test` quando precisarem alterar dados.
 
 A implementação deverá ocorrer estritamente uma tarefa por vez. O repositório de referência poderá orientar somente a estrutura; nenhuma tarefa poderá copiar código, importar a branch ou tentar reproduzir o projeto de referência.
 

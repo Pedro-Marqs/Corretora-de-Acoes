@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { createAccount } from './api/accounts.js'
 import AccountHome from './components/AccountHome.jsx'
+import LoginForm from './components/LoginForm.jsx'
+import SessionHome from './components/SessionHome.jsx'
 
 const initialForm = { name: '', cpf: '', email: '', password: '' }
 
@@ -15,6 +17,7 @@ export default function App() {
   const [message, setMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [createdAccount, setCreatedAccount] = useState(null)
+  const [screen, setScreen] = useState('register')
 
   function updateField(event) {
     const { name, value } = event.target
@@ -44,7 +47,19 @@ export default function App() {
     setCreatedAccount(null)
   }
 
-  if (createdAccount) return <AccountHome account={createdAccount} onRestart={restart} />
+  function showLogin() {
+    restart()
+    setScreen('login')
+  }
+
+  function showRegister() {
+    restart()
+    setScreen('register')
+  }
+
+  if (screen === 'session') return <SessionHome onLoggedOut={() => setScreen('login')} />
+  if (screen === 'login') return <LoginForm onAuthenticated={() => setScreen('session')} onRegister={showRegister} />
+  if (createdAccount) return <AccountHome account={createdAccount} onRestart={restart} onGoToLogin={showLogin} />
 
   return (
     <main className="page-shell">
@@ -71,6 +86,7 @@ export default function App() {
                 <p className="eyebrow">Crie sua conta</p><h2>Seus dados de acesso</h2>
                 <p>Preencha os campos abaixo para começar.</p>
               </header>
+              <button className="text-button top-login" type="button" onClick={showLogin}>Já tenho uma conta</button>
               {message && <div className="error-banner" role="alert">{message}</div>}
               <form onSubmit={handleSubmit} noValidate>
                 <FormField label="Nome completo" name="name" error={fieldErrors.name}>
