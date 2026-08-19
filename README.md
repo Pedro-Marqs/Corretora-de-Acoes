@@ -1,4 +1,3 @@
-
 # Gestão de Ações e Corretoras
 
 Projeto acadêmico para simulação de investimentos em ações brasileiras e norte-americanas.
@@ -38,6 +37,18 @@ Execute os testes rápidos com H2:
 ```powershell
 .\mvnw.cmd clean verify
 ```
+
+## OpenSpec com Codex/GPT
+
+As especificações operacionais do OpenSpec ficam em `openspec/specs/`. Os documentos originais continuam em `docs/spec/`.
+
+```powershell
+openspec list --specs
+openspec new change nome-da-mudanca
+openspec validate --all --strict --no-interactive
+```
+
+O OpenSpec foi configurado para o adaptador Codex em `.agents/skills/`.
 
 ## Frontend
 

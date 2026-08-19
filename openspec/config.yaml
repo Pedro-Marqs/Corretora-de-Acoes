@@ -1,0 +1,29 @@
+schema: spec-driven
+
+context: |
+	Projeto academico de simulacao de investimentos em acoes brasileiras e norte-americanas.
+	Stack: Java 17, Spring Boot 3.4.0, PostgreSQL, React, Vite e JavaScript.
+	A fonte documental original permanece em docs/spec; as main specs OpenSpec ficam em openspec/specs.
+	Implementar uma tarefa por vez, seguindo AGENTS.md e docs/.
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always include a "Non-goals" section
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+
+# Per-operation guidance (optional)
+# Add advisory guidance for how apply and archive work should be conducted.
+# This is separate from artifact rules above.
+# Example:
+#   operations:
+#     apply:
+#       guidance:
+#         - Keep test summaries concise
+#     archive:
+#       guidance:
+#         - Summarize the archive outcome before finishing
