@@ -59,3 +59,26 @@ async function changeCredential(path, payload) {
 }
 export function changeEmail(payload) { return changeCredential('/api/accounts/me/email', payload) }
 export function changePassword(payload) { return changeCredential('/api/accounts/me/password', payload) }
+
+export async function deleteAccount(payload) {
+  try {
+    const token = await getCsrfToken(AccountApiError, 'Não foi possível iniciar a exclusão. Tente novamente.')
+    const response = await fetch(`${API_BASE_URL}/api/accounts/me`, {
+      method: 'DELETE',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': token },
+      body: JSON.stringify(payload),
+    })
+    const body = await parseJson(response)
+    if (!response.ok) {
+      throw new AccountApiError(
+        body?.message ?? 'Não foi possível excluir a conta. Tente novamente.',
+        groupFieldErrors(body?.fieldErrors),
+        response.status,
+      )
+    }
+  } catch (error) {
+    if (error instanceof AccountApiError) throw error
+    throw new AccountApiError('Não foi possível conectar ao servidor. Verifique se a aplicação está em execução.')
+  }
+}

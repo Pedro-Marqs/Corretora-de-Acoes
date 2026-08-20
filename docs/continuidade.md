@@ -180,6 +180,14 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 
 ## Próximo passo
 
+### Forma de trabalho a partir da T13
+
+- Trabalhar com base no OpenSpec.
+- Para o change `implementar-t13-exclusao-reativacao`, ler primeiro `AGENTS.md`, os documentos relacionados à T13, as specs relevantes em `openspec/specs/` e os arquivos `proposal.md`, `design.md` e `tasks.md` do change.
+- Implementar somente a próxima tarefa ainda não concluída de `tasks.md`, sem avançar para outras tarefas e sem refatorar código fora do escopo.
+- Executar os testes necessários para a tarefa implementada.
+- Ao terminar, marcar somente essa tarefa como concluída em `tasks.md` e informar os arquivos alterados, o comportamento implementado, os testes e comandos executados, o resultado e qualquer risco ou pendência.
+
 Implementar somente a T13 — telas de exclusão e reativação. As rotas, a sessão, o cliente HTTP e a área da conta consolidados nas T11 e T12 devem ser reutilizados. O PostgreSQL local está funcional e deve ter sua conexão verificada antes das execuções; criar o banco `gestao_acoes` somente se ele ainda não existir. Não usar Docker ou Testcontainers nas próximas validações; testes de integração devem utilizar PostgreSQL local e o banco separado `gestao_acoes_test` quando precisarem alterar dados.
 
 A implementação deverá ocorrer estritamente uma tarefa por vez. O repositório de referência poderá orientar somente a estrutura; nenhuma tarefa poderá copiar código, importar a branch ou tentar reproduzir o projeto de referência.

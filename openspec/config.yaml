@@ -1,10 +1,10 @@
 schema: spec-driven
 
 context: |
-	Projeto academico de simulacao de investimentos em acoes brasileiras e norte-americanas.
-	Stack: Java 17, Spring Boot 3.4.0, PostgreSQL, React, Vite e JavaScript.
-	A fonte documental original permanece em docs/spec; as main specs OpenSpec ficam em openspec/specs.
-	Implementar uma tarefa por vez, seguindo AGENTS.md e docs/.
+  Projeto academico de simulacao de investimentos em acoes brasileiras e norte-americanas.
+  Stack: Java 17, Spring Boot 3.4.0, PostgreSQL, React, Vite e JavaScript.
+  A fonte documental original permanece em docs/spec; as main specs OpenSpec ficam em openspec/specs.
+  Implementar uma tarefa por vez, seguindo AGENTS.md e docs/.
 
 # Per-artifact rules (optional)
 # Add custom rules for specific artifacts.

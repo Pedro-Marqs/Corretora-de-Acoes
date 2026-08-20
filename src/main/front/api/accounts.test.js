@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { changeEmail, changePassword, createAccount } from './accounts.js'
+import { AccountApiError, changeEmail, changePassword, createAccount, deleteAccount } from './accounts.js'
 
 function response(body, status = 200) {
-  return { ok: status >= 200 && status < 300, headers: new Headers({ 'content-type': 'application/json' }), json: vi.fn().mockResolvedValue(body) }
+  return { ok: status >= 200 && status < 300, status, headers: new Headers({ 'content-type': 'application/json' }), json: vi.fn().mockResolvedValue(body) }
 }
 
 describe('createAccount', () => {
@@ -48,5 +48,69 @@ describe('createAccount', () => {
     await changePassword({ currentPassword: 'Atual@123', newPassword: 'Nova@123' })
     expect(fetch).toHaveBeenNthCalledWith(2, 'http://localhost:8080/api/accounts/me/email', expect.objectContaining({ method: 'PATCH', credentials: 'include' }))
     expect(fetch).toHaveBeenNthCalledWith(4, 'http://localhost:8080/api/accounts/me/password', expect.objectContaining({ method: 'PATCH', credentials: 'include' }))
+  })
+})
+
+describe('deleteAccount', () => {
+  beforeEach(() => { vi.restoreAllMocks(); vi.stubGlobal('fetch', vi.fn()) })
+
+  it('envia o payload integral por DELETE autenticado com CSRF', async () => {
+    fetch.mockResolvedValueOnce(response({ token: 'csrf-delete' })).mockResolvedValueOnce(response(null, 204))
+    const payload = { email: 'ana@example.com', password: 'Senha@123', confirmation: 'Excluir' }
+
+    await expect(deleteAccount(payload)).resolves.toBeUndefined()
+
+    expect(fetch).toHaveBeenNthCalledWith(1, 'http://localhost:8080/api/csrf', { credentials: 'include' })
+    expect(fetch).toHaveBeenNthCalledWith(2, 'http://localhost:8080/api/accounts/me', {
+      method: 'DELETE',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': 'csrf-delete' },
+      body: JSON.stringify(payload),
+    })
+  })
+
+  it('converte erro funcional com todos os erros de campo e status', async () => {
+    fetch.mockResolvedValueOnce(response({ token: 'csrf-delete' })).mockResolvedValueOnce(response({
+      message: 'Confirmação inválida.',
+      fieldErrors: [
+        { field: 'confirmation', message: 'Confirmação deve ser exatamente Excluir.' },
+        { field: 'email', message: 'E-mail inválido.' },
+      ],
+    }, 400))
+
+    await expect(deleteAccount({})).rejects.toMatchObject({
+      name: 'AccountApiError',
+      message: 'Confirmação inválida.',
+      fieldErrors: {
+        confirmation: ['Confirmação deve ser exatamente Excluir.'],
+        email: ['E-mail inválido.'],
+      },
+      status: 400,
+    })
+  })
+
+  it('usa mensagem segura para resposta técnica inválida', async () => {
+    fetch.mockResolvedValueOnce(response({ token: 'csrf-delete' })).mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      headers: new Headers({ 'content-type': 'text/html' }),
+      json: vi.fn(),
+    })
+
+    await expect(deleteAccount({})).rejects.toMatchObject({
+      message: 'Não foi possível excluir a conta. Tente novamente.',
+      fieldErrors: {},
+      status: 500,
+    })
+  })
+
+  it('converte falha de conexão em AccountApiError seguro', async () => {
+    fetch.mockRejectedValue(new TypeError('Failed to fetch'))
+
+    const rejection = deleteAccount({})
+    await expect(rejection).rejects.toBeInstanceOf(AccountApiError)
+    await expect(rejection).rejects.toMatchObject({
+      message: 'Não foi possível conectar ao servidor. Verifique se a aplicação está em execução.',
+    })
   })
 })
