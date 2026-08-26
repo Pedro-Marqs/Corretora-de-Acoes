@@ -110,12 +110,24 @@ input[aria-invalid="true"] { border-color: #b23a3a; }
 .profile-card dl { display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin:0; }
 .profile-card dt { color:#6e7b73;font-size:.78rem;font-weight:700; }
 .profile-card dd { margin:.35rem 0 0;font-weight:700; }
-.settings-grid { display:grid;grid-template-columns:1fr 1fr;gap:1.25rem; }
-.settings-card h2 { margin-bottom:1.5rem;font-size:1.7rem; }
+.settings-list { display:grid;gap:.75rem; }
+.collapsible-settings { padding:0;overflow:hidden; }
+.settings-toggle { display:flex;align-items:center;justify-content:space-between;width:100%;padding:1.25rem 1.5rem;border:0;color:#163c30;background:#fff;cursor:pointer;font-family:Georgia,"Times New Roman",serif;font-size:1.7rem;text-align:left; }
+.settings-toggle:hover { background:#f7faf5; }
+.settings-toggle:focus-visible { outline:3px solid rgb(50 115 91 / 25%);outline-offset:-3px; }
+.settings-toggle > span:last-child { color:#1b604b;font-family:Inter,sans-serif;font-size:1.5rem;font-weight:700; }
+.settings-content { padding:0 1.5rem 1.5rem;border-top:1px solid #e4e9e3; }
+.settings-content > :first-child { margin-top:1.5rem; }
 .danger-zone { display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:1.25rem;margin-top:1.25rem;padding:clamp(1.25rem,3vw,2rem);border:1px solid #efc9c5;border-radius:1rem;background:#fff8f7; }
 .danger-zone-copy h2 { color:#7d2929;font-size:clamp(1.7rem,3vw,2.35rem); }
 .danger-zone-copy > p:last-child { color:#765a57;line-height:1.6; }
-.deletion-card { min-width:0;border-color:#efcfcc;box-shadow:none; }
+.danger-trigger { align-self:center;margin:0; }
+.account-modal { position:fixed;z-index:20;inset:0;display:grid;place-items:center;padding:1rem;background:rgb(18 35 29 / 62%); }
+.account-modal-card { width:min(100%,34rem);max-height:calc(100vh - 2rem);overflow-y:auto;padding:clamp(1.5rem,4vw,2.5rem);border-radius:1rem;background:#fff;box-shadow:0 1.5rem 4rem rgb(10 35 27 / 30%); }
+.account-modal-card h2 { color:#7d2929;font-size:clamp(1.8rem,4vw,2.5rem); }
+.account-modal-card > p { color:#68756e; }
+.modal-actions { display:flex;gap:.75rem;margin-top:1rem; }
+.modal-actions > button { flex:1;margin:0; }
 .danger-button { width:100%;min-height:3.25rem;margin-top:.5rem;border:0;border-radius:.65rem;color:#fff;background:#a13737;cursor:pointer;font-weight:800;transition:background .15s,transform .15s; }
 .danger-button:hover:not(:disabled) { background:#812929;transform:translateY(-1px); }
 .danger-button:focus-visible { outline:3px solid rgb(161 55 55 / 25%);outline-offset:2px; }
@@ -123,6 +135,20 @@ input[aria-invalid="true"] { border-color: #b23a3a; }
 .foundation-home { padding-block: clamp(3rem, 8vw, 6rem); }
 .foundation-home h1 { max-width: none; color: #163c30; }
 .foundation-home > p { color: #68756e; }
+.wallet-page { width:min(100%,72rem);margin-inline:auto;padding-block:clamp(2.5rem,6vw,5rem); }
+.wallet-heading h1 { max-width:none;color:#163c30; }
+.wallet-heading > p:last-child { color:#68756e; }
+.wallet-balance { display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-top:2rem;padding:clamp(1.5rem,4vw,2.75rem);border:1px solid #dfe5dd;border-radius:1rem;background:#fff;box-shadow:0 1.2rem 3rem rgb(30 62 50 / 6%); }
+.wallet-balance p { margin:0 0 .65rem;color:#6e7b73;font-size:.86rem;font-weight:700; }
+.wallet-balance strong { color:#163f32;font-family:Georgia,serif;font-size:clamp(2.25rem,5vw,4rem);font-weight:500;letter-spacing:-.035em; }
+.wallet-balance > span { display:grid;place-items:center;flex:0 0 auto;width:3.5rem;height:3.5rem;border-radius:50%;color:#1b604b;background:#e2f1ce;font-weight:800; }
+.deposit-card { display:grid;grid-template-columns:minmax(0,1fr) minmax(18rem,.8fr);gap:clamp(1.5rem,5vw,4rem);margin-top:1.5rem;padding:clamp(1.5rem,4vw,2.5rem);border:1px solid #dfe5dd;border-radius:1rem;background:#fff; }
+.deposit-card h2,.deposit-confirmation h2 { color:#163c30;font-size:clamp(1.7rem,3vw,2.35rem); }
+.deposit-card > div > p:last-child,.deposit-confirmation p { color:#68756e;line-height:1.6; }
+.deposit-confirmation { position:fixed;z-index:10;inset:0;display:grid;place-items:center;padding:1rem;background:rgb(18 63 50 / 55%); }
+.deposit-confirmation > div { width:min(100%,31rem);padding:clamp(1.5rem,5vw,2.5rem);border-radius:1rem;background:#fff;box-shadow:0 1.5rem 4rem rgb(10 35 27 / 25%); }
+.confirmation-actions { display:flex;gap:.75rem;margin-top:1.5rem; }
+.confirmation-actions .primary-button { margin:0; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (max-width: 860px) {
   .page-shell { grid-template-columns: 1fr; }
@@ -138,8 +164,9 @@ input[aria-invalid="true"] { border-color: #b23a3a; }
   .home-actions .primary-button { width: 100%; }
   .private-header { align-items:flex-start;flex-wrap:wrap;gap:1rem; }
   .private-header nav { order:3;width:100%; }
-  .profile-card dl,.settings-grid,.danger-zone { grid-template-columns:1fr; }
+  .profile-card dl,.danger-zone { grid-template-columns:1fr; }
   .reactivation-options { grid-template-columns:1fr; }
+  .deposit-card { grid-template-columns:1fr; }
   .option-card p { min-height:0; }
 }
 @media (max-width: 420px) {
@@ -147,5 +174,9 @@ input[aria-invalid="true"] { border-color: #b23a3a; }
   .balance-card { padding: 1.25rem; }
   .balance-card strong { font-size: 1.85rem; }
   .balance-card-icon { display: none; }
+  .wallet-balance > span { display:none; }
+  .wallet-balance strong { font-size:1.85rem; }
+  .confirmation-actions { flex-direction:column-reverse; }
+  .modal-actions { flex-direction:column-reverse; }
 }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } .state-spinner { animation: none; } }

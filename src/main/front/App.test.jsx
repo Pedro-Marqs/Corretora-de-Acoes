@@ -223,10 +223,11 @@ describe('Cadastro', () => {
     window.history.replaceState({}, '', '/app/conta')
     render(<App />)
     await screen.findByRole('heading', { name: 'Minha conta' })
+    fireEvent.click(screen.getByRole('button', { name: 'Excluir minha conta' }))
     fireEvent.change(screen.getByLabelText(/E-mail atual/), { target: { value: 'ana@example.com' } })
     fireEvent.change(screen.getByLabelText(/Senha atual/, { selector: '#deletePassword' }), { target: { value: 'Senha@123' } })
-    fireEvent.change(screen.getByLabelText(/Digite Excluir/), { target: { value: 'Excluir' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Excluir minha conta' }))
+    fireEvent.change(screen.getByLabelText(/Digite "Excluir"/), { target: { value: 'Excluir' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar exclusão' }))
     expect(await screen.findByRole('heading', { name: 'Bem-vindo de volta.' })).toBeInTheDocument()
     expect(screen.getByRole('status')).toHaveTextContent('Conta excluída. Seus dados permanecem preservados')
 

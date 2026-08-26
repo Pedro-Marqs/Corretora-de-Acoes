@@ -17,7 +17,7 @@ export async function parseJson(response) {
 export async function getCsrfToken(ErrorType, message) {
   const response = await fetch(`${API_BASE_URL}/api/csrf`, { credentials: 'include' })
   const body = await parseJson(response)
-  if (!response.ok || !body?.token) throw new ErrorType(message)
+  if (!response.ok || !body?.token) throw new ErrorType(message, {}, response.status)
   return body.token
 }
 

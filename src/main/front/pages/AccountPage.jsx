@@ -1,4 +1,4 @@
-import { cloneElement, useRef, useState } from 'react'
+import { cloneElement, useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { changeEmail, changePassword, deleteAccount, getCurrentAccount } from '../api/accounts.js'
@@ -13,6 +13,7 @@ export default function AccountPage() {
   const auth = useAuth()
   const navigate = useNavigate()
   const locks = useRef({ email: false, password: false, deletion: false })
+  const deleteTriggerRef = useRef(null)
   const [email, setEmail] = useState(emptyEmail)
   const [password, setPassword] = useState(emptyPassword)
   const [deletion, setDeletion] = useState(emptyDeletion)
@@ -24,6 +25,8 @@ export default function AccountPage() {
   const [deletionMessage, setDeletionMessage] = useState('')
   const [pending, setPending] = useState({ email: false, password: false, deletion: false })
   const [technical, setTechnical] = useState(null)
+  const [expandedCredential, setExpandedCredential] = useState(null)
+  const [deletionOpen, setDeletionOpen] = useState(false)
 
   async function handle401(error, kind) {
     setTechnical(null)
@@ -93,7 +96,7 @@ export default function AccountPage() {
     if (!deletion.email.trim()) errors.email = ['E-mail atual é obrigatório.']
     if (!deletion.password) errors.password = ['Senha atual é obrigatória.']
     if (deletion.confirmation !== 'Excluir') {
-      errors.confirmation = [deletion.confirmation ? 'A confirmação deve ser exatamente Excluir.' : 'Digite Excluir para confirmar.']
+      errors.confirmation = [deletion.confirmation ? 'A confirmação deve ser exatamente "Excluir".' : 'Digite "Excluir" para confirmar.']
     }
     return errors
   }
@@ -147,8 +150,8 @@ export default function AccountPage() {
         </dl>
       </section>
       {technical && <ErrorState message={technical.message} onRetry={technical.retry} />}
-      <div className="settings-grid">
-        <CredentialForm title="Alterar e-mail" message={emailMessage} onSubmit={(event) => submitCredential('email', event)} pending={pending.email}>
+      <div className="settings-list">
+        <CredentialForm id="email-settings" title="Alterar e-mail" expanded={expandedCredential === 'email'} onToggle={() => setExpandedCredential((current) => current === 'email' ? null : 'email')} message={emailMessage} onSubmit={(event) => submitCredential('email', event)} pending={pending.email}>
           <Field label="Novo e-mail" id="newEmail" errors={emailErrors.newEmail}>
             <input id="newEmail" type="email" required value={email.newEmail} onChange={(event) => setEmail({ ...email, newEmail: event.target.value })} />
           </Field>
@@ -156,7 +159,7 @@ export default function AccountPage() {
             <input id="emailPassword" type="password" required value={email.currentPassword} onChange={(event) => setEmail({ ...email, currentPassword: event.target.value })} />
           </Field>
         </CredentialForm>
-        <CredentialForm title="Alterar senha" message={passwordMessage} onSubmit={(event) => submitCredential('password', event)} pending={pending.password}>
+        <CredentialForm id="password-settings" title="Alterar senha" expanded={expandedCredential === 'password'} onToggle={() => setExpandedCredential((current) => current === 'password' ? null : 'password')} message={passwordMessage} onSubmit={(event) => submitCredential('password', event)} pending={pending.password}>
           <Field label="Senha atual" id="passwordCurrent" errors={passwordErrors.currentPassword}>
             <input id="passwordCurrent" type="password" required value={password.currentPassword} onChange={(event) => setPassword({ ...password, currentPassword: event.target.value })} />
           </Field>
@@ -172,28 +175,59 @@ export default function AccountPage() {
           <h2 id="delete-account-title">Excluir minha conta</h2>
           <p>A exclusão é lógica: sua sessão será encerrada e seus dados permanecerão preservados caso você decida reativar a conta.</p>
         </div>
-        <form className="settings-card deletion-card" onSubmit={submitDeletion} noValidate>
-          {deletionMessage && <div className="error-banner" role="alert">{deletionMessage}</div>}
-          <Field label="E-mail atual" id="deleteEmail" errors={deletionErrors.email}>
-            <input id="deleteEmail" name="email" type="email" autoComplete="email" required value={deletion.email} onChange={updateDeletion} />
-          </Field>
-          <Field label="Senha atual" id="deletePassword" errors={deletionErrors.password}>
-            <input id="deletePassword" name="password" type="password" autoComplete="current-password" required value={deletion.password} onChange={updateDeletion} />
-          </Field>
-          <Field label="Digite Excluir" id="deleteConfirmation" errors={deletionErrors.confirmation}>
-            <input id="deleteConfirmation" name="confirmation" type="text" autoComplete="off" required value={deletion.confirmation} onChange={updateDeletion} />
-          </Field>
-          <button className="danger-button" type="submit" disabled={pending.deletion}>
-            {pending.deletion ? 'Excluindo conta…' : 'Excluir minha conta'}
-          </button>
-        </form>
+        <button ref={deleteTriggerRef} className="danger-button danger-trigger" type="button" onClick={() => setDeletionOpen(true)}>Excluir minha conta</button>
       </section>
+      {deletionOpen && <DeletionModal deletion={deletion} errors={deletionErrors} message={deletionMessage} pending={pending.deletion} onChange={updateDeletion} onClose={() => setDeletionOpen(false)} onSubmit={submitDeletion} returnFocusRef={deleteTriggerRef} />}
     </main>
   )
 }
 
-function CredentialForm({ title, message, onSubmit, pending, children }) {
-  return <form className="settings-card" onSubmit={onSubmit} noValidate><h2>{title}</h2>{message && <div className="error-banner" role="alert">{message}</div>}{children}<button className="primary-button" disabled={pending}>{pending ? 'Salvando…' : 'Salvar alteração'}</button></form>
+function CredentialForm({ id, title, expanded, onToggle, message, onSubmit, pending, children }) {
+  return <section className="settings-card collapsible-settings">
+    <button className="settings-toggle" type="button" aria-expanded={expanded} aria-controls={id} onClick={onToggle}>
+      <span>{title}</span><span aria-hidden="true">{expanded ? '−' : '+'}</span>
+    </button>
+    {expanded && <form id={id} className="settings-content" onSubmit={onSubmit} noValidate>{message && <div className="error-banner" role="alert">{message}</div>}{children}<button className="primary-button" disabled={pending}>{pending ? 'Salvando…' : 'Salvar alteração'}</button></form>}
+  </section>
+}
+
+function DeletionModal({ deletion, errors, message, pending, onChange, onClose, onSubmit, returnFocusRef }) {
+  const cancelRef = useRef(null)
+  const submitRef = useRef(null)
+
+  useEffect(() => {
+    const returnFocus = returnFocusRef.current
+    cancelRef.current?.focus()
+    return () => returnFocus?.focus()
+  }, [returnFocusRef])
+
+  function close() {
+    if (pending) return
+    onClose()
+  }
+
+  function handleKeyDown(event) {
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      close()
+    } else if (event.key === 'Tab' && !pending) {
+      if (event.shiftKey && document.activeElement === cancelRef.current) {
+        event.preventDefault()
+        submitRef.current?.focus()
+      } else if (!event.shiftKey && document.activeElement === submitRef.current) {
+        event.preventDefault()
+        cancelRef.current?.focus()
+      }
+    }
+  }
+
+  return <section className="account-modal" role="dialog" aria-modal="true" aria-labelledby="delete-modal-title" onKeyDown={handleKeyDown}><div className="account-modal-card"><h2 id="delete-modal-title">Excluir minha conta</h2><p>Confirme seus dados para excluir a conta.</p><form onSubmit={onSubmit} noValidate>
+    {message && <div className="error-banner" role="alert">{message}</div>}
+    <Field label="E-mail atual" id="deleteEmail" errors={errors.email}><input id="deleteEmail" name="email" type="email" autoComplete="email" required value={deletion.email} onChange={onChange} /></Field>
+    <Field label="Senha atual" id="deletePassword" errors={errors.password}><input id="deletePassword" name="password" type="password" autoComplete="current-password" required value={deletion.password} onChange={onChange} /></Field>
+    <Field label={'Digite "Excluir"'} id="deleteConfirmation" errors={errors.confirmation}><input id="deleteConfirmation" name="confirmation" type="text" autoComplete="off" required value={deletion.confirmation} onChange={onChange} /></Field>
+    <div className="modal-actions"><button ref={cancelRef} className="secondary-button" type="button" onClick={close} disabled={pending}>Cancelar</button><button ref={submitRef} className="danger-button" type="submit" disabled={pending}>{pending ? 'Excluindo conta…' : 'Confirmar exclusão'}</button></div>
+  </form></div></section>
 }
 
 function Field({ label, id, errors, children }) {

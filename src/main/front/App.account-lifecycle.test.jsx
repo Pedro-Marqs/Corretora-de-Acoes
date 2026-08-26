@@ -24,10 +24,11 @@ describe('ciclo autenticado da conta com rotas reais', () => {
     render(<App />)
     await screen.findByRole('heading', { name: 'Minha conta' })
 
+    fireEvent.click(screen.getByRole('button', { name: 'Excluir minha conta' }))
     fireEvent.change(screen.getByLabelText(/E-mail atual/), { target: { value: 'ana@example.com' } })
     fireEvent.change(screen.getByLabelText(/Senha atual/, { selector: '#deletePassword' }), { target: { value: 'Senha@123' } })
-    fireEvent.change(screen.getByLabelText(/Digite Excluir/), { target: { value: 'Excluir' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Excluir minha conta' }))
+    fireEvent.change(screen.getByLabelText(/Digite "Excluir"/), { target: { value: 'Excluir' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar exclusão' }))
 
     expect(await screen.findByRole('status')).toHaveTextContent('Conta excluída. Seus dados permanecem preservados')
     await waitFor(() => expect(window.location.pathname).toBe('/login'))
