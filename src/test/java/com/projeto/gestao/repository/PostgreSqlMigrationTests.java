@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 import org.flywaydb.core.Flyway;
@@ -43,7 +44,7 @@ class PostgreSqlMigrationTests {
     void migratesEmptyPostgreSqlDatabase() {
         Integer appliedMigrations = jdbc.queryForObject(
                 "SELECT COUNT(*) FROM flyway_schema_history WHERE success", Integer.class);
-        assertThat(appliedMigrations).isEqualTo(2);
+        assertThat(appliedMigrations).isEqualTo(3);
     }
 
     @Test
@@ -56,6 +57,25 @@ class PostgreSqlMigrationTests {
         assertThatThrownBy(() -> insertAccount(
                 UUID.randomUUID(), "66666666666", "negative-postgres@example.com", "ACTIVE",
                 new BigDecimal("-0.01")))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    void enforcesT14HistoricalSchema() {
+        List<String> columns = jdbc.queryForList("""
+                SELECT column_name FROM information_schema.columns
+                 WHERE table_name = 'patrimonial_point'
+                """, String.class);
+        assertThat(columns).contains("balance_brl", "positions_value_brl", "usd_brl_rate");
+
+        UUID accountId = UUID.randomUUID();
+        insertAccount(accountId, "90909090909", "t14-postgres@example.com", "ACTIVE");
+        assertThatThrownBy(() -> jdbc.update("""
+                INSERT INTO movement
+                    (id, account_id, movement_type, ticker, total_amount, currency,
+                     occurred_at, remaining_balance)
+                VALUES (?, ?, 'DEPOSIT', 'PETR4', 10.00, 'BRL', ?, 10010.00)
+                """, UUID.randomUUID(), accountId, Timestamp.from(Instant.now())))
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 

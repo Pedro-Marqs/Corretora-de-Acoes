@@ -42,6 +42,31 @@ class SchemaMigrationTests {
     }
 
     @Test
+    void patrimonialPointStoresCalculationInputs() {
+        List<String> columns = jdbc.queryForList("""
+                SELECT LOWER(column_name) FROM information_schema.columns
+                 WHERE table_name = 'PATRIMONIAL_POINT'
+                """, String.class);
+        assertThat(columns).contains("balance_brl", "positions_value_brl", "usd_brl_rate");
+    }
+
+    @Test
+    void rejectsMovementWithFieldsInapplicableToItsType() {
+        UUID accountId = UUID.randomUUID();
+        insertAccount(accountId, "12121212121", "movement-fields@example.com",
+                new BigDecimal("10000.00"), "ACTIVE");
+
+        assertThatThrownBy(() -> jdbc.update("""
+                INSERT INTO movement
+                    (id, account_id, movement_type, ticker, total_amount, currency,
+                     occurred_at, remaining_balance)
+                VALUES (?, ?, 'DEPOSIT', 'PETR4', 10.00, 'BRL', ?, 10010.00)
+                """, UUID.randomUUID(), accountId,
+                Timestamp.from(OffsetDateTime.now().toInstant())))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
     void rejectsNegativeBalance() {
         assertThatThrownBy(() -> insertAccount(UUID.randomUUID(), "11111111111", "negative@example.com",
                 new BigDecimal("-0.01"), "ACTIVE"))
@@ -135,8 +160,9 @@ class SchemaMigrationTests {
 
         assertThatThrownBy(() -> jdbc.update("""
                 INSERT INTO patrimonial_point
-                    (id, account_id, movement_id, recorded_at, patrimony_brl)
-                VALUES (?, ?, ?, ?, 10010.00)
+                    (id, account_id, movement_id, recorded_at,
+                     balance_brl, positions_value_brl, patrimony_brl)
+                VALUES (?, ?, ?, ?, 10010.00, 0.00, 10010.00)
                 """, UUID.randomUUID(), pointAccountId, movementId,
                 Timestamp.from(OffsetDateTime.now().toInstant())))
                 .isInstanceOf(DataIntegrityViolationException.class);

@@ -210,8 +210,9 @@ class AccountLifecycleTests {
                 VALUES (?,?,'INITIAL_BALANCE',12345.67,'BRL',CURRENT_TIMESTAMP,12345.67)
                 """, movementId, accountId);
         jdbcTemplate.update("""
-                INSERT INTO patrimonial_point (id,account_id,movement_id,recorded_at,patrimony_brl)
-                VALUES (?,?,?,CURRENT_TIMESTAMP,12345.67)
+                INSERT INTO patrimonial_point
+                    (id,account_id,movement_id,recorded_at,balance_brl,positions_value_brl,patrimony_brl)
+                VALUES (?,?,?,CURRENT_TIMESTAMP,12145.67,200.00,12345.67)
                 """, UUID.randomUUID(), accountId, movementId);
     }
 

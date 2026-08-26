@@ -12,10 +12,7 @@ import com.projeto.gestao.api.exception.ConflictException;
 import com.projeto.gestao.domain.model.Account;
 import com.projeto.gestao.domain.model.AccountStatus;
 import com.projeto.gestao.domain.model.Movement;
-import com.projeto.gestao.domain.model.PatrimonialPoint;
 import com.projeto.gestao.repository.AccountRepository;
-import com.projeto.gestao.repository.MovementRepository;
-import com.projeto.gestao.repository.PatrimonialPointRepository;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -27,20 +24,17 @@ public class AccountRegistrationService {
     private static final BigDecimal INITIAL_BALANCE = new BigDecimal("10000.00");
 
     private final AccountRepository accountRepository;
-    private final MovementRepository movementRepository;
-    private final PatrimonialPointRepository patrimonialPointRepository;
+    private final FinancialHistoryService financialHistoryService;
     private final PasswordEncoder passwordEncoder;
     private final Clock clock;
 
     public AccountRegistrationService(
             AccountRepository accountRepository,
-            MovementRepository movementRepository,
-            PatrimonialPointRepository patrimonialPointRepository,
+            FinancialHistoryService financialHistoryService,
             PasswordEncoder passwordEncoder,
             Clock clock) {
         this.accountRepository = accountRepository;
-        this.movementRepository = movementRepository;
-        this.patrimonialPointRepository = patrimonialPointRepository;
+        this.financialHistoryService = financialHistoryService;
         this.passwordEncoder = passwordEncoder;
         this.clock = clock;
     }
@@ -64,10 +58,9 @@ public class AccountRegistrationService {
         } catch (DataIntegrityViolationException exception) {
             throw ConflictException.activeAccountAlreadyExists();
         }
-        Movement movement = movementRepository.save(
-                Movement.initialBalance(UUID.randomUUID(), account, INITIAL_BALANCE, now));
-        patrimonialPointRepository.save(
-                PatrimonialPoint.initial(UUID.randomUUID(), account, movement, INITIAL_BALANCE, now));
+        financialHistoryService.record(account, now,
+                (id, registeredAccount, occurredAt) -> Movement.initialBalance(
+                        id, registeredAccount, INITIAL_BALANCE, occurredAt));
         return new CreateAccountResponse(account.getId(), account.getName(),
                 account.getBalance(), account.getStatus());
     }

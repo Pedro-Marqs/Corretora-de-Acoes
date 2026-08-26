@@ -16,6 +16,7 @@ import jakarta.servlet.http.Cookie;
 import com.projeto.gestao.repository.AccountRepository;
 import com.projeto.gestao.repository.MovementRepository;
 import com.projeto.gestao.repository.PatrimonialPointRepository;
+import com.projeto.gestao.service.PatrimonyCalculator;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +37,7 @@ class AccountRegistrationRollbackTests {
     @Autowired private AccountRepository accountRepository;
     @Autowired private MovementRepository movementRepository;
     @MockitoSpyBean private PatrimonialPointRepository patrimonialPointRepository;
+    @MockitoSpyBean private PatrimonyCalculator patrimonyCalculator;
 
     @Test
     void rollsBackAccountAndMovementWhenPatrimonialPointFails() throws Exception {
@@ -54,6 +56,28 @@ class AccountRegistrationRollbackTests {
                                 "email", "rollback@example.com", "password", "SenhaForte1!"))))
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.code").value("INTERNAL_ERROR"));
+
+        org.assertj.core.api.Assertions.assertThat(accountRepository.count()).isZero();
+        org.assertj.core.api.Assertions.assertThat(movementRepository.count()).isZero();
+        org.assertj.core.api.Assertions.assertThat(patrimonialPointRepository.count()).isZero();
+    }
+
+    @Test
+    void rollsBackAccountAndMovementWhenPatrimonyCalculationFails() throws Exception {
+        doThrow(new IllegalStateException("falha simulada no cálculo"))
+                .when(patrimonyCalculator).calculate(any());
+        MvcResult csrf = mockMvc.perform(get("/api/csrf")).andExpect(status().isOk()).andReturn();
+        JsonNode csrfBody = objectMapper.readTree(csrf.getResponse().getContentAsString());
+        Cookie csrfCookie = csrf.getResponse().getCookie("XSRF-TOKEN");
+
+        mockMvc.perform(post("/api/accounts")
+                        .cookie(csrfCookie)
+                        .header("X-XSRF-TOKEN", csrfBody.path("token").asText())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "name", "Conta Rollback Cálculo", "cpf", "11144477735",
+                                "email", "rollback-calc@example.com", "password", "SenhaForte1!"))))
+                .andExpect(status().isInternalServerError());
 
         org.assertj.core.api.Assertions.assertThat(accountRepository.count()).isZero();
         org.assertj.core.api.Assertions.assertThat(movementRepository.count()).isZero();

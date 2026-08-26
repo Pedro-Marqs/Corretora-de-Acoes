@@ -73,10 +73,36 @@ class AccountRegistrationTests {
         assertThat(movement.getTotalAmount()).isEqualByComparingTo("10000.00");
         assertThat(movement.getRemainingBalance()).isEqualByComparingTo("10000.00");
         assertThat(point.getPatrimonyBrl()).isEqualByComparingTo("10000.00");
+        assertThat(point.getBalanceBrl()).isEqualByComparingTo("10000.00");
+        assertThat(point.getPositionsValueBrl()).isEqualByComparingTo("0.00");
+        assertThat(point.getUsdBrlRate()).isNull();
+        assertThat(movementRepository.count()).isEqualTo(1);
+        assertThat(patrimonialPointRepository.count()).isEqualTo(1);
         assertThat(movement.getOccurredAt()).isEqualTo(account.getCreatedAt());
         assertThat(point.getRecordedAt()).isEqualTo(account.getCreatedAt());
         assertThat(result.getResponse().getContentAsString()).doesNotContain(
                 "52998224725", "investidor@example.com", "SenhaForte1!", account.getPasswordHash());
+    }
+
+    @Test
+    void isolatedQuoteUpdateDoesNotCreateMovementOrPatrimonialPoint() throws Exception {
+        register(validPayload("52998224725", "market@example.com")).andExpect(status().isCreated());
+        java.util.UUID assetId = java.util.UUID.randomUUID();
+        OffsetDateTime quotedAt = OffsetDateTime.parse("2026-08-26T10:00:00-03:00");
+        jdbcTemplate.update("""
+                INSERT INTO asset (id, ticker, name, market, currency)
+                VALUES (?, 'PETR4', 'Petrobras', 'BR', 'BRL')
+                """, assetId);
+        jdbcTemplate.update("""
+                INSERT INTO quote (asset_id, price, currency, quoted_at, collected_at)
+                VALUES (?, 30.00, 'BRL', ?, ?)
+                """, assetId, quotedAt, quotedAt);
+
+        jdbcTemplate.update("UPDATE quote SET price = 31.00, collected_at = ? WHERE asset_id = ?",
+                quotedAt.plusMinutes(5), assetId);
+
+        assertThat(movementRepository.count()).isEqualTo(1);
+        assertThat(patrimonialPointRepository.count()).isEqualTo(1);
     }
 
     @Test
