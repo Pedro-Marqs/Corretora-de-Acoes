@@ -1,6 +1,7 @@
 package com.projeto.gestao.domain.model;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -49,6 +50,17 @@ public class Account {
 
     public void changePasswordHash(String newPasswordHash) {
         this.passwordHash = newPasswordHash;
+    }
+
+    public void credit(BigDecimal amount) {
+        if (amount == null) {
+            throw new IllegalArgumentException("Credit amount is required");
+        }
+        BigDecimal normalizedAmount = amount.setScale(2, RoundingMode.HALF_UP);
+        if (amount.signum() <= 0 || normalizedAmount.signum() <= 0) {
+            throw new IllegalArgumentException("Credit amount must be positive");
+        }
+        balance = balance.add(normalizedAmount).setScale(2, RoundingMode.HALF_UP);
     }
 
     public void inactivate(OffsetDateTime occurredAt) {
