@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BrowserRouter, Navigate, Route, Routes, useNavigate } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { createAccount } from './api/accounts.js'
 import AccountHome from './components/AccountHome.jsx'
 import { AuthProvider } from './context/AuthContext.jsx'
@@ -10,6 +10,7 @@ import LoginPage from './pages/LoginPage.jsx'
 import HomePage from './pages/HomePage.jsx'
 import NotFoundPage from './pages/NotFoundPage.jsx'
 import AccountPage from './pages/AccountPage.jsx'
+import ReactivationPage from './pages/ReactivationPage.jsx'
 
 const initialForm = { name: '', cpf: '', email: '', password: '' }
 
@@ -20,7 +21,8 @@ function formatCpf(value) {
 
 function RegisterPage() {
   const navigate = useNavigate()
-  const [form, setForm] = useState(initialForm)
+  const location = useLocation()
+  const [form, setForm] = useState(() => location.state?.fromReactivation ? { ...initialForm, cpf: location.state.cpf ?? '' } : initialForm)
   const [fieldErrors, setFieldErrors] = useState({})
   const [message, setMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -87,6 +89,7 @@ function RegisterPage() {
                 <p>Preencha os campos abaixo para começar.</p>
               </header>
               <button className="text-button top-login" type="button" onClick={showLogin}>Já tenho uma conta</button>
+              {location.state?.fromReactivation && <div className="message registration-context" role="status">Você está criando uma conta independente. A conta anterior continuará inacessível.</div>}
               {message && <div className="error-banner" role="alert">{message}</div>}
               <form onSubmit={handleSubmit} noValidate>
                 <FormField label="Nome completo" name="name" error={fieldErrors.name}>
@@ -116,6 +119,7 @@ export default function App() {
     <Route path="/" element={<Navigate to="/cadastro" replace />} />
     <Route path="/cadastro" element={<PublicRoute><RegisterPage /></PublicRoute>} />
     <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+    <Route path="/reativacao" element={<PublicRoute><ReactivationPage /></PublicRoute>} />
     <Route path="/app" element={<PrivateRoute><AppLayout /></PrivateRoute>}><Route index element={<HomePage />} /><Route path="conta" element={<AccountPage />} /></Route>
     <Route path="/404" element={<NotFoundPage />} />
     <Route path="*" element={<Navigate to="/404" replace />} />

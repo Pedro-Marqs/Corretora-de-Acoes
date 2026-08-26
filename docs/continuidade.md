@@ -98,7 +98,14 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 - O logout passou a ser uma ação compartilhada do layout privado. A navegação contém somente destinos funcionais: `Início` e `Minha conta`.
 - Os quatro campos de alteração são identificados como obrigatórios, possuem associação `aria-invalid`/`aria-describedby`, mensagens por campo e proteção síncrona contra envio duplicado.
 - A validação final da T12 passou com 40 testes frontend, ESLint e build Vite; `npm audit` não encontrou vulnerabilidades. O backend e o banco não foram alterados pela T12.
-- Exclusão e reativação não foram adicionadas à interface na T12 e permanecem reservadas para a T13.
+- A T13 foi concluída e aprovada pelo agente Revisor. A área `Minha conta` agora permite a exclusão lógica mediante e-mail atual, senha atual e confirmação exata `Excluir`, bloqueia envios duplicados, preserva erros recuperáveis e limpa o estado autenticado antes de redirecionar ao login.
+- A rota pública `/reativacao` consulta a elegibilidade pelo CPF e oferece reativar a conta preservada ou reutilizar o cadastro existente para criar uma conta independente. A reativação não cria sessão e a interface declara explicitamente que esta versão acadêmica não exige comprovação adicional de identidade.
+- O cadastro alternativo recebe o CPF consultado, informa que a conta anterior continuará inacessível e mantém o saldo inicial de R$ 10.000,00 para a nova conta.
+- As operações novas reutilizam o cliente de contas, cookies, CSRF e o contrato uniforme de erros. Estados de carregamento, sucesso, erro funcional, erro técnico com nova tentativa e bloqueio de submissão simultânea estão cobertos por testes.
+- A validação final da T13 passou com 73 testes frontend, ESLint, build Vite e 6 testes backend de `AccountLifecycleTests`. A verificação integrada em Chrome local cobriu cadastro, login, exclusão, proteção de rota privada, reativação sem sessão automática, novo login e criação alternativa.
+- A responsividade foi verificada em 320 px, 768 px e desktop, sem rolagem horizontal e com os controles dentro do viewport. Durante essa validação foram corrigidos o overflow causado pela largura mínima global e uma corrida que descartava a mensagem de sucesso após exclusão.
+- O Revisor não encontrou achados críticos, altos ou médios. O achado baixo de contraste foi corrigido; cores de texto auxiliar e bordas de campos agora atendem aos limiares aplicáveis.
+- A validação integrada usou H2 em memória e isolado porque as credenciais do PostgreSQL local não estavam disponíveis nas variáveis desta execução; o PostgreSQL persistente não foi alterado.
 
 ## Decisões funcionais confirmadas
 
@@ -180,18 +187,18 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 
 ## Próximo passo
 
-### Forma de trabalho a partir da T13
+A T13 e o change `implementar-t13-exclusao-reativacao` estão completos. Aguardar o usuário gerar o OpenSpec da próxima tarefa antes de iniciar nova implementação.
 
-- Trabalhar com base no OpenSpec.
-- Para o change `implementar-t13-exclusao-reativacao`, ler primeiro `AGENTS.md`, os documentos relacionados à T13, as specs relevantes em `openspec/specs/` e os arquivos `proposal.md`, `design.md` e `tasks.md` do change.
-- Implementar somente a próxima tarefa ainda não concluída de `tasks.md`, sem avançar para outras tarefas e sem refatorar código fora do escopo.
-- Executar os testes necessários para a tarefa implementada.
-- Ao terminar, marcar somente essa tarefa como concluída em `tasks.md` e informar os arquivos alterados, o comportamento implementado, os testes e comandos executados, o resultado e qualquer risco ou pendência.
+### Forma de trabalho para as próximas tarefas
 
-Implementar somente a T13 — telas de exclusão e reativação. As rotas, a sessão, o cliente HTTP e a área da conta consolidados nas T11 e T12 devem ser reutilizados. O PostgreSQL local está funcional e deve ter sua conexão verificada antes das execuções; criar o banco `gestao_acoes` somente se ele ainda não existir. Não usar Docker ou Testcontainers nas próximas validações; testes de integração devem utilizar PostgreSQL local e o banco separado `gestao_acoes_test` quando precisarem alterar dados.
+- Trabalhar com base no change correspondente em `C:\Projetos\corretora\openspec\changes`, usando os artefatos do OpenSpec como fonte de verdade.
+- Antes de implementar, ler `AGENTS.md`, os documentos e specs relacionados e todos os artefatos `proposal.md`, `design.md` e `tasks.md` do change.
+- Implementar uma tarefa ou change do projeto por vez, mas concluir todos os seus tópicos, subtópicos e itens de checklist em uma única entrega contínua. Os checkboxes são pontos internos de acompanhamento, não entregas parciais; não interromper o trabalho após cada item, salvo bloqueio real ou instrução explícita do usuário.
+- Examinar o código existente, evitar refatorações fora do escopo, validar entradas e erros, criar os testes necessários e executar toda a validação prevista antes de concluir.
+- Assim que a codificação da tarefa completa terminar, acionar o subagente Revisor de código em modo somente leitura, usando o perfil em `C:\Users\pedro.codex\agents` quando disponível; nesta máquina, usar o equivalente `C:\Users\pedro\.codex\agents\revisor.toml`.
+- Depois da revisão, corrigir os achados relevantes, executar novamente testes, análise estática, build e verificações aplicáveis, marcar no OpenSpec todos os itens efetivamente satisfeitos e atualizar `docs/continuidade.md`.
+- Ao finalizar a tarefa completa, informar objetivo, comportamento, arquivos alterados, comandos e testes, comparação com os critérios, riscos restantes e avisar o usuário para que ele possa gerar a próxima tarefa.
+- O repositório de referência poderá orientar somente a estrutura; nenhuma tarefa poderá copiar código, importar a branch ou tentar reproduzir o projeto de referência.
+- Antes de validar o backend localmente, verificar a conexão com o PostgreSQL e preservar bancos existentes. Não usar Docker ou Testcontainers nas próximas validações; quando testes precisarem alterar dados persistentes, usar o banco separado `gestao_acoes_test` com credenciais fornecidas por variáveis de ambiente.
 
-A implementação deverá ocorrer estritamente uma tarefa por vez. O repositório de referência poderá orientar somente a estrutura; nenhuma tarefa poderá copiar código, importar a branch ou tentar reproduzir o projeto de referência.
-
-O trabalho deve ser coordenado pelo agente Orquestrador, usando os perfis disponíveis em `C:\Users\Arklok\.codex\agents`: Planejador para análise, Programador para backend e testes, Front-end Designer para interface e Revisor de código para auditoria independente. Delegações devem ter escopo específico, agentes não devem editar simultaneamente os mesmos arquivos e o Orquestrador deve consolidar e validar toda entrega.
-
-Ao concluir cada tarefa, o Orquestrador deve sempre apresentar ao usuário um resumo contendo: objetivo da tarefa, comportamento implementado, arquivos criados ou alterados, verificações e testes executados, comparação com os critérios de conclusão e limitações ou pendências restantes.
+O trabalho deve ser coordenado pelo agente Orquestrador. Perfis especializados devem ter escopo específico, não devem editar simultaneamente os mesmos arquivos e o Orquestrador deve consolidar e validar toda entrega.

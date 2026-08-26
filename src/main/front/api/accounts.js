@@ -82,3 +82,53 @@ export async function deleteAccount(payload) {
     throw new AccountApiError('Não foi possível conectar ao servidor. Verifique se a aplicação está em execução.')
   }
 }
+
+export async function checkReactivation(cpf) {
+  try {
+    const token = await getCsrfToken(AccountApiError, 'Não foi possível iniciar a consulta de reativação. Tente novamente.')
+    const response = await fetch(`${API_BASE_URL}/api/accounts/reactivation/check`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': token },
+      body: JSON.stringify({ cpf }),
+    })
+    const body = await parseJson(response)
+    if (!response.ok) {
+      throw new AccountApiError(
+        body?.message ?? 'Não foi possível consultar a reativação. Tente novamente.',
+        groupFieldErrors(body?.fieldErrors),
+        response.status,
+      )
+    }
+    if (!body || typeof body !== 'object' || Array.isArray(body) || typeof body.reactivationAvailable !== 'boolean') {
+      throw new AccountApiError('A resposta da consulta de reativação não pôde ser processada.')
+    }
+    return body
+  } catch (error) {
+    if (error instanceof AccountApiError) throw error
+    throw new AccountApiError('Não foi possível conectar ao servidor. Verifique se a aplicação está em execução.')
+  }
+}
+
+export async function reactivateAccount(cpf) {
+  try {
+    const token = await getCsrfToken(AccountApiError, 'Não foi possível iniciar a reativação. Tente novamente.')
+    const response = await fetch(`${API_BASE_URL}/api/accounts/reactivation`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': token },
+      body: JSON.stringify({ cpf }),
+    })
+    const body = await parseJson(response)
+    if (!response.ok) {
+      throw new AccountApiError(
+        body?.message ?? 'Não foi possível reativar a conta. Tente novamente.',
+        groupFieldErrors(body?.fieldErrors),
+        response.status,
+      )
+    }
+  } catch (error) {
+    if (error instanceof AccountApiError) throw error
+    throw new AccountApiError('Não foi possível conectar ao servidor. Verifique se a aplicação está em execução.')
+  }
+}

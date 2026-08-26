@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { login } from '../api/auth.js'
 
-export default function LoginForm({ onAuthenticated, onRegister, notice }) {
+export default function LoginForm({ onAuthenticated, onRegister, onReactivate, notice }) {
   const [credentials, setCredentials] = useState({ email: '', password: '' })
   const [fieldErrors, setFieldErrors] = useState({})
   const [message, setMessage] = useState('')
@@ -38,7 +38,10 @@ export default function LoginForm({ onAuthenticated, onRegister, notice }) {
           <LoginField label="Senha" name="password" errors={fieldErrors.password}><input id="login-password" name="password" type="password" autoComplete="current-password" value={credentials.password} onChange={update} required aria-invalid={Boolean(fieldErrors.password)} aria-describedby={fieldErrors.password ? 'login-password-error' : undefined} /></LoginField>
           <button className="primary-button" type="submit" disabled={loading}>{loading ? 'Entrando…' : 'Entrar'}</button>
         </form>
-        <button className="text-button" type="button" onClick={onRegister}>Ainda não tenho conta</button>
+        <div className="login-links">
+          <button className="text-button" type="button" onClick={onRegister}>Ainda não tenho conta</button>
+          <button className="text-button" type="button" onClick={onReactivate}>Reativar uma conta</button>
+        </div>
       </section>
     </main>
   )
