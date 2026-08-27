@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { deposit, getWalletBalance } from '../api/wallet.js'
 import { ErrorState, LoadingState, Message } from '../components/common/AsyncStates.jsx'
 import { useAuth } from '../context/auth-context.js'
-import { formatCurrency } from '../utils/formatters.js'
+import { currencyInputToDecimal, formatCurrency, formatCurrencyInput } from '../utils/formatters.js'
 
 export default function WalletPage() {
   const { clear: clearAuth } = useAuth()
@@ -55,7 +55,7 @@ export default function WalletPage() {
   function requestDeposit(event) {
     event.preventDefault()
     if (depositLock.current) return
-    const normalized = amount.trim().replace(',', '.')
+    const normalized = currencyInputToDecimal(amount)
     const numericAmount = Number(normalized)
     let message = ''
     if (!normalized) message = 'Informe o valor do aporte.'
@@ -124,7 +124,7 @@ export default function WalletPage() {
           {depositState.message && <Message kind="success">{depositState.message}</Message>}
           <div className="form-field">
             <label htmlFor="depositAmount">Valor do aporte <span aria-hidden="true">*</span></label>
-            <input id="depositAmount" name="amount" type="text" inputMode="decimal" autoComplete="off" placeholder="0,00" value={amount} onChange={(event) => { setAmount(event.target.value); setAmountError('') }} aria-invalid={Boolean(amountError)} aria-describedby={amountError ? 'depositAmount-error' : 'depositAmount-hint'} />
+            <input id="depositAmount" name="amount" type="text" inputMode="numeric" autoComplete="off" placeholder="R$ 0,00" value={amount} onChange={(event) => { setAmount(formatCurrencyInput(event.target.value)); setAmountError('') }} aria-invalid={Boolean(amountError)} aria-describedby={amountError ? 'depositAmount-error' : 'depositAmount-hint'} />
             {amountError ? <span className="field-error" id="depositAmount-error">{amountError}</span> : <span className="field-hint" id="depositAmount-hint">Valor mínimo de R$ 10,00.</span>}
           </div>
           <button className="primary-button" type="submit" disabled={depositState.pending}>Continuar</button>

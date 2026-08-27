@@ -116,6 +116,21 @@ class CvmRegulatoryRegistryAdapterTests {
                                 .isEqualTo(ExternalDataFailure.Reason.INVALID_RESPONSE));
     }
 
+    @Test
+    void acceptsRowsWithoutCvmCodeWhenDatasetContainsOtherValidParticipants() throws IOException {
+        String csv = "TP_PARTIC;CNPJ;DENOM_SOCIAL;DENOM_COMERC;SIT;CD_CVM;CEP\n"
+                + "CONSULTORES;47960950000121;PARTICIPANTE SEM CODIGO;;ATIVO;;01001000\n"
+                + "CORRETORAS;02332886000104;XP INVESTIMENTOS;XP;EM FUNCIONAMENTO NORMAL;3247;22250911\n";
+        CvmDatasetParser parser = new CvmDatasetParser();
+
+        var participants = parser.parse(zip(csv));
+
+        assertThat(participants.get("47960950000121")).singleElement()
+                .satisfies(row -> assertThat(row.cvmCode()).isEmpty());
+        assertThat(participants.get(XP_CNPJ)).singleElement()
+                .satisfies(row -> assertThat(row.cvmCode()).isEqualTo("3247"));
+    }
+
     private static CvmRegulatoryRegistryAdapter adapter(ExternalHttpTransport transport, Clock clock,
             Duration validity) {
         CvmDatasetClient client = new CvmDatasetClient(URI.create("https://example.test/cvm.zip"),

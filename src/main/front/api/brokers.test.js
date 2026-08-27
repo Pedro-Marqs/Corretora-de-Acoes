@@ -1,0 +1,19 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { associateBroker, BrokerApiError, getActiveBrokers, removeBroker, searchBroker } from './brokers.js'
+
+const broker = { cnpj: '12345678000190', corporateName: 'Corretora Exemplo S.A.', tradeName: 'Exemplo', registrationStatus: 'ATIVA', cvmCategory: 'CTVM', postalCode: '01001000', street: 'Praça da Sé', complement: null, district: 'Sé', city: 'São Paulo', state: 'SP' }
+const association = { associationId: '8cf229b1-9731-4da8-82ca-b3d7c3776d19', ...broker }
+function response(body, status = 200, contentType = 'application/json') { return { ok: status >= 200 && status < 300, status, headers: new Headers(contentType ? { 'content-type': contentType } : {}), json: vi.fn().mockResolvedValue(body) } }
+
+describe('brokers API', () => {
+  beforeEach(() => { vi.restoreAllMocks(); vi.stubGlobal('fetch', vi.fn()) })
+  it('pesquisa por CNPJ com cookie de sessão', async () => { fetch.mockResolvedValue(response(broker)); await expect(searchBroker('12/34')).resolves.toEqual(broker); expect(fetch).toHaveBeenCalledWith('http://localhost:8080/api/brokers/search?cnpj=12%2F34', { credentials: 'include' }) })
+  it('lista associações ativas pelo contrato real', async () => { fetch.mockResolvedValue(response([association])); await expect(getActiveBrokers()).resolves.toEqual([association]); expect(fetch).toHaveBeenCalledWith('http://localhost:8080/api/brokers', { credentials: 'include' }) })
+  it('associa CNPJ com JSON, cookie e CSRF', async () => { fetch.mockResolvedValueOnce(response({ token: 'csrf' })).mockResolvedValueOnce(response(association, 201)); await expect(associateBroker(broker.cnpj)).resolves.toEqual(association); expect(fetch).toHaveBeenNthCalledWith(2, 'http://localhost:8080/api/brokers', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': 'csrf' }, body: JSON.stringify({ cnpj: broker.cnpj }) }) })
+  it('remove pela associação com cookie e CSRF', async () => { fetch.mockResolvedValueOnce(response({ token: 'csrf' })).mockResolvedValueOnce(response(null, 204, '')); await expect(removeBroker(association.associationId)).resolves.toBeUndefined(); expect(fetch).toHaveBeenNthCalledWith(2, `http://localhost:8080/api/brokers/${association.associationId}`, { method: 'DELETE', credentials: 'include', headers: { 'X-XSRF-TOKEN': 'csrf' } }) })
+  it('preserva status e erros funcionais agrupados', async () => { fetch.mockResolvedValue(response({ message: 'CNPJ inválido.', fieldErrors: [{ field: 'cnpj', message: 'Use 14 dígitos.' }] }, 400)); await expect(searchBroker('1')).rejects.toMatchObject({ name: 'BrokerApiError', status: 400, message: 'CNPJ inválido.', fieldErrors: { cnpj: ['Use 14 dígitos.'] } }) })
+  it.each([null, {}, [broker], { ...broker, corporateName: null }])('rejeita pesquisa inválida %#', async (body) => { fetch.mockResolvedValue(response(body)); await expect(searchBroker('1')).rejects.toMatchObject({ message: 'A resposta da pesquisa não pôde ser processada.' }) })
+  it.each([{ ...broker, corporateName: '' }, { ...broker, cnpj: '123' }])('rejeita campo obrigatório vazio ou malformado %#', async (body) => { fetch.mockResolvedValue(response(body)); await expect(searchBroker('1')).rejects.toMatchObject({ message: 'A resposta da pesquisa não pôde ser processada.' }) })
+  it.each([{}, [broker], [{ ...association, associationId: null }]])('rejeita listagem inválida %#', async (body) => { fetch.mockResolvedValue(response(body)); await expect(getActiveBrokers()).rejects.toMatchObject({ message: 'A resposta da listagem não pôde ser processada.' }) })
+  it('converte falha de transporte em mensagem segura', async () => { fetch.mockRejectedValue(new TypeError('failed')); await expect(getActiveBrokers()).rejects.toBeInstanceOf(BrokerApiError) })
+})

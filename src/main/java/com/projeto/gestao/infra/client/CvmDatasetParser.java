@@ -75,7 +75,6 @@ public class CvmDatasetParser {
             require(row, "TP_PARTIC");
             require(row, "DENOM_SOCIAL");
             require(row, "SIT");
-            require(row, "CD_CVM");
             rows.add(new CvmParticipantRow(row.get("TP_PARTIC"), cnpj, row.get("DENOM_SOCIAL"),
                     row.get("DENOM_COMERC"), row.get("SIT"), row.get("CD_CVM")));
         }

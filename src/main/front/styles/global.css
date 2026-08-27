@@ -149,6 +149,22 @@ input[aria-invalid="true"] { border-color: #b23a3a; }
 .deposit-confirmation > div { width:min(100%,31rem);padding:clamp(1.5rem,5vw,2.5rem);border-radius:1rem;background:#fff;box-shadow:0 1.5rem 4rem rgb(10 35 27 / 25%); }
 .confirmation-actions { display:flex;gap:.75rem;margin-top:1.5rem; }
 .confirmation-actions .primary-button { margin:0; }
+.brokers-page { width:min(100%,72rem);margin-inline:auto;padding-block:clamp(2.5rem,6vw,5rem); }
+.brokers-heading h1 { max-width:none;color:#163c30; }
+.brokers-heading > p:last-child,.broker-search-card > div > p:last-child { color:#68756e;line-height:1.6; }
+.broker-search-card { display:grid;grid-template-columns:minmax(0,1fr) minmax(18rem,.75fr);gap:clamp(1.5rem,5vw,4rem);margin:2rem 0 1rem;padding:clamp(1.5rem,4vw,2.5rem);border:1px solid #dfe5dd;border-radius:1rem;background:#fff; }
+.broker-search-card h2,.broker-preview h2,.brokers-list-heading h2 { color:#163c30;font-size:clamp(1.7rem,3vw,2.35rem); }
+.broker-preview,.brokers-list-section { margin-top:1rem;padding:clamp(1.25rem,4vw,2rem);border:1px solid #dfe5dd;border-radius:1rem;background:#fff; }
+.broker-preview dl,.broker-card dl { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;margin:1.5rem 0; }
+.broker-preview dt,.broker-card dt { color:#6e7b73;font-size:.76rem;font-weight:700; }
+.broker-preview dd,.broker-card dd { margin:.3rem 0 0;overflow-wrap:anywhere;font-weight:700; }
+.broker-address { grid-column:1/-1; }
+.broker-preview > .primary-button { width:auto;min-width:13rem; }
+.brokers-list-heading { display:flex;align-items:center;justify-content:space-between;gap:1rem; }
+.brokers-list-heading > span { display:grid;place-items:center;min-width:2.5rem;height:2.5rem;border-radius:50%;color:#164a39;background:#e2f1ce;font-weight:800; }
+.broker-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;margin-top:1.5rem; }
+.broker-card { min-width:0;padding:1.25rem;border:1px solid #dfe5dd;border-radius:.8rem;background:#fafbf8; }
+.broker-card .secondary-button { width:100%; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (max-width: 860px) {
   .page-shell { grid-template-columns: 1fr; }
@@ -167,6 +183,7 @@ input[aria-invalid="true"] { border-color: #b23a3a; }
   .profile-card dl,.danger-zone { grid-template-columns:1fr; }
   .reactivation-options { grid-template-columns:1fr; }
   .deposit-card { grid-template-columns:1fr; }
+  .broker-search-card,.broker-grid { grid-template-columns:1fr; }
   .option-card p { min-height:0; }
 }
 @media (max-width: 420px) {
@@ -178,5 +195,7 @@ input[aria-invalid="true"] { border-color: #b23a3a; }
   .wallet-balance strong { font-size:1.85rem; }
   .confirmation-actions { flex-direction:column-reverse; }
   .modal-actions { flex-direction:column-reverse; }
+  .broker-preview dl,.broker-card dl { grid-template-columns:1fr; }
+  .broker-preview > .primary-button { width:100%; }
 }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } .state-spinner { animation: none; } }
