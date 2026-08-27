@@ -8,9 +8,12 @@ import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 
 import com.projeto.gestao.domain.port.CompanyRegistryPort;
+import com.projeto.gestao.domain.port.BrazilMarketDataPort;
 import com.projeto.gestao.domain.port.ExternalDataFailure;
 import com.projeto.gestao.domain.port.PostalAddressPort;
 import com.projeto.gestao.domain.port.RegulatoryRegistryPort;
+import com.projeto.gestao.domain.port.UsMarketDataPort;
+import com.projeto.gestao.domain.port.UsdBrlExchangeRatePort;
 
 class ExternalContractsTests {
 
@@ -19,7 +22,10 @@ class ExternalContractsTests {
         assertThat(Arrays.asList(
                 CompanyRegistryPort.class,
                 PostalAddressPort.class,
-                RegulatoryRegistryPort.class))
+                RegulatoryRegistryPort.class,
+                BrazilMarketDataPort.class,
+                UsMarketDataPort.class,
+                UsdBrlExchangeRatePort.class))
                 .allSatisfy(type -> Arrays.stream(type.getMethods())
                         .flatMap(method -> Arrays.stream(new Class<?>[] {method.getReturnType()}))
                         .forEach(returnType -> assertThat(returnType.getPackageName())

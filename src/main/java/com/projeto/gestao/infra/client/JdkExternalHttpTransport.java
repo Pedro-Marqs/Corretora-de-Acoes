@@ -6,6 +6,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.Map;
 
 import com.projeto.gestao.domain.port.ExternalDataFailure;
 
@@ -21,7 +22,14 @@ public final class JdkExternalHttpTransport implements ExternalHttpTransport {
 
     @Override
     public ExternalHttpResponse get(URI uri, Duration timeout) {
-        HttpRequest request = HttpRequest.newBuilder(uri).timeout(timeout).GET().build();
+        return get(uri, timeout, Map.of());
+    }
+
+    @Override
+    public ExternalHttpResponse get(URI uri, Duration timeout, Map<String, String> headers) {
+        HttpRequest.Builder builder = HttpRequest.newBuilder(uri).timeout(timeout).GET();
+        headers.forEach(builder::header);
+        HttpRequest request = builder.build();
         try {
             HttpResponse<byte[]> response = httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());
             return new ExternalHttpResponse(response.statusCode(), response.body());

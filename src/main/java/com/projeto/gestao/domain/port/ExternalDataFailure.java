@@ -30,6 +30,7 @@ public final class ExternalDataFailure extends RuntimeException {
 
     public enum Reason {
         INVALID_INPUT,
+        AUTHENTICATION,
         NOT_FOUND,
         INCOMPLETE_RESPONSE,
         RATE_LIMITED,

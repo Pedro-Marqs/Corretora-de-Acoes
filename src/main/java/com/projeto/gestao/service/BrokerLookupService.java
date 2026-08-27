@@ -55,7 +55,7 @@ public class BrokerLookupService {
         return switch (failure.reason()) {
             case INVALID_INPUT -> BrokerRuleException.invalidCnpj();
             case NOT_FOUND -> BrokerRuleException.notFound();
-            case INCOMPLETE_RESPONSE, RATE_LIMITED, SERVER_ERROR, TIMEOUT,
+            case AUTHENTICATION, INCOMPLETE_RESPONSE, RATE_LIMITED, SERVER_ERROR, TIMEOUT,
                     TRANSPORT_ERROR, INVALID_RESPONSE -> new ExternalDependencyException();
         };
     }

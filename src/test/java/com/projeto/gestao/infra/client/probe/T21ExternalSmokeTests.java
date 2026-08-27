@@ -44,26 +44,28 @@ class T21ExternalSmokeTests {
     }
 
     @Test
-    void verifiesTwelveDataRepresentativeUsQuotesAndRejectedMarket() throws Exception {
+    void verifiesTwelveDataRepresentativeUsQuotes() throws Exception {
         String apiKey = System.getenv("TWELVE_DATA_API_KEY");
         Assumptions.assumeTrue(apiKey != null && !apiKey.isBlank(),
                 "Set TWELVE_DATA_API_KEY for Twelve Data live verification");
         var apple = twelveQuote("AAPL", "NASDAQ", apiKey);
+        var microsoft = twelveQuote("MSFT", "NASDAQ", apiKey);
         var cocaCola = twelveQuote("KO", "NYSE", apiKey);
-        HttpResponse<String> canadian = get(twelveUrl("SHOP", "TSX", apiKey), "");
 
         assertThat(apple.market()).isEqualTo("US");
         assertThat(apple.name()).isNotBlank();
         assertThat(apple.currency()).isEqualTo("USD");
         assertThat(apple.price()).isPositive();
         assertThat(apple.marketTime()).isNotNull();
+        assertThat(microsoft.symbol()).isEqualTo("MSFT");
+        assertThat(microsoft.market()).isEqualTo("US");
+        assertThat(microsoft.name()).isNotBlank();
+        assertThat(microsoft.currency()).isEqualTo("USD");
+        assertThat(microsoft.price()).isPositive();
+        assertThat(microsoft.marketTime()).isNotNull();
         assertThat(cocaCola.market()).isEqualTo("US");
         assertThat(cocaCola.name()).isNotBlank();
         assertThat(cocaCola.marketTime()).isNotNull();
-        org.assertj.core.api.Assertions.assertThatThrownBy(
-                () -> MarketDataProbe.mapTwelveData(canadian.statusCode(), canadian.body()))
-                .isInstanceOfSatisfying(MarketDataProbe.ProbeFailure.class,
-                        failure -> assertThat(failure.kind()).isEqualTo(MarketDataProbe.Kind.UNSUPPORTED_MARKET));
     }
 
     @Test

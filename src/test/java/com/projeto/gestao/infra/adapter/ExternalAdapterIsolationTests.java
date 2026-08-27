@@ -44,7 +44,10 @@ class ExternalAdapterIsolationTests {
         List<Class<?>> adapters = List.of(
                 BrasilApiCompanyRegistryAdapter.class,
                 ViaCepPostalAddressAdapter.class,
-                CvmRegulatoryRegistryAdapter.class);
+                CvmRegulatoryRegistryAdapter.class,
+                BrapiMarketDataAdapter.class,
+                AwesomeApiExchangeRateAdapter.class,
+                TwelveDataMarketDataAdapter.class);
 
         assertThat(adapters).allSatisfy(adapter -> {
             assertThat(adapter.isAnnotationPresent(Transactional.class)).isFalse();

@@ -9,9 +9,20 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record ExternalIntegrationProperties(
         HttpSource brasilApi,
         HttpSource viaCep,
-        CvmSource cvm) {
+        CvmSource cvm,
+        AuthenticatedHttpSource brapi,
+        ApiKeyHttpSource twelveData,
+        ApiKeyHttpSource awesomeApi) {
 
     public record HttpSource(URI baseUrl, Duration connectTimeout, Duration readTimeout) {
+    }
+
+    public record AuthenticatedHttpSource(
+            URI baseUrl, String token, Duration connectTimeout, Duration readTimeout) {
+    }
+
+    public record ApiKeyHttpSource(
+            URI baseUrl, String apiKey, Duration connectTimeout, Duration readTimeout) {
     }
 
     public record CvmSource(

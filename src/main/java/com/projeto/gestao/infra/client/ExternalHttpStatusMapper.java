@@ -13,6 +13,7 @@ public final class ExternalHttpStatusMapper {
         }
         ExternalDataFailure.Reason reason = switch (status) {
             case 400 -> ExternalDataFailure.Reason.INVALID_INPUT;
+            case 401, 403 -> ExternalDataFailure.Reason.AUTHENTICATION;
             case 404 -> ExternalDataFailure.Reason.NOT_FOUND;
             case 429 -> ExternalDataFailure.Reason.RATE_LIMITED;
             default -> status >= 500

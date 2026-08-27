@@ -9,12 +9,12 @@ eles devem ser revistos antes da T22 e nunca tratados como invariantes de domín
 | Fonte | Uso | Resultado para T22 | Motivo |
 |---|---|---|---|
 | Brapi | ativos e cotações BR | **APROVADO COM LIMITAÇÃO** | Contrato mínimo e sandbox foram confirmados; plano Gratuito atualiza ações em aproximadamente 30 minutos e aceita apenas um ticker por chamada. |
-| Twelve Data | ativos e cotações US | **BLOQUEADO** | O contrato de AAPL/NASDAQ foi confirmado com a chave pública `demo`, mas a mesma chave recusou MSFT/NASDAQ e SHOP/TSX. Sem uma chave local Basic não foi possível comprovar a amostra de cobertura exigida. |
+| Twelve Data | ativos e cotações US | **APROVADO COM LIMITAÇÃO** | AAPL/NASDAQ, MSFT/NASDAQ e KO/NYSE foram confirmados com chave local válida. SHOP/TSX não está disponível no plano; mercados fora da allowlist US são rejeitados deterministicamente. |
 | AwesomeAPI | USD/BRL | **APROVADO COM LIMITAÇÃO** | Contrato público confirmado; sem chave há cache de um minuto. A T22 deve usar um único lado da cotação e preservar o timestamp numérico. |
 
-O bloqueio da Twelve Data não invalida a prova T21: ele impede iniciar sua parte da T22 até que
-`T21_EXTERNAL_SMOKE=true` e `TWELVE_DATA_API_KEY` válida confirmem a amostra de cobertura. Não se
-autoriza substituir o fornecedor ou reduzir a exigência silenciosamente.
+O gate US da Twelve Data foi satisfeito com `T21_EXTERNAL_SMOKE=true` e chave local válida. A
+limitação de cobertura observada para SHOP/TSX não altera a fonte nem amplia os mercados aceitos;
+classificações US continuam dependendo de exchange/MIC pertencente à allowlist documentada.
 
 ## Matriz técnica
 
@@ -156,3 +156,22 @@ local.
   T22.
 - Implementar quotas, cache, scheduler, ports e adapters somente na T22/T23; nenhum desses
   componentes faz parte desta prova.
+
+## Estado do gate T22
+
+Em **27/08/2026**, durante a implementação da T22, o ambiente não continha a variável
+`TWELVE_DATA_API_KEY`. O gate obrigatório AAPL/NASDAQ, MSFT/NASDAQ, KO/NYSE e rejeição de SHOP/TSX
+não pôde ser executado com uma chave local válida. Por isso, a tarefa Twelve Data permanece
+explicitamente bloqueada e nenhum client, DTO ou adapter de produção desse fornecedor foi criado.
+
+Na retomada do mesmo dia, uma chave local válida foi disponibilizada e o smoke obrigatório foi
+executado explicitamente. AAPL/NASDAQ, MSFT/NASDAQ e KO/NYSE retornaram contratos válidos e foram
+aceitos como mercado US. Entretanto, a consulta `SHOP` com `exchange=TSX` retornou símbolo não
+encontrado (`NOT_FOUND`), e não um instrumento canadense válido que pudesse ser rejeitado como
+`UNSUPPORTED_MARKET`.
+
+Após a correção explícita dos artefatos OpenSpec, o gate passou a exigir somente a cobertura US:
+AAPL/NASDAQ, MSFT/NASDAQ e KO/NYSE. Em **27/08/2026**, o smoke foi reexecutado com
+`T21_EXTERNAL_SMOKE=true` e os três casos passaram. SHOP/TSX permanece como evidência de listagem
+indisponível no plano e não bloqueia a T22. A rejeição de mercado não-US é comprovada offline por
+fixture `TSX/XTSE`, fora da allowlist validada `NASDAQ/XNGS` e `NYSE/XNYS`.
