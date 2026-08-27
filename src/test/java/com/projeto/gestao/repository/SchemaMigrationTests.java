@@ -28,6 +28,30 @@ class SchemaMigrationTests {
     private JdbcTemplate jdbc;
 
     @Test
+    void marketCacheMigrationBackfillsAndConstrainsCatalogMetadata() {
+        UUID assetId = createAsset("CACHE3");
+        jdbc.update("""
+                INSERT INTO quote (asset_id, price, currency, quoted_at, collected_at)
+                VALUES (?, 12.34, 'BRL', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                """, assetId);
+        jdbc.update("""
+                INSERT INTO exchange_rate (currency_pair, rate, quoted_at, collected_at)
+                VALUES ('USD/BRL', 5.20, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                """);
+
+        assertThat(jdbc.queryForObject(
+                "SELECT asset_type || ':' || status FROM asset WHERE id = ?", String.class, assetId))
+                .isEqualTo("STOCK:ACTIVE");
+        assertThat(jdbc.queryForObject(
+                "SELECT source FROM quote WHERE asset_id = ?", String.class, assetId)).isEqualTo("LEGACY");
+        assertThat(jdbc.queryForObject(
+                "SELECT source FROM exchange_rate WHERE currency_pair = 'USD/BRL'", String.class))
+                .isEqualTo("LEGACY");
+        assertThatThrownBy(() -> jdbc.update("UPDATE asset SET status = 'UNKNOWN' WHERE id = ?", assetId))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
     void flywayCreatesDomainAndSpringSessionTables() {
         List<String> tables = jdbc.queryForList("""
                 SELECT LOWER(table_name)
