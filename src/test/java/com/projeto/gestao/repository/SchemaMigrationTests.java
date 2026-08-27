@@ -112,7 +112,7 @@ class SchemaMigrationTests {
     }
 
     @Test
-    void rejectsDuplicateActiveBrokerAssociationButAllowsHistoricalAssociation() {
+    void rejectsSecondHistoricalBrokerAssociationForSameAccountAndBroker() {
         UUID accountId = UUID.randomUUID();
         insertAccount(accountId, "33333333333", "broker@example.com", new BigDecimal("10000.00"), "ACTIVE");
         UUID brokerId = createBroker();
@@ -121,7 +121,8 @@ class SchemaMigrationTests {
         assertThatThrownBy(() -> insertAccountBroker(UUID.randomUUID(), accountId, brokerId, "ACTIVE"))
                 .isInstanceOf(DataIntegrityViolationException.class);
 
-        insertAccountBroker(UUID.randomUUID(), accountId, brokerId, "INACTIVE");
+        assertThatThrownBy(() -> insertAccountBroker(UUID.randomUUID(), accountId, brokerId, "INACTIVE"))
+                .isInstanceOf(DataIntegrityViolationException.class);
     }
 
     @Test

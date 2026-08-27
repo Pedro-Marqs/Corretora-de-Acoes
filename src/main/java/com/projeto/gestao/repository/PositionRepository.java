@@ -10,4 +10,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface PositionRepository extends JpaRepository<Position, UUID> {
     List<Position> findByAccountIdAndQuantityGreaterThan(UUID accountId, long quantity);
     Optional<Position> findByAccountIdAndAccountBrokerIdAndAssetId(UUID accountId, UUID accountBrokerId, UUID assetId);
+    boolean existsByAccountIdAndAccountBrokerIdAndQuantityGreaterThan(
+            UUID accountId, UUID accountBrokerId, long quantity);
 }

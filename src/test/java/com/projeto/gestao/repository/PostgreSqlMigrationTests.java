@@ -44,7 +44,7 @@ class PostgreSqlMigrationTests {
     void migratesEmptyPostgreSqlDatabase() {
         Integer appliedMigrations = jdbc.queryForObject(
                 "SELECT COUNT(*) FROM flyway_schema_history WHERE success", Integer.class);
-        assertThat(appliedMigrations).isEqualTo(3);
+        assertThat(appliedMigrations).isEqualTo(4);
     }
 
     @Test
