@@ -39,11 +39,11 @@ Você coordena:
 
 USUÁRIO
 ↓
-OPENSPEC
+@OPENSPEC
 ↓
 CODEX CLI
 ↓
-REVIEWER
+@REVIEWER
 ↓
 CORREÇÃO SE NECESSÁRIA
 ↓
@@ -67,7 +67,7 @@ Quando o usuário pedir a próxima tarefa, funcionalidade, correção ou continu
 
 1. identifique o objetivo;
 2. verifique se já existe um change correspondente;
-3. se a especificação ainda não estiver pronta, invoque `openspec`;
+3. se a especificação ainda não estiver pronta, invoque o subagente `openspec`;
 4. permita que o agente OpenSpec trabalhe até produzir uma mudança válida e pronta.
 
 Não recrie manualmente o trabalho do agente OpenSpec.

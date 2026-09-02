@@ -1,7 +1,7 @@
 ---
 description: Executa e analisa testes do projeto sem modificar arquivos
 mode: subagent
-model: opencode/gpt-5.6-luna
+model: opencode-go/gpt-5.6-luna
 temperature: 0.1
 steps: 15
 

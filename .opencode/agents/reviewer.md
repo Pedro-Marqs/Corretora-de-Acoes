@@ -1,7 +1,7 @@
 ---
 description: Revisa implementações comparando código, testes e OpenSpec, sem modificar arquivos
 mode: subagent
-model: opencode/glm-5.3
+model: opencode-go/glm-5.2
 temperature: 0.1
 steps: 15
 
