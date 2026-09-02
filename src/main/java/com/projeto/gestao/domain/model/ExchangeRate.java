@@ -20,6 +20,7 @@ public class ExchangeRate implements Persistable<String> {
     @Column(name = "quoted_at", nullable = false) private OffsetDateTime quotedAt;
     @Column(name = "collected_at", nullable = false) private OffsetDateTime collectedAt;
     @Column(nullable = false, length = 60) private String source;
+    @Column(nullable = false) private boolean stale;
     @Transient private boolean newEntity = true;
 
     protected ExchangeRate() { }
@@ -27,16 +28,25 @@ public class ExchangeRate implements Persistable<String> {
     public ExchangeRate(String currencyPair, BigDecimal rate, OffsetDateTime quotedAt,
             OffsetDateTime collectedAt, String source) {
         this.currencyPair = currencyPair;
-        replace(rate, quotedAt, collectedAt, source);
+        applySnapshot(rate, quotedAt, collectedAt, source);
     }
 
     public void replace(BigDecimal rate, OffsetDateTime quotedAt, OffsetDateTime collectedAt,
             String source) {
+        applySnapshot(rate, quotedAt, collectedAt, source);
+    }
+
+    private void applySnapshot(BigDecimal rate, OffsetDateTime quotedAt,
+            OffsetDateTime collectedAt, String source) {
         this.rate = rate;
         this.quotedAt = quotedAt;
         this.collectedAt = collectedAt;
         this.source = source;
+        this.stale = false;
     }
+
+    public void markStale() { this.stale = true; }
+    public void clearStale() { this.stale = false; }
 
     public String getCurrencyPair() { return currencyPair; }
     @Override public String getId() { return currencyPair; }
@@ -46,4 +56,5 @@ public class ExchangeRate implements Persistable<String> {
     public OffsetDateTime getQuotedAt() { return quotedAt; }
     public OffsetDateTime getCollectedAt() { return collectedAt; }
     public String getSource() { return source; }
+    public boolean isStale() { return stale; }
 }

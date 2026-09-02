@@ -30,6 +30,7 @@ public class Quote implements Persistable<java.util.UUID> {
     @Column(name = "quoted_at", nullable = false) private OffsetDateTime quotedAt;
     @Column(name = "collected_at", nullable = false) private OffsetDateTime collectedAt;
     @Column(nullable = false, length = 60) private String source;
+    @Column(nullable = false) private boolean stale;
     @Transient private boolean newEntity = true;
 
     protected Quote() { }
@@ -38,17 +39,26 @@ public class Quote implements Persistable<java.util.UUID> {
             OffsetDateTime collectedAt, String source) {
         this.asset = asset;
         this.assetId = asset.getId();
-        replace(price, currency, quotedAt, collectedAt, source);
+        applySnapshot(price, currency, quotedAt, collectedAt, source);
     }
 
     public void replace(BigDecimal price, Currency currency, OffsetDateTime quotedAt,
+            OffsetDateTime collectedAt, String source) {
+        applySnapshot(price, currency, quotedAt, collectedAt, source);
+    }
+
+    private void applySnapshot(BigDecimal price, Currency currency, OffsetDateTime quotedAt,
             OffsetDateTime collectedAt, String source) {
         this.price = price;
         this.currency = currency;
         this.quotedAt = quotedAt;
         this.collectedAt = collectedAt;
         this.source = source;
+        this.stale = false;
     }
+
+    public void markStale() { this.stale = true; }
+    public void clearStale() { this.stale = false; }
 
     public java.util.UUID getAssetId() { return assetId; }
     @Override public java.util.UUID getId() { return assetId; }
@@ -60,4 +70,5 @@ public class Quote implements Persistable<java.util.UUID> {
     public OffsetDateTime getQuotedAt() { return quotedAt; }
     public OffsetDateTime getCollectedAt() { return collectedAt; }
     public String getSource() { return source; }
+    public boolean isStale() { return stale; }
 }

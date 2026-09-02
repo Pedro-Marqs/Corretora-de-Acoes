@@ -53,6 +53,8 @@ public class MarketCachePersistenceService {
             asset.updateCatalog(incoming.name());
             quote.replace(incoming.price(), incoming.currency(), quotedAt,
                     atUtc(incoming.collectedAt()), incoming.source());
+        } else if (quotedAt.equals(quote.getQuotedAt())) {
+            quote.clearStale();
         }
         return view(asset, quote, freshness);
     }
@@ -76,6 +78,8 @@ public class MarketCachePersistenceService {
                     atUtc(incoming.collectedAt()), incoming.source()));
         } else if (quotedAt.isAfter(rate.getQuotedAt())) {
             rate.replace(incoming.rate(), quotedAt, atUtc(incoming.collectedAt()), incoming.source());
+        } else if (quotedAt.equals(rate.getQuotedAt())) {
+            rate.clearStale();
         }
         return view(rate, freshness);
     }
@@ -85,17 +89,27 @@ public class MarketCachePersistenceService {
         return rates.findById(USD_BRL).map(rate -> view(rate, freshness)).orElse(null);
     }
 
+    @Transactional
+    public void markQuoteStale(java.util.UUID assetId) {
+        quotes.findById(assetId).ifPresent(Quote::markStale);
+    }
+
+    @Transactional
+    public void markExchangeRateStale() {
+        rates.findById(USD_BRL).ifPresent(ExchangeRate::markStale);
+    }
+
     private static CachedAssetQuote view(Asset asset, Quote quote, MarketDataFreshness freshness) {
         return new CachedAssetQuote(asset.getTicker(), asset.getName(), asset.getMarket(),
                 quote.getCurrency(), quote.getPrice(), quote.getSource(),
                 quote.getQuotedAt().toInstant(), quote.getCollectedAt().toInstant(),
-                freshness.quoteIsStale(quote.getQuotedAt().toInstant()));
+                quote.isStale() || freshness.quoteIsStale(quote.getQuotedAt().toInstant()));
     }
 
     private static CachedExchangeRate view(ExchangeRate rate, MarketDataFreshness freshness) {
         return new CachedExchangeRate(rate.getRate(), rate.getSource(), rate.getQuotedAt().toInstant(),
                 rate.getCollectedAt().toInstant(),
-                freshness.exchangeRateIsStale(rate.getQuotedAt().toInstant()));
+                rate.isStale() || freshness.exchangeRateIsStale(rate.getQuotedAt().toInstant()));
     }
 
     private static OffsetDateTime atUtc(java.time.Instant value) {

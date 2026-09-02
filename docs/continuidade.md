@@ -106,6 +106,9 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 - A responsividade foi verificada em 320 px, 768 px e desktop, sem rolagem horizontal e com os controles dentro do viewport. Durante essa validação foram corrigidos o overflow causado pela largura mínima global e uma corrida que descartava a mensagem de sucesso após exclusão.
 - O Revisor não encontrou achados críticos, altos ou médios. O achado baixo de contraste foi corrigido; cores de texto auxiliar e bordas de campos agora atendem aos limiares aplicáveis.
 - A validação integrada usou H2 em memória e isolado porque as credenciais do PostgreSQL local não estavam disponíveis nas variáveis desta execução; o PostgreSQL persistente não foi alterado.
+- A T24 foi concluída e aprovada pelo Revisor: agendamentos atualizam cotações brasileiras a cada cinco minutos e cotações norte-americanas/USD-BRL diariamente às 10h de Brasília, com seleção apenas de ativos ativos com posição, proteção contra sobreposição e limite diário.
+- Falhas de atualização preservam o cache e marcam o dado como desatualizado; um snapshot bem-sucedido com o mesmo instante também limpa essa marca. O ciclo diário executa USD/BRL mesmo quando a etapa norte-americana falha e só registra a data após as etapas concluírem.
+- A T24 não cria movimentações nem pontos patrimoniais. A suíte focada, a suíte backend H2, a compilação Maven sem testes, `git diff --check` e `openspec validate --strict` passaram; a query de seleção de ativos foi coberta com teste persistente em H2.
 
 ## Decisões funcionais confirmadas
 
@@ -187,7 +190,7 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 
 ## Próximo passo
 
-A T23 e o change `implementar-t23-catalogo-cache-pesquisa-ativos` estão completos. Aguardar o usuário gerar o OpenSpec da próxima tarefa antes de iniciar nova implementação.
+A T24 e o change `implementar-t24-agendamentos-mercado` estão completos e prontos para arquivamento. Depois do arquivamento, aguardar o usuário gerar o OpenSpec da próxima tarefa antes de iniciar nova implementação.
 
 ### Forma de trabalho para as próximas tarefas
 

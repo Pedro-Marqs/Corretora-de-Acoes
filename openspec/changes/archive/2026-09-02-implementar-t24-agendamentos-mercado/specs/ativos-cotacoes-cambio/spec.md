@@ -1,10 +1,4 @@
-# Ativos, cotacoes e cambio Specification
-
-## Purpose
-
-Disponibilizar ativos, cotacoes e cambio para suportar consultas e operacoes de investimento.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Catalogo de ativos
 O sistema SHALL manter ativos brasileiros e norte-americanos com identificação, tipo, moeda e status, permitindo pesquisa de ativos suportados e persistindo somente dados completos e válidos. Consultas de ativos SHALL considerar somente ativos ativos. Ciclos automáticos de cotação SHALL atualizar somente ativos ativos que possuam posição em alguma carteira.
@@ -75,12 +69,3 @@ O sistema SHALL registrar cotações e câmbio válidos com fonte, instante, moe
 #### Scenario: Ciclos nao se sobrepoem
 - **WHEN** um ciclo do mesmo tipo ja estiver em execucao
 - **THEN** o sistema SHALL rejeitar ou ignorar a nova execucao sem iniciar processamento concorrente
-
-### Requirement: Precisao financeira
-
-O sistema SHALL usar valores decimais e conversao USD/BRL com arredondamento HALF_UP em duas casas.
-
-#### Scenario: Conversao monetaria
-
-- **WHEN** um valor em USD for convertido para BRL
-- **THEN** o sistema SHALL aplicar a cotacao de cambio e arredondar o resultado em duas casas

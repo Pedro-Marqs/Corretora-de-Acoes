@@ -1,10 +1,4 @@
-# Historico e registro patrimonial Specification
-
-## Purpose
-
-Manter historico imutavel de movimentacoes e pontos patrimoniais para consulta e auditoria.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Historico de movimentacoes
 O sistema SHALL registrar operacoes, aportes, transferencias e ajustes com conta, instante, valores e origem. Atualizacoes automaticas de cotacoes ou cambio, sem operacao financeira, SHALL NOT criar movimentacoes.
