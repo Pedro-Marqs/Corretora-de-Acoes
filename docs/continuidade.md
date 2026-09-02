@@ -187,7 +187,7 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 
 ## Próximo passo
 
-A T13 e o change `implementar-t13-exclusao-reativacao` estão completos. Aguardar o usuário gerar o OpenSpec da próxima tarefa antes de iniciar nova implementação.
+A T23 e o change `implementar-t23-catalogo-cache-pesquisa-ativos` estão completos. Aguardar o usuário gerar o OpenSpec da próxima tarefa antes de iniciar nova implementação.
 
 ### Forma de trabalho para as próximas tarefas
 
