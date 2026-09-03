@@ -45,6 +45,16 @@ class FinancialAmountTests {
     }
 
     @Test
+    void subtractsAndMultipliesDecimalAmountsWithoutFloatingPointArithmetic() {
+        FinancialAmount result = FinancialAmount.of("10.23")
+                .subtract(FinancialAmount.of("2.10"))
+                .multiply(new BigDecimal("1.5"));
+
+        assertThat(result.value()).isEqualByComparingTo("12.20");
+        assertThat(FinancialAmount.zero().value()).isEqualByComparingTo("0.00");
+    }
+
+    @Test
     void multipliesAmountByAnIntegerQuantity() {
         FinancialAmount result = FinancialAmount.of("12.345").multiply(3);
 

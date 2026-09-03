@@ -20,8 +20,9 @@ const usAsset = {
   usdBrlRate: '5.50', exchangeRateSource: 'AwesomeAPI', exchangeRateQuotedAt: '2026-09-03T10:00:00Z', exchangeRateStale: false,
 }
 
-function submit(ticker) {
+function submit(ticker, market = 'BR') {
   fireEvent.change(screen.getByLabelText(/Ticker/), { target: { value: ticker } })
+  fireEvent.change(screen.getByLabelText(/Mercado/), { target: { value: market } })
   fireEvent.click(screen.getByRole('button', { name: 'Pesquisar ativo' }))
 }
 
@@ -39,6 +40,7 @@ describe('assets private route', () => {
     expect(screen.getByRole('link', { name: 'Ativos' })).toHaveClass('active')
     expect(screen.getByText('Nenhuma pesquisa realizada')).toBeInTheDocument()
     expect(screen.getByLabelText(/Ticker/)).toBeRequired()
+    expect(screen.getByLabelText(/Mercado/)).toBeRequired()
     expect(screen.queryByRole('button', { name: /atualizar/i })).not.toBeInTheDocument()
   })
 
@@ -47,6 +49,14 @@ describe('assets private route', () => {
     render(<App />)
     expect(await screen.findByRole('heading', { name: 'Bem-vindo de volta.' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Pesquisa de ativos' })).not.toBeInTheDocument()
+    expect(searchAsset).not.toHaveBeenCalled()
+  })
+
+  it('exige ticker e mercado antes de pesquisar', async () => {
+    render(<App />); await screen.findByRole('heading', { name: 'Pesquisa de ativos' })
+    fireEvent.click(screen.getByRole('button', { name: 'Pesquisar ativo' }))
+    expect(screen.getByText('Informe um ticker com 1 a 12 letras ou números.')).toBeInTheDocument()
+    expect(screen.getByText('Selecione o mercado do ativo.')).toBeInTheDocument()
     expect(searchAsset).not.toHaveBeenCalled()
   })
 
@@ -59,23 +69,24 @@ describe('assets private route', () => {
     expect(screen.getByText('BRL')).toBeInTheDocument()
     expect(screen.getByText(/R\$\s*38,50/)).toBeInTheDocument()
     expect(screen.getByText(/03\/09\/2026.*09:00/)).toBeInTheDocument()
-    expect(searchAsset).toHaveBeenCalledWith('PETR4')
+    expect(searchAsset).toHaveBeenCalledWith('PETR4', 'BR')
   })
 
   it('mostra resultado US, conversão e ambos os instantes recebidos', async () => {
     searchAsset.mockResolvedValue(usAsset)
-    render(<App />); await screen.findByRole('heading', { name: 'Pesquisa de ativos' }); submit('AAPL')
+    render(<App />); await screen.findByRole('heading', { name: 'Pesquisa de ativos' }); submit('AAPL', 'US')
     expect(await screen.findByRole('heading', { name: 'AAPL' })).toBeInTheDocument()
     expect(screen.getByText(/US\$\s*225,10/)).toBeInTheDocument()
     expect(screen.getByText(/R\$\s*1\.238,05/)).toBeInTheDocument()
     expect(screen.getByText('5,50')).toBeInTheDocument()
     expect(screen.getByText(/02\/09\/2026.*17:00/)).toBeInTheDocument()
     expect(screen.getByText(/03\/09\/2026.*07:00/)).toBeInTheDocument()
+    expect(searchAsset).toHaveBeenCalledWith('AAPL', 'US')
   })
 
   it('bloqueia submissão duplicada durante o carregamento', async () => {
     searchAsset.mockReturnValue(new Promise(() => {}))
-    render(<App />); await screen.findByRole('heading', { name: 'Pesquisa de ativos' }); submit('AAPL')
+    render(<App />); await screen.findByRole('heading', { name: 'Pesquisa de ativos' }); submit('AAPL', 'US')
     const button = screen.getByRole('button', { name: 'Pesquisando…' })
     expect(button).toBeDisabled(); fireEvent.click(button)
     expect(screen.getByRole('status')).toHaveTextContent('Pesquisando AAPL')
@@ -107,7 +118,7 @@ describe('assets private route', () => {
 
   it('remove dados e direciona ao login em resposta 401', async () => {
     searchAsset.mockRejectedValue(new MarketApiError('detalhe interno', {}, 401))
-    render(<App />); await screen.findByRole('heading', { name: 'Pesquisa de ativos' }); submit('AAPL')
+    render(<App />); await screen.findByRole('heading', { name: 'Pesquisa de ativos' }); submit('AAPL', 'US')
     expect(await screen.findByRole('heading', { name: 'Bem-vindo de volta.' })).toBeInTheDocument()
     expect(screen.queryByText('detalhe interno')).not.toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Pesquisa de ativos' })).not.toBeInTheDocument()
@@ -115,7 +126,7 @@ describe('assets private route', () => {
 
   it('renderiza avisos independentes pelas flags e preserva valores e horários', async () => {
     searchAsset.mockResolvedValue({ ...usAsset, quoteStale: true, exchangeRateStale: true })
-    render(<App />); await screen.findByRole('heading', { name: 'Pesquisa de ativos' }); submit('AAPL')
+    render(<App />); await screen.findByRole('heading', { name: 'Pesquisa de ativos' }); submit('AAPL', 'US')
     expect(await screen.findByText('Cotação desatualizada')).toBeInTheDocument()
     expect(screen.getByText('USD/BRL desatualizado')).toBeInTheDocument()
     expect(screen.getByText(/US\$\s*225,10/)).toBeInTheDocument()
@@ -126,7 +137,7 @@ describe('assets private route', () => {
 
   it('não exibe avisos quando o backend marca ambos os limites como atuais', async () => {
     searchAsset.mockResolvedValue(usAsset)
-    render(<App />); await screen.findByRole('heading', { name: 'Pesquisa de ativos' }); submit('AAPL')
+    render(<App />); await screen.findByRole('heading', { name: 'Pesquisa de ativos' }); submit('AAPL', 'US')
     await screen.findByRole('heading', { name: 'AAPL' })
     expect(screen.queryByText(/desatualizad[oa]/i)).not.toBeInTheDocument()
   })
@@ -135,6 +146,7 @@ describe('assets private route', () => {
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: 320 })
     render(<App />); await screen.findByRole('heading', { name: 'Pesquisa de ativos' })
     expect(screen.getByLabelText(/Ticker/)).toBeVisible()
+    expect(screen.getByLabelText(/Mercado/)).toBeVisible()
     expect(screen.getByRole('button', { name: 'Pesquisar ativo' })).toBeVisible()
   })
 })

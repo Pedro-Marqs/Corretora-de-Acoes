@@ -5,13 +5,14 @@ const br = { ticker: 'PETR4', name: 'Petrobras', market: 'BR', currency: 'BRL', 
 const us = { ticker: 'AAPL', name: 'Apple Inc.', market: 'US', currency: 'USD', originalPrice: '225.10', priceBrl: '1238.05', quoteSource: 'Twelve Data', quoteQuotedAt: '2026-09-02T20:00:00Z', quoteStale: false, usdBrlRate: '5.50', exchangeRateSource: 'AwesomeAPI', exchangeRateQuotedAt: '2026-09-03T10:00:00Z', exchangeRateStale: false }
 describe('market API', () => {
   beforeEach(() => { vi.restoreAllMocks(); vi.stubGlobal('fetch', vi.fn()) })
-  it.each([[' petr4 ', 'PETR4', 'BR', br], ['aapl', 'AAPL', 'US', us]])('pesquisa %s usando ticker e sessão', async (input, ticker, market, body) => {
-    fetch.mockResolvedValue(response(body)); await expect(searchAsset(input)).resolves.toEqual(body)
+  it.each([[' petr4 ', ' br ', 'PETR4', 'BR', br], ['aapl', 'us', 'AAPL', 'US', us]])('pesquisa %s usando mercado explícito e sessão', async (input, inputMarket, ticker, market, body) => {
+    fetch.mockResolvedValue(response(body)); await expect(searchAsset(input, inputMarket)).resolves.toEqual(body)
     expect(fetch).toHaveBeenCalledWith(`http://localhost:8080/api/assets/search?ticker=${ticker}&market=${market}`, { credentials: 'include' })
     expect(fetch.mock.calls[0][1]).not.toHaveProperty('body'); expect(fetch.mock.calls[0][1]).not.toHaveProperty('method')
   })
-  it('preserva erro funcional e status', async () => { fetch.mockResolvedValue(response({ message: 'Mercado não suportado.' }, 422)); await expect(searchAsset('XPTO')).rejects.toMatchObject({ message: 'Mercado não suportado.', status: 422 }) })
-  it('normaliza falha de transporte', async () => { fetch.mockRejectedValue(new TypeError('internal detail')); await expect(searchAsset('AAPL')).rejects.toMatchObject({ message: 'Não foi possível conectar ao servidor. Tente novamente em instantes.' }) })
-  it.each([{}, { ...br, name: null }, { ...br, originalPrice: null }, { ...br, quoteSource: null }, { ...br, quoteQuotedAt: 'invalid' }, { ...br, currency: 'USD' }, { ...us, usdBrlRate: null }, { ...us, exchangeRateSource: null }, { ...us, exchangeRateQuotedAt: null }])('rejeita resposta incompleta: %#', async (body) => { fetch.mockResolvedValue(response(body)); await expect(searchAsset('AAPL')).rejects.toBeInstanceOf(MarketApiError) })
-  it('representa ausência como vazio', async () => { fetch.mockResolvedValue(response(null, 204)); await expect(searchAsset('AAPL')).resolves.toBeNull() })
+  it.each(['', 'B3', 'NASDAQ'])('rejeita mercado ausente ou inválido sem consultar a API: %s', async (market) => { await expect(searchAsset('PETR4', market)).rejects.toMatchObject({ message: 'Selecione um mercado válido.' }); expect(fetch).not.toHaveBeenCalled() })
+  it('preserva erro funcional e status', async () => { fetch.mockResolvedValue(response({ message: 'Mercado não suportado.' }, 422)); await expect(searchAsset('XPTO', 'US')).rejects.toMatchObject({ message: 'Mercado não suportado.', status: 422 }) })
+  it('normaliza falha de transporte', async () => { fetch.mockRejectedValue(new TypeError('internal detail')); await expect(searchAsset('AAPL', 'US')).rejects.toMatchObject({ message: 'Não foi possível conectar ao servidor. Tente novamente em instantes.' }) })
+  it.each([{}, { ...br, name: null }, { ...br, originalPrice: null }, { ...br, quoteSource: null }, { ...br, quoteQuotedAt: 'invalid' }, { ...br, currency: 'USD' }, { ...us, usdBrlRate: null }, { ...us, exchangeRateSource: null }, { ...us, exchangeRateQuotedAt: null }])('rejeita resposta incompleta: %#', async (body) => { fetch.mockResolvedValue(response(body)); await expect(searchAsset('AAPL', 'US')).rejects.toBeInstanceOf(MarketApiError) })
+  it('representa ausência como vazio', async () => { fetch.mockResolvedValue(response(null, 204)); await expect(searchAsset('AAPL', 'US')).resolves.toBeNull() })
 })

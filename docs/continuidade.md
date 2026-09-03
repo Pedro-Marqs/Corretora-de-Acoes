@@ -112,6 +112,7 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 
 - A implementação da T25 foi concluída no change `implementar-t25-interface-pesquisa-ativos`: a rota privada `/app/ativos` permite pesquisar ticker, apresenta resultados BR e US com valores e horários oficiais do backend, diferencia estados vazios/erros e sinaliza independentemente cotação e USD/BRL desatualizados.
 - A T25 foi concluída e o change `implementar-t25-interface-pesquisa-ativos` foi arquivado em `openspec/changes/archive/2026-09-03-implementar-t25-interface-pesquisa-ativos`. O Reviewer foi APROVADO, e o Tester foi aprovado com 169 testes frontend, ESLint, build Vite e `git diff --check`; `openspec validate --strict` também foi aprovado.
+- A implementação da T26 foi concluída no change `implementar-t26-regras-posicao-resultado`: o núcleo financeiro imutável e puro cobre compra, venda parcial/total, recompra, transferência com conservação de custo, conversão USD/BRL, valor de mercado, patrimônio e resultados realizado/não realizado/total, sem endpoints ou dependências de persistência. A suíte focada passou com 31 testes e o change passou em `openspec validate --strict`; permanecem as aprovações externas de Reviewer e Tester antes do arquivamento.
 
 ## Decisões funcionais confirmadas
 
@@ -193,7 +194,7 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 
 ## Próximo passo
 
-A T25 está arquivada em `openspec/changes/archive/2026-09-03-implementar-t25-interface-pesquisa-ativos`. Aguardar o próximo change OpenSpec.
+A implementação da T26 está concluída em `openspec/changes/implementar-t26-regras-posicao-resultado`. O próximo passo é a revisão e a suíte final externas, seguidas da validação OpenSpec e do arquivamento pelo fluxo responsável.
 
 ### Forma de trabalho para as próximas tarefas
 

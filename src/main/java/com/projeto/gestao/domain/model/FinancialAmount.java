@@ -26,6 +26,20 @@ public record FinancialAmount(BigDecimal value) {
         return new FinancialAmount(value.add(other.value));
     }
 
+    public FinancialAmount subtract(FinancialAmount other) {
+        Objects.requireNonNull(other, "other must not be null");
+        return new FinancialAmount(value.subtract(other.value));
+    }
+
+    public FinancialAmount multiply(BigDecimal multiplier) {
+        Objects.requireNonNull(multiplier, "multiplier must not be null");
+        return new FinancialAmount(value.multiply(multiplier));
+    }
+
+    public static FinancialAmount zero() {
+        return new FinancialAmount(BigDecimal.ZERO);
+    }
+
     public FinancialAmount multiply(long quantity) {
         return new FinancialAmount(value.multiply(BigDecimal.valueOf(quantity)));
     }

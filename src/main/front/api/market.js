@@ -4,7 +4,6 @@ export class MarketApiError extends ApiError {
   constructor(message, fieldErrors = {}, status) { super(message, fieldErrors, status); this.name = 'MarketApiError' }
 }
 
-function marketForTicker(ticker) { return /\d$/.test(ticker) ? 'BR' : 'US' }
 function validText(value) { return typeof value === 'string' && value.trim().length > 0 }
 function validNumber(value) { return (typeof value === 'number' || validText(value)) && Number.isFinite(Number(value)) }
 function validInstant(value) { return validText(value) && !Number.isNaN(new Date(value).getTime()) }
@@ -24,10 +23,14 @@ function requireAsset(body) {
   return body
 }
 
-export async function searchAsset(rawTicker) {
+export async function searchAsset(rawTicker, rawMarket) {
   const ticker = String(rawTicker ?? '').trim().toUpperCase()
+  const market = String(rawMarket ?? '').trim().toUpperCase()
+  if (!['BR', 'US'].includes(market)) {
+    throw new MarketApiError('Selecione um mercado válido.')
+  }
   try {
-    const query = new URLSearchParams({ ticker, market: marketForTicker(ticker) })
+    const query = new URLSearchParams({ ticker, market })
     const response = await fetch(`${API_BASE_URL}/api/assets/search?${query}`, { credentials: 'include' })
     const body = await parseJson(response)
     if (!response.ok) throw new MarketApiError(body?.message ?? 'Não foi possível pesquisar o ativo.', groupFieldErrors(body?.fieldErrors), response.status)

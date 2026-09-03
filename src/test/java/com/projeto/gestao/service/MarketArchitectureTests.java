@@ -17,8 +17,11 @@ class MarketArchitectureTests {
                 .noneMatch(annotation -> annotation.annotationType() == Transactional.class)).isTrue();
     }
 
-    @Test void normalUsConsultationHasNoTwelveDataDependency() {
+    @Test void assetCatalogUsesUsMarketPortWithoutDependingOnTwelveDataAdapter() {
         assertThat(Arrays.stream(AssetCatalogService.class.getDeclaredFields())
-                .noneMatch(field -> field.getType() == UsMarketDataPort.class)).isTrue();
+                .anyMatch(field -> field.getType() == UsMarketDataPort.class)).isTrue();
+        assertThat(Arrays.stream(AssetCatalogService.class.getDeclaredFields())
+                .noneMatch(field -> field.getType().getSimpleName().contains("TwelveData"))).isTrue();
     }
+
 }

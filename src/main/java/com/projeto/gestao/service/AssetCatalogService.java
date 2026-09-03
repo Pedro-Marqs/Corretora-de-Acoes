@@ -8,19 +8,23 @@ import com.projeto.gestao.api.exception.MarketDataUnavailableException;
 import com.projeto.gestao.domain.model.Market;
 import com.projeto.gestao.domain.port.BrazilMarketDataPort;
 import com.projeto.gestao.domain.port.ExternalDataFailure;
+import com.projeto.gestao.domain.port.UsMarketDataPort;
 import org.springframework.stereotype.Service;
 
 @Service
 public class AssetCatalogService {
     private static final String TICKER_PATTERN = "[A-Z0-9]{1,12}";
     private final BrazilMarketDataPort brazil;
+    private final UsMarketDataPort unitedStates;
     private final MarketCachePersistenceService cache;
     private final MarketDataFreshness freshness;
     private final ExchangeRateService exchangeRates;
 
-    public AssetCatalogService(BrazilMarketDataPort brazil, MarketCachePersistenceService cache,
-            MarketDataFreshness freshness, ExchangeRateService exchangeRates) {
+    public AssetCatalogService(BrazilMarketDataPort brazil, UsMarketDataPort unitedStates,
+            MarketCachePersistenceService cache, MarketDataFreshness freshness,
+            ExchangeRateService exchangeRates) {
         this.brazil = brazil;
+        this.unitedStates = unitedStates;
         this.cache = cache;
         this.freshness = freshness;
         this.exchangeRates = exchangeRates;
@@ -54,10 +58,14 @@ public class AssetCatalogService {
 
     private CachedAssetQuote findUnitedStates(String ticker) {
         CachedAssetQuote result = cache.find(ticker, Market.US, freshness);
-        if (result == null) {
-            throw new MarketDataUnavailableException("Ativo US nÃ£o disponÃ­vel no catÃ¡logo.");
+        if (result != null) return result;
+        try {
+            return cache.store(unitedStates.findQuote(ticker), freshness);
+        } catch (ExternalDataFailure | IllegalArgumentException exception) {
+            CachedAssetQuote fallback = cache.find(ticker, Market.US, freshness);
+            if (fallback != null) return fallback;
+            throw new ExternalDependencyException();
         }
-        return result;
     }
 
     private static String normalize(String ticker) {

@@ -12,17 +12,21 @@ import com.projeto.gestao.domain.model.Market;
 import com.projeto.gestao.domain.model.MarketQuote;
 import com.projeto.gestao.domain.port.BrazilMarketDataPort;
 import com.projeto.gestao.domain.port.ExternalDataFailure;
+import com.projeto.gestao.domain.port.UsMarketDataPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class AssetCatalogServiceTests {
     BrazilMarketDataPort brazil = mock(BrazilMarketDataPort.class);
+    UsMarketDataPort unitedStates = mock(UsMarketDataPort.class);
     MarketCachePersistenceService cache = mock(MarketCachePersistenceService.class);
     MarketDataFreshness freshness = mock(MarketDataFreshness.class);
     ExchangeRateService exchange = mock(ExchangeRateService.class);
     AssetCatalogService service;
 
-    @BeforeEach void setUp() { service = new AssetCatalogService(brazil, cache, freshness, exchange); }
+    @BeforeEach void setUp() {
+        service = new AssetCatalogService(brazil, unitedStates, cache, freshness, exchange);
+    }
 
     @Test void brazilIsOnlineFirstAndPersistsValidResponse() {
         MarketQuote external = quote(Market.BR, Currency.BRL, "10.00");
@@ -48,12 +52,48 @@ class AssetCatalogServiceTests {
                 .isInstanceOf(ExternalDependencyException.class);
     }
 
-    @Test void usConsultationNeverConsumesMarketProviderAndUsesHalfUpConversion() {
+    @Test void cachedUsConsultationDoesNotConsumeMarketProviderAndUsesHalfUpConversion() {
         when(cache.find("AAPL", Market.US, freshness)).thenReturn(cached(Market.US, Currency.USD, "10.005"));
         when(exchange.resolveUsdBrl()).thenReturn(new CachedExchangeRate(new BigDecimal("5.00"),
                 "awesome", Instant.EPOCH, Instant.EPOCH, false));
         assertThat(service.find("AAPL", Market.US).priceBrl()).isEqualByComparingTo("50.03");
-        verifyNoInteractions(brazil);
+        verifyNoInteractions(brazil, unitedStates);
+    }
+
+    @Test void usCacheMissLoadsValidSnapshotAndReturnsUsdBrlConversion() {
+        MarketQuote external = usQuote("10.005");
+        CachedAssetQuote stored = cached(Market.US, Currency.USD, "10.005");
+        when(unitedStates.findQuote("AAPL")).thenReturn(external);
+        when(cache.store(external, freshness)).thenReturn(stored);
+        when(exchange.resolveUsdBrl()).thenReturn(new CachedExchangeRate(new BigDecimal("5.00"),
+                "awesome", Instant.EPOCH, Instant.EPOCH, false));
+
+        AssetPriceView result = service.find("aapl", Market.US);
+
+        assertThat(result.originalPrice()).isEqualByComparingTo("10.005");
+        assertThat(result.priceBrl()).isEqualByComparingTo("50.03");
+        verify(cache).store(external, freshness);
+    }
+
+    @Test void usExternalFailureUsesCacheThatBecameAvailable() {
+        CachedAssetQuote fallback = cached(Market.US, Currency.USD, "9.00");
+        when(cache.find("AAPL", Market.US, freshness)).thenReturn(null, fallback);
+        when(unitedStates.findQuote("AAPL")).thenThrow(new ExternalDataFailure(
+                ExternalDataFailure.Reason.TIMEOUT, "twelve-data", "timeout"));
+        when(exchange.resolveUsdBrl()).thenReturn(new CachedExchangeRate(new BigDecimal("5.00"),
+                "awesome", Instant.EPOCH, Instant.EPOCH, false));
+
+        assertThat(service.find("AAPL", Market.US).originalPrice()).isEqualByComparingTo("9.00");
+        verify(cache, never()).store(any(MarketQuote.class), any(MarketDataFreshness.class));
+    }
+
+    @Test void usExternalFailureWithoutCacheReturnsSafeDependencyError() {
+        when(unitedStates.findQuote("AAPL")).thenThrow(new ExternalDataFailure(
+                ExternalDataFailure.Reason.TIMEOUT, "twelve-data", "sensitive detail"));
+
+        assertThatThrownBy(() -> service.find("AAPL", Market.US))
+                .isInstanceOf(ExternalDependencyException.class);
+        verifyNoInteractions(exchange);
     }
 
     @Test void nullMarketIsRejectedInsteadOfBeingTreatedAsUs() {
@@ -65,6 +105,10 @@ class AssetCatalogServiceTests {
     private static MarketQuote quote(Market market, Currency currency, String price) {
         return new MarketQuote("PETR4", "Asset", market, currency, new BigDecimal(price),
                 Instant.EPOCH, Instant.EPOCH, "provider");
+    }
+    private static MarketQuote usQuote(String price) {
+        return new MarketQuote("AAPL", "Apple Inc.", Market.US, Currency.USD,
+                new BigDecimal(price), Instant.EPOCH, Instant.EPOCH, "twelve-data");
     }
     private static CachedAssetQuote cached(Market market, Currency currency, String price) {
         return new CachedAssetQuote(market == Market.US ? "AAPL" : "PETR4", "Asset", market,
