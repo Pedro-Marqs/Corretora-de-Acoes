@@ -30,35 +30,39 @@ O sistema SHALL manter ativos brasileiros e norte-americanos com identificação
 - **THEN** o sistema SHALL consultar somente ativos ativos que estejam presentes em alguma posicao
 
 ### Requirement: Cotacoes e cambio
-O sistema SHALL registrar cotações e câmbio válidos com fonte, instante, moeda e indicação de desatualização, utilizando o último valor válido armazenado quando uma atualização externa não puder fornecer um valor utilizável. O sistema SHALL atualizar cotações brasileiras a cada cinco minutos e cotações norte-americanas e USD/BRL uma vez por dia às 10h no horário de Brasília. Uma falha da fonte externa SHALL preservar o último valor válido armazenado e sinalizar sua desatualização.
+O sistema SHALL registrar cotações e câmbio válidos com fonte, instante, moeda e indicação de desatualização, utilizando o último valor válido armazenado quando uma atualização externa não puder fornecer um valor utilizável. O sistema SHALL atualizar cotações brasileiras a cada cinco minutos e cotações norte-americanas e USD/BRL uma vez por dia às 10h no horário de Brasília. Uma falha da fonte externa SHALL preservar o último valor válido armazenado e sinalizar sua desatualização. Operações de compra SHALL usar a cotação/câmbio atual ou o último valor armazenado utilizável, informando o instante original; sem valor utilizável, SHALL bloquear a compra.
 
-#### Scenario: Cotacao indisponivel ou desatualizada
-- **WHEN** a fonte externa falhar ou a cotacao exceder sua validade
-- **THEN** o sistema SHALL informar o estado desatualizado sem inventar um valor
+#### Scenario: Fallback usado na compra
+- **WHEN** a consulta externa falhar e existir cotação válida armazenada para o ativo e, se necessário, USD/BRL válido
+- **THEN** o sistema SHALL usar os últimos valores armazenados, informar seus instantes originais e permitir o cálculo da compra
 
 #### Scenario: Fallback de cotacao
 - **WHEN** uma consulta externa falhar e existir uma cotação válida armazenada para o ativo
 - **THEN** o sistema SHALL utilizar a última cotação válida e SHALL informar seu instante original
 
+#### Scenario: Fallback de cambio
+- **WHEN** a consulta de USD/BRL falhar e existir uma cotação de câmbio válida armazenada
+- **THEN** o sistema SHALL utilizar o último USD/BRL válido e SHALL informar seu instante original
+
+#### Scenario: Cotacao indisponivel ou desatualizada
+- **WHEN** a fonte externa falhar ou a cotacao exceder sua validade
+- **THEN** o sistema SHALL informar o estado desatualizado sem inventar um valor
+
 #### Scenario: Ausencia de cotacao utilizavel
-- **WHEN** uma funcionalidade financeira depender de uma cotação e não existir valor atual nem valor válido armazenado
-- **THEN** o sistema SHALL bloquear a operação dependente sem inventar uma cotação
+- **WHEN** uma compra depender de uma cotação e não existir valor atual nem valor válido armazenado
+- **THEN** o sistema SHALL bloquear a compra dependente sem alterar saldo, posição, histórico ou patrimônio
+
+#### Scenario: Ausencia de cambio utilizavel
+- **WHEN** uma compra de ativo norte-americano exigir conversão para BRL e não existir USD/BRL utilizável
+- **THEN** o sistema SHALL bloquear a compra dependente sem alterar saldo, posição, histórico ou patrimônio
 
 #### Scenario: Cotacao de ativo antiga
 - **WHEN** a cotação utilizada tiver mais de 24 horas
 - **THEN** o sistema SHALL indicá-la como desatualizada e SHALL manter disponível o valor armazenado
 
-#### Scenario: Fallback de cambio
-- **WHEN** a consulta de USD/BRL falhar e existir uma cotação de câmbio válida armazenada
-- **THEN** o sistema SHALL utilizar o último USD/BRL válido e SHALL informar seu instante original
-
 #### Scenario: Cambio antigo
 - **WHEN** o USD/BRL utilizado tiver mais de sete dias
 - **THEN** o sistema SHALL indicá-lo como desatualizado e SHALL manter disponível o valor armazenado
-
-#### Scenario: Ausencia de cambio utilizavel
-- **WHEN** uma funcionalidade financeira em ativo norte-americano exigir conversão para BRL e não existir USD/BRL utilizável
-- **THEN** o sistema SHALL bloquear a operação dependente sem inventar uma taxa de câmbio
 
 #### Scenario: Exibir ativo norte-americano
 - **WHEN** um ativo norte-americano possuir cotação armazenada em USD e existir USD/BRL utilizável

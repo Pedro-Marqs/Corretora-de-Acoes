@@ -49,8 +49,8 @@ public class Position {
     }
 
     public void apply(PositionBalance balance) {
-        if (balance == null || !balance.isOpen()) {
-            throw new IllegalArgumentException("Open position balance is required");
+        if (balance == null) {
+            throw new IllegalArgumentException("Position balance is required");
         }
         quantity = balance.quantity().value();
         averagePrice = balance.averagePrice().value();

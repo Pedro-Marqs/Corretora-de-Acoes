@@ -25,7 +25,8 @@ class MovementTests {
                 new BigDecimal("40"), Currency.BRL,
                 "Broker", new BigDecimal("9970"), now);
         Movement sale = Movement.sale(UUID.randomUUID(), account, "AAPL", Market.US,
-                new BigDecimal("10"), 2, new BigDecimal("20"), Currency.USD,
+                new BigDecimal("10"), new BigDecimal("50"), new BigDecimal("5"),
+                2, new BigDecimal("100"), Currency.USD,
                 "Broker", new BigDecimal("10070"), new BigDecimal("-5"), now);
         Movement usPurchase = Movement.purchase(UUID.randomUUID(), account, "AAPL", Market.US,
                 new BigDecimal("10.005"), new BigDecimal("50.15"),

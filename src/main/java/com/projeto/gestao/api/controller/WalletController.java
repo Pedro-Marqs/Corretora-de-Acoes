@@ -3,6 +3,7 @@ package com.projeto.gestao.api.controller;
 import com.projeto.gestao.security.AccountPrincipal;
 import com.projeto.gestao.service.WalletService;
 import com.projeto.gestao.service.PurchaseService;
+import com.projeto.gestao.service.SaleService;
 import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,10 +17,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class WalletController {
     private final WalletService walletService;
     private final PurchaseService purchaseService;
+    private final SaleService saleService;
 
-    public WalletController(WalletService walletService, PurchaseService purchaseService) {
+    public WalletController(WalletService walletService, PurchaseService purchaseService,
+            SaleService saleService) {
         this.walletService = walletService;
         this.purchaseService = purchaseService;
+        this.saleService = saleService;
     }
 
     @GetMapping
@@ -38,5 +42,12 @@ public class WalletController {
             @Valid @RequestBody PurchaseRequest request) {
         return PurchaseResponse.from(purchaseService.purchase(principal.accountId(),
                 request.assetId(), request.brokerId(), request.quantity()));
+    }
+
+    @PostMapping("/sales")
+    SaleResponse sale(@AuthenticationPrincipal AccountPrincipal principal,
+            @Valid @RequestBody SaleRequest request) {
+        return SaleResponse.from(saleService.sell(principal.accountId(),
+                request.assetId(), request.brokerId(), request.quantityAsLong()));
     }
 }

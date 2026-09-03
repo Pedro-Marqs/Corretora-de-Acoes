@@ -83,13 +83,35 @@ public class Movement {
 
     public static Movement sale(
             UUID id, Account account, String ticker, Market market, BigDecimal quotePrice,
-            long quantity, BigDecimal totalAmount, Currency currency, String brokerName,
+            BigDecimal unitPriceBrl, BigDecimal usdBrlRate, long quantity,
+            BigDecimal totalAmount, Currency currency, String brokerName,
             BigDecimal remainingBalance, BigDecimal realizedResult, OffsetDateTime occurredAt) {
         Movement movement = traded(id, account, MovementType.SALE, ticker, market,
                 quotePrice, quantity, totalAmount, currency, brokerName, remainingBalance,
                 occurredAt);
+        movement.validateFinancialInputs(unitPriceBrl, usdBrlRate);
         movement.realizedResult = signedMoney(realizedResult, "realizedResult");
         return movement;
+    }
+
+    private void validateFinancialInputs(BigDecimal valueBrl, BigDecimal rate) {
+        unitPriceBrl = money(valueBrl, "unitPriceBrl", false);
+        if (market == Market.US) {
+            usdBrlRate = money(rate, "usdBrlRate", false);
+            BigDecimal converted = new FinancialAmount(quotePrice)
+                    .convertUsdToBrl(usdBrlRate).value();
+            if (converted.compareTo(unitPriceBrl) != 0) {
+                throw new IllegalArgumentException("unitPriceBrl must match USD/BRL conversion");
+            }
+        } else if (rate != null) {
+            throw new IllegalArgumentException("usdBrlRate applies only to US movements");
+        } else if (quotePrice.compareTo(unitPriceBrl) != 0) {
+            throw new IllegalArgumentException("unitPriceBrl must match BRL quote price");
+        }
+        if (new FinancialAmount(unitPriceBrl).multiply(quantity).value()
+                .compareTo(totalAmount) != 0) {
+            throw new IllegalArgumentException("totalAmount must match unit price and quantity");
+        }
     }
 
     public static Movement transfer(

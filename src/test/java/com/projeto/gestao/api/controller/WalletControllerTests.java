@@ -139,6 +139,76 @@ class WalletControllerTests {
     }
 
     @Test
+    void saleUsesSessionAccountAndBackendPriceWhileIgnoringInjectedFields() throws Exception {
+        Cookie session = login(first.getEmail());
+        Asset asset = assetRepository.save(new Asset("PETR4", "Petrobras", Market.BR, Currency.BRL));
+        Broker broker = brokerRepository.save(Broker.create(UUID.randomUUID(), "02332886000104",
+                "XP INVESTIMENTOS SA", "XP", "ATIVA", "CTVM", "01001000", "Rua A", "1",
+                null, "Centro", "São Paulo", "SP", OffsetDateTime.now()));
+        AccountBroker association = accountBrokerRepository.save(AccountBroker.create(
+                UUID.randomUUID(), first, broker, OffsetDateTime.now()));
+        org.mockito.Mockito.when(brazil.findQuote("PETR4")).thenReturn(new MarketQuote(
+                "PETR4", "Petrobras", Market.BR, Currency.BRL, new BigDecimal("25.00"),
+                java.time.Instant.parse("2026-09-03T13:00:00Z"),
+                java.time.Instant.parse("2026-09-03T13:00:01Z"), "Brapi"), new MarketQuote(
+                "PETR4", "Petrobras", Market.BR, Currency.BRL, new BigDecimal("30.00"),
+                java.time.Instant.parse("2026-09-03T13:05:00Z"),
+                java.time.Instant.parse("2026-09-03T13:05:01Z"), "Brapi"));
+        CsrfCredentials purchaseCsrf = csrf();
+        mockMvc.perform(post("/api/wallet/purchases").cookie(session, purchaseCsrf.cookie())
+                .header("X-XSRF-TOKEN", purchaseCsrf.token()).contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of("assetId", asset.getId(),
+                        "brokerId", association.getId(), "quantity", 2))))
+                .andExpect(status().isOk());
+        CsrfCredentials saleCsrf = csrf();
+
+        mockMvc.perform(post("/api/wallet/sales").cookie(session, saleCsrf.cookie())
+                        .header("X-XSRF-TOKEN", saleCsrf.token()).contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "assetId", asset.getId(), "brokerId", association.getId(),
+                                "quantity", 1, "accountId", second.getId(), "price", 0.01))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.saleAmountBrl").value(30.00))
+                .andExpect(jsonPath("$.realizedResultBrl").value(5.00))
+                .andExpect(jsonPath("$.remainingBalanceBrl").value(9980.00))
+                .andExpect(jsonPath("$.accountId").doesNotExist())
+                .andExpect(jsonPath("$.price").doesNotExist());
+        assertThat(accountRepository.findById(second.getId()).orElseThrow().getBalance())
+                .isEqualByComparingTo("10000.00");
+    }
+
+    @Test
+    void saleValidatesIntegerPositiveContractAndRequiresAuthenticationAndCsrf() throws Exception {
+        mockMvc.perform(post("/api/wallet/sales").contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isForbidden());
+        CsrfCredentials anonymousCsrf = csrf();
+        mockMvc.perform(post("/api/wallet/sales").cookie(anonymousCsrf.cookie())
+                        .header("X-XSRF-TOKEN", anonymousCsrf.token())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"assetId\":\"" + UUID.randomUUID()
+                                + "\",\"brokerId\":\"" + UUID.randomUUID()
+                                + "\",\"quantity\":1}"))
+                .andExpect(status().isUnauthorized());
+        Cookie session = login(first.getEmail());
+        CsrfCredentials csrf = csrf();
+        mockMvc.perform(post("/api/wallet/sales").cookie(session, csrf.cookie())
+                        .header("X-XSRF-TOKEN", csrf.token()).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"quantity\":0}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.fieldErrors.length()").value(3));
+        mockMvc.perform(post("/api/wallet/sales").cookie(session, csrf.cookie())
+                        .header("X-XSRF-TOKEN", csrf.token()).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"assetId\":\"" + UUID.randomUUID()
+                                + "\",\"brokerId\":\"" + UUID.randomUUID()
+                                + "\",\"quantity\":1.5}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+        assertThat(movementRepository.count()).isZero();
+    }
+
+    @Test
     void returnsInitialBalanceAndDepositsOnlyIntoSessionAccount() throws Exception {
         Cookie firstSession = login(first.getEmail());
         Cookie secondSession = login(second.getEmail());
