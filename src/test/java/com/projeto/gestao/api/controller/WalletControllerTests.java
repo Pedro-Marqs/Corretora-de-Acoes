@@ -14,9 +14,22 @@ import java.util.UUID;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.projeto.gestao.domain.model.Account;
+import com.projeto.gestao.domain.model.AccountBroker;
+import com.projeto.gestao.domain.model.Asset;
+import com.projeto.gestao.domain.model.Broker;
+import com.projeto.gestao.domain.model.Currency;
+import com.projeto.gestao.domain.model.Market;
+import com.projeto.gestao.domain.model.MarketQuote;
+import com.projeto.gestao.domain.port.BrazilMarketDataPort;
+import com.projeto.gestao.repository.AccountBrokerRepository;
 import com.projeto.gestao.repository.AccountRepository;
+import com.projeto.gestao.repository.AssetRepository;
+import com.projeto.gestao.repository.BrokerRepository;
+import com.projeto.gestao.repository.ExchangeRateRepository;
 import com.projeto.gestao.repository.MovementRepository;
 import com.projeto.gestao.repository.PatrimonialPointRepository;
+import com.projeto.gestao.repository.PositionRepository;
+import com.projeto.gestao.repository.QuoteRepository;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,6 +41,7 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -42,8 +56,15 @@ class WalletControllerTests {
     @Autowired private AccountRepository accountRepository;
     @Autowired private MovementRepository movementRepository;
     @Autowired private PatrimonialPointRepository patrimonialPointRepository;
+    @Autowired private PositionRepository positionRepository;
+    @Autowired private QuoteRepository quoteRepository;
+    @Autowired private ExchangeRateRepository exchangeRateRepository;
+    @Autowired private AssetRepository assetRepository;
+    @Autowired private AccountBrokerRepository accountBrokerRepository;
+    @Autowired private BrokerRepository brokerRepository;
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private JdbcTemplate jdbc;
+    @MockitoBean private BrazilMarketDataPort brazil;
 
     private Account first;
     private Account second;
@@ -60,7 +81,61 @@ class WalletControllerTests {
         jdbc.update("DELETE FROM SPRING_SESSION");
         patrimonialPointRepository.deleteAll();
         movementRepository.deleteAll();
+        positionRepository.deleteAll();
+        quoteRepository.deleteAll();
+        exchangeRateRepository.deleteAll();
+        accountBrokerRepository.deleteAll();
+        brokerRepository.deleteAll();
+        assetRepository.deleteAll();
         accountRepository.deleteAll();
+    }
+
+    @Test
+    void purchaseUsesSessionAccountAndBackendPriceWhileIgnoringInjectedFields() throws Exception {
+        Cookie session = login(first.getEmail());
+        Asset asset = assetRepository.save(new Asset("PETR4", "Petrobras", Market.BR, Currency.BRL));
+        Broker broker = brokerRepository.save(Broker.create(UUID.randomUUID(), "02332886000104",
+                "XP INVESTIMENTOS SA", "XP", "ATIVA", "CTVM", "01001000", "Rua A", "1",
+                null, "Centro", "São Paulo", "SP", OffsetDateTime.now()));
+        AccountBroker association = accountBrokerRepository.save(AccountBroker.create(
+                UUID.randomUUID(), first, broker, OffsetDateTime.now()));
+        org.mockito.Mockito.when(brazil.findQuote("PETR4")).thenReturn(new MarketQuote(
+                "PETR4", "Petrobras", Market.BR, Currency.BRL, new BigDecimal("25.00"),
+                java.time.Instant.parse("2026-09-03T13:00:00Z"),
+                java.time.Instant.parse("2026-09-03T13:00:01Z"), "Brapi"));
+        CsrfCredentials csrf = csrf();
+
+        mockMvc.perform(post("/api/wallet/purchases").cookie(session, csrf.cookie())
+                        .header("X-XSRF-TOKEN", csrf.token()).contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "assetId", asset.getId(), "brokerId", association.getId(),
+                                "quantity", 2, "accountId", second.getId(), "price", 0.01))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.purchaseAmountBrl").value(50.00))
+                .andExpect(jsonPath("$.remainingBalanceBrl").value(9950.00))
+                .andExpect(jsonPath("$.accountId").doesNotExist())
+                .andExpect(jsonPath("$.price").doesNotExist());
+        assertThat(accountRepository.findById(second.getId()).orElseThrow().getBalance())
+                .isEqualByComparingTo("10000.00");
+    }
+
+    @Test
+    void purchaseValidatesContractAndRequiresAuthenticationAndCsrf() throws Exception {
+        mockMvc.perform(post("/api/wallet/purchases").contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isForbidden());
+        Cookie session = login(first.getEmail());
+        CsrfCredentials csrf = csrf();
+        mockMvc.perform(post("/api/wallet/purchases").cookie(session, csrf.cookie())
+                        .header("X-XSRF-TOKEN", csrf.token()).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"quantity\":0}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.fieldErrors.length()").value(3));
+        mockMvc.perform(post("/api/wallet/purchases").cookie(session)
+                        .contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isForbidden());
+        assertThat(movementRepository.count()).isZero();
     }
 
     @Test

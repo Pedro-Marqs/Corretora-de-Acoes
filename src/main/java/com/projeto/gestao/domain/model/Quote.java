@@ -49,7 +49,7 @@ public class Quote implements Persistable<java.util.UUID> {
 
     private void applySnapshot(BigDecimal price, Currency currency, OffsetDateTime quotedAt,
             OffsetDateTime collectedAt, String source) {
-        this.price = price;
+        this.price = new FinancialAmount(price).value();
         this.currency = currency;
         this.quotedAt = quotedAt;
         this.collectedAt = collectedAt;

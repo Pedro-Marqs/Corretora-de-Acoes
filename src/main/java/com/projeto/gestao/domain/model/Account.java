@@ -63,6 +63,17 @@ public class Account {
         balance = balance.add(normalizedAmount).setScale(2, RoundingMode.HALF_UP);
     }
 
+    public void debit(FinancialAmount amount) {
+        if (amount == null || amount.value().signum() <= 0) {
+            throw new IllegalArgumentException("Debit amount must be positive");
+        }
+        FinancialAmount available = new FinancialAmount(balance);
+        if (amount.value().compareTo(available.value()) > 0) {
+            throw new IllegalStateException("Debit exceeds available balance");
+        }
+        balance = available.subtract(amount).value();
+    }
+
     public void inactivate(OffsetDateTime occurredAt) {
         if (status != AccountStatus.ACTIVE) {
             throw new IllegalStateException("Only an active account can be inactivated");

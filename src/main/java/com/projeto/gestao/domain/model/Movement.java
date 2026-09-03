@@ -25,6 +25,8 @@ public class Movement {
     @Column(length = 20) private String ticker;
     @Enumerated(EnumType.STRING) @JdbcTypeCode(SqlTypes.VARCHAR) @Column(length = 8) private Market market;
     @Column(name = "quote_price", precision = 19, scale = 2) private BigDecimal quotePrice;
+    @Column(name = "unit_price_brl", precision = 19, scale = 2) private BigDecimal unitPriceBrl;
+    @Column(name = "usd_brl_rate", precision = 19, scale = 2) private BigDecimal usdBrlRate;
     private Long quantity;
     @Column(name = "total_amount", nullable = false, precision = 19, scale = 2) private BigDecimal totalAmount;
     @Enumerated(EnumType.STRING) @JdbcTypeCode(SqlTypes.VARCHAR) @Column(nullable = false, length = 3) private Currency currency;
@@ -53,11 +55,29 @@ public class Movement {
 
     public static Movement purchase(
             UUID id, Account account, String ticker, Market market, BigDecimal quotePrice,
-            long quantity, BigDecimal totalAmount, Currency currency, String brokerName,
+            BigDecimal unitPriceBrl, BigDecimal usdBrlRate, long quantity,
+            BigDecimal totalAmount, Currency currency, String brokerName,
             BigDecimal remainingBalance, OffsetDateTime occurredAt) {
         Movement movement = traded(id, account, MovementType.PURCHASE, ticker, market,
                 quotePrice, quantity, totalAmount, currency, brokerName, remainingBalance,
                 occurredAt);
+        movement.unitPriceBrl = money(unitPriceBrl, "unitPriceBrl", false);
+        if (market == Market.US) {
+            movement.usdBrlRate = money(usdBrlRate, "usdBrlRate", false);
+            BigDecimal converted = new FinancialAmount(movement.quotePrice)
+                    .convertUsdToBrl(movement.usdBrlRate).value();
+            if (converted.compareTo(movement.unitPriceBrl) != 0) {
+                throw new IllegalArgumentException("unitPriceBrl must match USD/BRL conversion");
+            }
+        } else if (usdBrlRate != null) {
+            throw new IllegalArgumentException("usdBrlRate applies only to US movements");
+        } else if (movement.quotePrice.compareTo(movement.unitPriceBrl) != 0) {
+            throw new IllegalArgumentException("unitPriceBrl must match BRL quote price");
+        }
+        if (new FinancialAmount(movement.unitPriceBrl).multiply(quantity).value()
+                .compareTo(movement.totalAmount) != 0) {
+            throw new IllegalArgumentException("totalAmount must match unit price and quantity");
+        }
         return movement;
     }
 
@@ -171,6 +191,8 @@ public class Movement {
     public String getTicker() { return ticker; }
     public Market getMarket() { return market; }
     public BigDecimal getQuotePrice() { return quotePrice; }
+    public BigDecimal getUnitPriceBrl() { return unitPriceBrl; }
+    public BigDecimal getUsdBrlRate() { return usdBrlRate; }
     public Long getQuantity() { return quantity; }
     public BigDecimal getTotalAmount() { return totalAmount; }
     public Currency getCurrency() { return currency; }

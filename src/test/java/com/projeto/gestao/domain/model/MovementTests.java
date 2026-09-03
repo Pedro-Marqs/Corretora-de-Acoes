@@ -21,11 +21,16 @@ class MovementTests {
         Movement deposit = Movement.deposit(UUID.randomUUID(), account,
                 new BigDecimal("10"), new BigDecimal("10010"), now);
         Movement purchase = Movement.purchase(UUID.randomUUID(), account, "PETR4", Market.BR,
-                new BigDecimal("20"), 2, new BigDecimal("40"), Currency.BRL,
+                new BigDecimal("20"), new BigDecimal("20"), null, 2,
+                new BigDecimal("40"), Currency.BRL,
                 "Broker", new BigDecimal("9970"), now);
         Movement sale = Movement.sale(UUID.randomUUID(), account, "AAPL", Market.US,
                 new BigDecimal("10"), 2, new BigDecimal("20"), Currency.USD,
                 "Broker", new BigDecimal("10070"), new BigDecimal("-5"), now);
+        Movement usPurchase = Movement.purchase(UUID.randomUUID(), account, "AAPL", Market.US,
+                new BigDecimal("10.005"), new BigDecimal("50.15"),
+                new BigDecimal("5.005"), 2, new BigDecimal("100.30"), Currency.USD,
+                "Broker", new BigDecimal("9869.70"), now);
         Movement transfer = Movement.transfer(UUID.randomUUID(), account, "PETR4", Market.BR,
                 2, new BigDecimal("40"), Currency.BRL, "Origin", "Destination",
                 new BigDecimal("10070"), now);
@@ -33,6 +38,10 @@ class MovementTests {
         assertThat(initial.getMovementType()).isEqualTo(MovementType.INITIAL_BALANCE);
         assertThat(deposit.getMovementType()).isEqualTo(MovementType.DEPOSIT);
         assertThat(purchase.getBrokerName()).isEqualTo("Broker");
+        assertThat(purchase.getUnitPriceBrl()).isEqualByComparingTo("20.00");
+        assertThat(purchase.getUsdBrlRate()).isNull();
+        assertThat(usPurchase.getUnitPriceBrl()).isEqualByComparingTo("50.15");
+        assertThat(usPurchase.getUsdBrlRate()).isEqualByComparingTo("5.01");
         assertThat(purchase.getOriginBrokerName()).isNull();
         assertThat(sale.getRealizedResult()).isEqualByComparingTo("-5.00");
         assertThat(transfer.getQuotePrice()).isNull();
@@ -45,15 +54,26 @@ class MovementTests {
         assertThatThrownBy(() -> Movement.deposit(UUID.randomUUID(), account, BigDecimal.ZERO,
                 new BigDecimal("10000"), now)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> Movement.purchase(UUID.randomUUID(), account, " ", Market.BR,
-                BigDecimal.TEN, 1, BigDecimal.TEN, Currency.BRL, "Broker", BigDecimal.ZERO, now))
+                BigDecimal.TEN, BigDecimal.TEN, null, 1, BigDecimal.TEN, Currency.BRL,
+                "Broker", BigDecimal.ZERO, now))
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> Movement.initialBalance(UUID.randomUUID(), account,
                 new BigDecimal("0.004"), now)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> Movement.purchase(UUID.randomUUID(), account, "AAPL", Market.US,
-                BigDecimal.TEN, 0, BigDecimal.TEN, Currency.USD, "Broker", BigDecimal.ZERO, now))
+                BigDecimal.TEN, BigDecimal.TEN, BigDecimal.ONE, 0, BigDecimal.TEN,
+                Currency.USD, "Broker", BigDecimal.ZERO, now))
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> Movement.purchase(UUID.randomUUID(), account, "AAPL", Market.US,
-                BigDecimal.TEN, 1, BigDecimal.TEN, Currency.BRL, "Broker", BigDecimal.ZERO, now))
+                BigDecimal.TEN, BigDecimal.TEN, BigDecimal.ONE, 1, BigDecimal.TEN,
+                Currency.BRL, "Broker", BigDecimal.ZERO, now))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> Movement.purchase(UUID.randomUUID(), account, "AAPL", Market.US,
+                BigDecimal.TEN, BigDecimal.TEN, null, 1, BigDecimal.TEN,
+                Currency.USD, "Broker", BigDecimal.ZERO, now))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> Movement.purchase(UUID.randomUUID(), account, "AAPL", Market.US,
+                BigDecimal.TEN, new BigDecimal("49.99"), new BigDecimal("5.00"), 1,
+                new BigDecimal("49.99"), Currency.USD, "Broker", BigDecimal.ZERO, now))
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> Movement.transfer(UUID.randomUUID(), account, "PETR4", Market.BR,
                 1, BigDecimal.TEN, Currency.BRL, "Same", "Same", BigDecimal.ZERO, now))

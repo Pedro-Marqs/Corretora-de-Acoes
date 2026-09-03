@@ -75,6 +75,28 @@ class SchemaMigrationTests {
     }
 
     @Test
+    void movementStoresPurchaseConversionInputs() {
+        List<String> columns = jdbc.queryForList("""
+                SELECT LOWER(column_name) FROM information_schema.columns
+                 WHERE table_name = 'MOVEMENT'
+                """, String.class);
+        assertThat(columns).contains("unit_price_brl", "usd_brl_rate");
+
+        UUID accountId = UUID.randomUUID();
+        insertAccount(accountId, "13131313131", "purchase-inputs@example.com",
+                new BigDecimal("10000.00"), "ACTIVE");
+        assertThatThrownBy(() -> jdbc.update("""
+                INSERT INTO movement
+                    (id, account_id, movement_type, ticker, market, quote_price, quantity,
+                     total_amount, currency, broker_name, occurred_at, remaining_balance)
+                VALUES (?, ?, 'PURCHASE', 'AAPL', 'US', 10.00, 1,
+                        50.00, 'USD', 'Broker', ?, 9950.00)
+                """, UUID.randomUUID(), accountId,
+                Timestamp.from(OffsetDateTime.now().toInstant())))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
     void rejectsMovementWithFieldsInapplicableToItsType() {
         UUID accountId = UUID.randomUUID();
         insertAccount(accountId, "12121212121", "movement-fields@example.com",

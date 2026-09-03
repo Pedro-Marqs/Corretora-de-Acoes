@@ -38,7 +38,7 @@ public class ExchangeRate implements Persistable<String> {
 
     private void applySnapshot(BigDecimal rate, OffsetDateTime quotedAt,
             OffsetDateTime collectedAt, String source) {
-        this.rate = rate;
+        this.rate = new FinancialAmount(rate).value();
         this.quotedAt = quotedAt;
         this.collectedAt = collectedAt;
         this.source = source;

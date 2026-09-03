@@ -1,10 +1,10 @@
 package com.projeto.gestao.service;
 
-import java.math.RoundingMode;
 import java.util.Locale;
 
 import com.projeto.gestao.api.exception.ExternalDependencyException;
 import com.projeto.gestao.api.exception.MarketDataUnavailableException;
+import com.projeto.gestao.domain.model.FinancialAmount;
 import com.projeto.gestao.domain.model.Market;
 import com.projeto.gestao.domain.port.BrazilMarketDataPort;
 import com.projeto.gestao.domain.port.ExternalDataFailure;
@@ -40,8 +40,10 @@ public class AssetCatalogService {
                     null, null, null, null);
         }
         CachedExchangeRate rate = exchangeRates.resolveUsdBrl();
+        FinancialAmount priceBrl = new FinancialAmount(quote.price())
+                .convertUsdToBrl(rate.rate());
         return new AssetPriceView(quote.ticker(), quote.name(), quote.market(), quote.currency(),
-                quote.price(), quote.price().multiply(rate.rate()).setScale(2, RoundingMode.HALF_UP),
+                quote.price(), priceBrl.value(),
                 quote.source(), quote.quotedAt(), quote.stale(), rate.rate(), rate.source(),
                 rate.quotedAt(), rate.stale());
     }

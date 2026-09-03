@@ -56,7 +56,7 @@ class AssetCatalogServiceTests {
         when(cache.find("AAPL", Market.US, freshness)).thenReturn(cached(Market.US, Currency.USD, "10.005"));
         when(exchange.resolveUsdBrl()).thenReturn(new CachedExchangeRate(new BigDecimal("5.00"),
                 "awesome", Instant.EPOCH, Instant.EPOCH, false));
-        assertThat(service.find("AAPL", Market.US).priceBrl()).isEqualByComparingTo("50.03");
+        assertThat(service.find("AAPL", Market.US).priceBrl()).isEqualByComparingTo("50.05");
         verifyNoInteractions(brazil, unitedStates);
     }
 
@@ -71,8 +71,19 @@ class AssetCatalogServiceTests {
         AssetPriceView result = service.find("aapl", Market.US);
 
         assertThat(result.originalPrice()).isEqualByComparingTo("10.005");
-        assertThat(result.priceBrl()).isEqualByComparingTo("50.03");
+        assertThat(result.priceBrl()).isEqualByComparingTo("50.05");
         verify(cache).store(external, freshness);
+    }
+
+    @Test void usConversionUsesFinancialAmountRoundingForPriceAndRate() {
+        when(cache.find("AAPL", Market.US, freshness))
+                .thenReturn(cached(Market.US, Currency.USD, "10.005"));
+        when(exchange.resolveUsdBrl()).thenReturn(new CachedExchangeRate(
+                new BigDecimal("5.005"), "awesome", Instant.EPOCH, Instant.EPOCH, false));
+
+        AssetPriceView result = service.find("AAPL", Market.US);
+
+        assertThat(result.priceBrl()).isEqualByComparingTo("50.15");
     }
 
     @Test void usExternalFailureUsesCacheThatBecameAvailable() {
