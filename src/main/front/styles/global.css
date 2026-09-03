@@ -99,7 +99,7 @@ input[aria-invalid="true"] { border-color: #b23a3a; }
 .private-layout { min-height: 100vh; padding: clamp(1rem, 3vw, 2rem); background: #f4f6f1; }
 .private-layout > header, .foundation-home { width: min(100%, 72rem); margin-inline: auto; }
 .private-header { display:flex;align-items:center;gap:2rem;justify-content:space-between; }
-.private-header nav { display:flex;gap:.5rem; }
+.private-header nav { display:flex;min-width:0;gap:.5rem;flex-wrap:wrap; }
 .private-header nav a { padding:.65rem .8rem;border-radius:.5rem;color:#526159;text-decoration:none;font-weight:700; }
 .private-header nav a.active { color:#164a39;background:#e2f1ce; }
 .layout-error,.account-page { width:min(100%,72rem);margin-inline:auto; }
@@ -165,6 +165,24 @@ input[aria-invalid="true"] { border-color: #b23a3a; }
 .broker-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;margin-top:1.5rem; }
 .broker-card { min-width:0;padding:1.25rem;border:1px solid #dfe5dd;border-radius:.8rem;background:#fafbf8; }
 .broker-card .secondary-button { width:100%; }
+.assets-page { width:min(100%,72rem);margin-inline:auto;padding-block:clamp(2.5rem,6vw,5rem); }
+.assets-heading h1 { max-width:none;color:#163c30; }
+.assets-heading > p:last-child { color:#526159;line-height:1.6; }
+.asset-search-card > div > p:last-child,.asset-result header p { color:#68756e;line-height:1.6; }
+.asset-search-card { display:grid;grid-template-columns:minmax(0,1fr) minmax(18rem,.75fr);gap:clamp(1.5rem,5vw,4rem);margin:2rem 0 1rem;padding:clamp(1.5rem,4vw,2.5rem);border:1px solid #dfe5dd;border-radius:1rem;background:#fff; }
+.asset-search-card h2,.asset-result h2 { color:#163c30;font-size:clamp(1.7rem,3vw,2.35rem); }
+.asset-response { min-width:0;margin-top:1rem;border:1px solid #dfe5dd;border-radius:1rem;background:#fff;overflow:hidden; }
+.asset-result { min-width:0;padding:clamp(1.25rem,4vw,2rem); }
+.asset-result header { display:flex;align-items:flex-start;justify-content:space-between;gap:1rem; }
+.asset-result header p { margin:.5rem 0 0; }
+.market-badge { flex:0 0 auto;padding:.45rem .7rem;border-radius:2rem;color:#164a39;background:#e2f1ce;font-size:.78rem;font-weight:800; }
+.asset-details { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem;margin:1.5rem 0 0; }
+.asset-details div { min-width:0;padding:1rem;border-radius:.7rem;background:#f7faf5; }
+.asset-details dt { color:#526159;font-size:.76rem;font-weight:700; }
+.asset-details dd { margin:.35rem 0 0;overflow-wrap:anywhere;color:#263d33;font-weight:750; }
+.freshness-warnings { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem; }
+.stale-warning { margin-top:1.25rem;padding:1rem 1.1rem;border-left:3px solid #bd7f27;border-radius:.5rem;color:#694e28;background:#fff8e9; }
+.stale-warning p { margin:.35rem 0 0;line-height:1.5; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (max-width: 860px) {
   .page-shell { grid-template-columns: 1fr; }
@@ -184,6 +202,8 @@ input[aria-invalid="true"] { border-color: #b23a3a; }
   .reactivation-options { grid-template-columns:1fr; }
   .deposit-card { grid-template-columns:1fr; }
   .broker-search-card,.broker-grid { grid-template-columns:1fr; }
+  .asset-search-card { grid-template-columns:1fr; }
+  .asset-details { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .option-card p { min-height:0; }
 }
 @media (max-width: 420px) {
@@ -197,5 +217,6 @@ input[aria-invalid="true"] { border-color: #b23a3a; }
   .modal-actions { flex-direction:column-reverse; }
   .broker-preview dl,.broker-card dl { grid-template-columns:1fr; }
   .broker-preview > .primary-button { width:100%; }
+  .asset-details,.freshness-warnings { grid-template-columns:1fr; }
 }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } .state-spinner { animation: none; } }

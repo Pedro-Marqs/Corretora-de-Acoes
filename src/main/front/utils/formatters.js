@@ -6,6 +6,13 @@ export function formatCurrency(value) {
   return Number.isFinite(number) ? brl.format(number) : 'Valor indisponível'
 }
 
+export function formatMoney(value, currency, style = true) {
+  const number = Number(value)
+  if (!Number.isFinite(number) || !['BRL', 'USD'].includes(currency)) return 'Valor indisponível'
+  const options = style ? { style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 2 } : { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+  return new Intl.NumberFormat('pt-BR', options).format(number)
+}
+
 export function formatCurrencyInput(value) {
   const digits = String(value ?? '').replace(/\D/g, '').slice(0, 15)
   if (!digits) return ''

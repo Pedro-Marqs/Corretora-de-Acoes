@@ -8,6 +8,7 @@ steps: 40
 permission:
   edit:
     "*": deny
+    "docs/continuidade.md": allow
     "openspec/**": allow
 
   bash:

@@ -110,6 +110,9 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 - Falhas de atualização preservam o cache e marcam o dado como desatualizado; um snapshot bem-sucedido com o mesmo instante também limpa essa marca. O ciclo diário executa USD/BRL mesmo quando a etapa norte-americana falha e só registra a data após as etapas concluírem.
 - A T24 não cria movimentações nem pontos patrimoniais. A suíte focada, a suíte backend H2, a compilação Maven sem testes, `git diff --check` e `openspec validate --strict` passaram; a query de seleção de ativos foi coberta com teste persistente em H2.
 
+- A implementação da T25 foi concluída no change `implementar-t25-interface-pesquisa-ativos`: a rota privada `/app/ativos` permite pesquisar ticker, apresenta resultados BR e US com valores e horários oficiais do backend, diferencia estados vazios/erros e sinaliza independentemente cotação e USD/BRL desatualizados.
+- A T25 foi concluída e o change `implementar-t25-interface-pesquisa-ativos` foi arquivado em `openspec/changes/archive/2026-09-03-implementar-t25-interface-pesquisa-ativos`. O Reviewer foi APROVADO, e o Tester foi aprovado com 169 testes frontend, ESLint, build Vite e `git diff --check`; `openspec validate --strict` também foi aprovado.
+
 ## Decisões funcionais confirmadas
 
 - O sistema é um simulador acadêmico para pessoa física, com um único tipo de usuário: `Investidor`. Cadastro, login e reativação são realizados pelo investidor ainda não autenticado; as demais funções exigem autenticação.
@@ -190,7 +193,7 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 
 ## Próximo passo
 
-A T24 e o change `implementar-t24-agendamentos-mercado` estão completos e prontos para arquivamento. Depois do arquivamento, aguardar o usuário gerar o OpenSpec da próxima tarefa antes de iniciar nova implementação.
+A T25 está arquivada em `openspec/changes/archive/2026-09-03-implementar-t25-interface-pesquisa-ativos`. Aguardar o próximo change OpenSpec.
 
 ### Forma de trabalho para as próximas tarefas
 

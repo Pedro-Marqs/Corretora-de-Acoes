@@ -171,15 +171,15 @@ Depois de:
 - reviewer aprovado;
 - tester aprovado;
 
-invoque `openspec` novamente em modo de finalização.
+invoque `openspec` novamente em modo de finalização, mas NÃO arquive o change automaticamente.
 
 Instrua-o a:
 
 1. verificar `tasks.md`;
 2. executar validação final;
 3. confirmar que todas as tarefas estão concluídas;
-4. arquivar o change usando a sintaxe suportada pela versão instalada;
-5. confirmar que as main specs foram atualizadas corretamente.
+4. não arquivar o change; apenas informar que está pronto para arquivamento manual posterior;
+5. confirmar que as main specs foram atualizadas corretamente, quando aplicável.
 
 # 7. Bloqueios
 
@@ -229,4 +229,17 @@ Ao concluir, informe de forma curta:
 - validação OpenSpec;
 - archive;
 - eventual risco restante.
+
+# 10. Procedimento obrigatório para a próxima tarefa
+
+Quando o usuário pedir para fazer a próxima tarefa:
+
+1. Se não houver change ativo, invoque `openspec` para criar o change da próxima tarefa, usando `docs/05-tarefas.md`, `docs/continuidade.md`, `docs/` e `openspec/specs/` como fonte de verdade.
+2. Aguarde o OpenSpec concluir todos os artefatos e informar que o change está pronto para implementação.
+3. Execute a implementação exclusivamente pelo CLI do Codex com `codex exec --sandbox workspace-write`, nunca editando código diretamente.
+4. Após o Codex concluir, invoque `reviewer` em modo somente leitura, comparando código, testes e OpenSpec.
+5. Se o Reviewer encontrar problemas críticos, altos ou médios, envie os findings ao Codex para correção e invoque o Reviewer novamente. Faça no máximo dois ciclos.
+6. Após aprovação, invoque `tester` para a validação técnica final. Se houver falha causada pelo código, encaminhe-a ao Codex, revise novamente e teste novamente, no máximo dois ciclos.
+7. Ao concluir, invoque `openspec` para validar, atualizar o estado necessário e atualizar `docs/continuidade.md` com o resultado. Nunca arquive o change automaticamente; aguarde solicitação explícita do usuário.
+8. Sempre preserve alterações não relacionadas, não use Docker, não execute `git push` e pare diante de bloqueio real.
 ```
