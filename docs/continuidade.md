@@ -116,7 +116,7 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 - A implementação da T27 foi concluída no change `implementar-t27-compra-ativos`: `POST /api/wallet/purchases` deriva a conta da sessão, aceita somente ativo, associação de corretora e quantidade inteira positiva, resolve mercado antes da transação e revalida conta, propriedade, ativo, snapshot e saldo sob bloqueio transacional. A compra BR/US debita o saldo único, aplica o núcleo T26 à posição e registra movimentação/ponto patrimonial atomicamente; preço ou conta extras enviados pelo cliente não têm autoridade.
 - A suíte focada da T27 passou com 19 testes, sendo 18 executados em H2 e o teste PostgreSQL local opt-in ignorado porque `RUN_LOCAL_POSTGRES_TESTS` e as credenciais não estavam configurados. Rollback por falha de movimentação ou patrimônio, concorrência de saldo, fallback de mercado, ausência de câmbio, isolamento e contrato HTTP foram comprovados. O empacotamento Maven, `git diff --check` e `openspec validate implementar-t27-compra-ativos --strict` passaram; permanecem as aprovações externas de Reviewer e Tester antes do arquivamento.
 
-- A T28 foi implementada no change `implementar-t28-venda-ativos`, incluindo venda transacional, atualização de posição e saldo, histórico, patrimônio, concorrência e rollback; a migração V8 `V8__movement_sale_financial_inputs.sql` ajusta as constraints financeiras para compras e vendas. A revisão externa aguarda validação.
+- A T28 foi implementada no change `implementar-t28-venda-ativos`, incluindo venda transacional, atualização de posição e saldo, histórico, patrimônio, concorrência e rollback; a migração V8 `V8__movement_sale_financial_inputs.sql` ajusta as constraints financeiras para compras e vendas. A verificação final foi aprovada com 31 testes focados de venda/HTTP/regressão de compra, `mvn package`, `git diff --check` e `openspec validate --strict`; o change está pronto para archive, que ainda não foi executado.
 
 ## Decisões funcionais confirmadas
 
@@ -198,7 +198,7 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 
 ## Próximo passo
 
-A implementação da T27 está concluída em `openspec/changes/implementar-t27-compra-ativos`. O próximo passo é a revisão e a suíte final externas, seguidas do arquivamento pelo fluxo responsável.
+A implementação da T28 está concluída em `openspec/changes/implementar-t28-venda-ativos`. O próximo passo correto é arquivar esse change pelo fluxo responsável; nenhuma implementação adicional ou alteração de requisitos é necessária antes do archive.
 
 ### Forma de trabalho para as próximas tarefas
 

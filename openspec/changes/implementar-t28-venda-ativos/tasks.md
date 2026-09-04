@@ -17,4 +17,4 @@
 
 ## 4. Verificação integral
 
-- [ ] 4.1 Executar a suíte focada de venda, os testes de regressão da compra, a compilação Maven e `git diff --check`; confirmar os critérios CA04, CA05, CA07 e CA08 aplicáveis à venda e todos os cenários dos deltas, sem alterar frontend ou banco principal.
+- [x] 4.1 Executar a suíte focada de venda, os testes de regressão da compra, a compilação Maven e `git diff --check`; confirmar os critérios CA04, CA05, CA07 e CA08 aplicáveis à venda e todos os cenários dos deltas, sem alterar frontend ou banco principal. Evidência: 31 testes focados de venda/HTTP/regressão de compra aprovados, `mvn package`, `git diff --check` e `openspec validate --strict` aprovados.
