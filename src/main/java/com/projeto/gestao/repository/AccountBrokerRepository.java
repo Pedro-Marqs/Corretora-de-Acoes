@@ -16,6 +16,7 @@ public interface AccountBrokerRepository extends JpaRepository<AccountBroker, UU
     List<AccountBroker> findByAccountIdAndStatus(UUID accountId, AssociationStatus status);
     boolean existsByAccountIdAndBrokerIdAndStatus(UUID accountId, UUID brokerId, AssociationStatus status);
     Optional<AccountBroker> findByAccountIdAndBrokerId(UUID accountId, UUID brokerId);
+    Optional<AccountBroker> findByIdAndAccountId(UUID id, UUID accountId);
     Optional<AccountBroker> findByIdAndAccountIdAndStatus(UUID id, UUID accountId, AssociationStatus status);
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<AccountBroker> findForUpdateByIdAndAccountIdAndStatus(
