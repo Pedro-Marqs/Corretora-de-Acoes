@@ -36,4 +36,6 @@ Alternativas rejeitadas: reservar posição fora da transação (aumentaria esta
 
 ## Migration Plan
 
-Não há migração de banco prevista: a venda usa tabelas, constraints e registros existentes. A implantação consiste em disponibilizar o novo caso de uso e seus testes; rollback é remover/desabilitar a rota e o serviço sem modificar dados já persistidos.
+A migração V8 (`V8__movement_sale_financial_inputs.sql`) substitui a constraint exclusiva de compras `ck_movement_purchase_financial_inputs` por `ck_movement_trade_financial_inputs`, estendendo a validação dos campos financeiros para compras e vendas: ativos BR exigem `unit_price_brl` sem câmbio, e ativos US exigem `unit_price_brl` e `usd_brl_rate`. A migração é compatível com os registros existentes e não exige transformação de dados.
+
+O rollback funcional permanece compatível: remover ou desabilitar a rota e o serviço não apaga registros persistidos. A V8 só deve ser revertida com uma migração explícita que restaure a constraint anterior após garantir que não existem vendas persistidas, pois a constraint antiga não aceita registros `SALE`.

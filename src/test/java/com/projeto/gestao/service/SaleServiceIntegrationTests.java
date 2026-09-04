@@ -115,7 +115,7 @@ class SaleServiceIntegrationTests {
     void convertsUsSaleAndPersistsEffectiveFinancialInputsAndNegativeResult() {
         var asset = assets.save(new com.projeto.gestao.domain.model.Asset(
                 "AAPL", "Apple", Market.US, Currency.USD));
-        when(unitedStates.findQuote("AAPL")).thenReturn(quoteUs("10.00", FIRST));
+        when(unitedStates.findQuote("AAPL")).thenReturn(quoteUs("AAPL", "10.00", FIRST));
         when(exchange.currentRate()).thenReturn(new UsdBrlRate(new BigDecimal("5.00"), FIRST,
                 FIRST.plusSeconds(1), "AwesomeAPI"));
         purchases.purchase(account.getId(), asset.getId(), association.getId(), 3);
@@ -204,7 +204,7 @@ class SaleServiceIntegrationTests {
     void blocksUnitedStatesSaleWhenExchangeRateIsUnavailable() {
         var asset = assets.save(new com.projeto.gestao.domain.model.Asset(
                 "MSFT", "Microsoft", Market.US, Currency.USD));
-        when(unitedStates.findQuote("MSFT")).thenReturn(quoteUs("10.00", FIRST));
+        when(unitedStates.findQuote("MSFT")).thenReturn(quoteUs("MSFT", "10.00", FIRST));
         when(exchange.currentRate()).thenReturn(new UsdBrlRate(
                 new BigDecimal("5.00"), FIRST, FIRST.plusSeconds(1), "AwesomeAPI"));
         purchases.purchase(account.getId(), asset.getId(), association.getId(), 2);
@@ -258,8 +258,8 @@ class SaleServiceIntegrationTests {
                 instant, instant.plusSeconds(1), "Brapi");
     }
 
-    private static MarketQuote quoteUs(String price, Instant instant) {
-        return new MarketQuote("AAPL", "Apple", Market.US, Currency.USD, new BigDecimal(price),
+    private static MarketQuote quoteUs(String ticker, String price, Instant instant) {
+        return new MarketQuote(ticker, "Asset", Market.US, Currency.USD, new BigDecimal(price),
                 instant, instant.plusSeconds(1), "TwelveData");
     }
 
