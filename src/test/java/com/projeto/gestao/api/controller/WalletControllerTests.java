@@ -20,6 +20,10 @@ import com.projeto.gestao.domain.model.Broker;
 import com.projeto.gestao.domain.model.Currency;
 import com.projeto.gestao.domain.model.Market;
 import com.projeto.gestao.domain.model.MarketQuote;
+import com.projeto.gestao.domain.model.FinancialAmount;
+import com.projeto.gestao.domain.model.Position;
+import com.projeto.gestao.domain.model.PositionBalance;
+import com.projeto.gestao.domain.model.PositionQuantity;
 import com.projeto.gestao.domain.port.BrazilMarketDataPort;
 import com.projeto.gestao.repository.AccountBrokerRepository;
 import com.projeto.gestao.repository.AccountRepository;
@@ -44,6 +48,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -64,6 +70,7 @@ class WalletControllerTests {
     @Autowired private BrokerRepository brokerRepository;
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private JdbcTemplate jdbc;
+    @Autowired private PlatformTransactionManager transactionManager;
     @MockitoBean private BrazilMarketDataPort brazil;
 
     private Account first;
@@ -216,6 +223,96 @@ class WalletControllerTests {
     }
 
     @Test
+    void transferUsesOnlySessionAccountAndRequestedIdentifiers() throws Exception {
+        Asset asset = assetRepository.save(new Asset("VALE3", "Vale", Market.BR, Currency.BRL));
+        AccountBroker origin = saveAssociation(first, "02332886000104", "Origem");
+        AccountBroker destination = saveAssociation(first, "10270580000110", "Destino");
+        new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
+            AccountBroker persistedOrigin = accountBrokerRepository.findById(origin.getId())
+                    .orElseThrow();
+            Asset managedAsset = assetRepository.findById(asset.getId()).orElseThrow();
+            positionRepository.save(Position.create(UUID.randomUUID(), persistedOrigin.getAccount(),
+                    persistedOrigin, managedAsset,
+                    new PositionBalance(PositionQuantity.positive(4),
+                            new FinancialAmount(new BigDecimal("40.00")),
+                            new FinancialAmount(new BigDecimal("10.00")))));
+            quoteRepository.save(new com.projeto.gestao.domain.model.Quote(managedAsset,
+                    new BigDecimal("12.00"), Currency.BRL, OffsetDateTime.now(),
+                    OffsetDateTime.now(), "cache"));
+        });
+        Cookie session = login(first.getEmail());
+        CsrfCredentials csrf = csrf();
+
+        mockMvc.perform(post("/api/wallet/transfers").cookie(session, csrf.cookie())
+                        .header("X-XSRF-TOKEN", csrf.token()).contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "originBrokerId", origin.getId(),
+                                "destinationBrokerId", destination.getId(),
+                                "assetId", asset.getId(), "quantity", 2,
+                                "accountId", second.getId(), "price", 0.01))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.originQuantity").value(2))
+                .andExpect(jsonPath("$.destinationQuantity").value(2))
+                .andExpect(jsonPath("$.transferredCostBrl").value(20.00))
+                .andExpect(jsonPath("$.remainingBalanceBrl").value(10000.00))
+                .andExpect(jsonPath("$.accountId").doesNotExist())
+                .andExpect(jsonPath("$.price").doesNotExist());
+        assertThat(accountRepository.findById(second.getId()).orElseThrow().getBalance())
+                .isEqualByComparingTo("10000.00");
+    }
+
+    @Test
+    void transferRequiresAuthenticationCsrfAndValidFieldsAndHidesForeignResources() throws Exception {
+        CsrfCredentials anonymousCsrf = csrf();
+        String validBody = objectMapper.writeValueAsString(Map.of(
+                "originBrokerId", UUID.randomUUID(), "destinationBrokerId", UUID.randomUUID(),
+                "assetId", UUID.randomUUID(), "quantity", 1));
+        mockMvc.perform(post("/api/wallet/transfers").cookie(anonymousCsrf.cookie())
+                        .header("X-XSRF-TOKEN", anonymousCsrf.token())
+                        .contentType(MediaType.APPLICATION_JSON).content(validBody))
+                .andExpect(status().isUnauthorized());
+        Cookie session = login(first.getEmail());
+        mockMvc.perform(post("/api/wallet/transfers").cookie(session)
+                        .contentType(MediaType.APPLICATION_JSON).content(validBody))
+                .andExpect(status().isForbidden());
+        CsrfCredentials csrf = csrf();
+        for (String body : new String[] {"{}", "{\"quantity\":0}",
+                "{\"originBrokerId\":\"" + UUID.randomUUID()
+                        + "\",\"destinationBrokerId\":\"" + UUID.randomUUID()
+                        + "\",\"assetId\":\"" + UUID.randomUUID() + "\",\"quantity\":1.5}"}) {
+            mockMvc.perform(post("/api/wallet/transfers").cookie(session, csrf.cookie())
+                            .header("X-XSRF-TOKEN", csrf.token())
+                            .contentType(MediaType.APPLICATION_JSON).content(body))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+        }
+
+        Asset asset = assetRepository.save(new Asset("VALE3", "Vale", Market.BR, Currency.BRL));
+        AccountBroker own = saveAssociation(first, "34028316000103", "Própria");
+        AccountBroker foreign = saveAssociation(second, "60872504000123", "Terceira");
+        AccountBroker persistedOwn = accountBrokerRepository.findById(own.getId()).orElseThrow();
+        positionRepository.save(Position.create(UUID.randomUUID(), persistedOwn.getAccount(),
+                persistedOwn, asset,
+                new PositionBalance(PositionQuantity.positive(2),
+                        new FinancialAmount(new BigDecimal("30.00")),
+                        new FinancialAmount(new BigDecimal("15.00")))));
+        long beforeMovements = movementRepository.count();
+        mockMvc.perform(post("/api/wallet/transfers").cookie(session, csrf.cookie())
+                        .header("X-XSRF-TOKEN", csrf.token()).contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "originBrokerId", own.getId(),
+                                "destinationBrokerId", foreign.getId(),
+                                "assetId", asset.getId(), "quantity", 1))))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("AUTHORIZATION_ERROR"))
+                .andExpect(jsonPath("$.message").value(
+                        "Você não tem permissão para realizar esta operação."));
+        assertThat(positionRepository.findById(positionRepository.findAll().get(0).getId())
+                .orElseThrow().getQuantity()).isEqualTo(2);
+        assertThat(movementRepository.count()).isEqualTo(beforeMovements);
+    }
+
+    @Test
     void returnsInitialBalanceAndDepositsOnlyIntoSessionAccount() throws Exception {
         Cookie firstSession = login(first.getEmail());
         Cookie secondSession = login(second.getEmail());
@@ -273,6 +370,14 @@ class WalletControllerTests {
         return accountRepository.saveAndFlush(Account.create(UUID.randomUUID(), "Investor", cpf,
                 email, passwordEncoder.encode(PASSWORD), new BigDecimal("10000.00"),
                 OffsetDateTime.parse("2026-08-26T10:00:00-03:00")));
+    }
+
+    private AccountBroker saveAssociation(Account owner, String cnpj, String name) {
+        Broker broker = brokerRepository.save(Broker.create(UUID.randomUUID(), cnpj, name + " SA",
+                name, "ATIVA", "CTVM", "01001000", "Rua A", "1", null, "Centro",
+                "São Paulo", "SP", OffsetDateTime.now()));
+        return accountBrokerRepository.save(AccountBroker.create(
+                UUID.randomUUID(), owner, broker, OffsetDateTime.now()));
     }
 
     private Cookie login(String email) throws Exception {

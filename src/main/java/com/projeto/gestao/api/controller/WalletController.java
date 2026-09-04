@@ -4,6 +4,7 @@ import com.projeto.gestao.security.AccountPrincipal;
 import com.projeto.gestao.service.WalletService;
 import com.projeto.gestao.service.PurchaseService;
 import com.projeto.gestao.service.SaleService;
+import com.projeto.gestao.service.TransferService;
 import com.projeto.gestao.service.WalletPositionsService;
 import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -19,13 +20,16 @@ public class WalletController {
     private final WalletService walletService;
     private final PurchaseService purchaseService;
     private final SaleService saleService;
+    private final TransferService transferService;
     private final WalletPositionsService walletPositionsService;
 
     public WalletController(WalletService walletService, PurchaseService purchaseService,
-            SaleService saleService, WalletPositionsService walletPositionsService) {
+            SaleService saleService, TransferService transferService,
+            WalletPositionsService walletPositionsService) {
         this.walletService = walletService;
         this.purchaseService = purchaseService;
         this.saleService = saleService;
+        this.transferService = transferService;
         this.walletPositionsService = walletPositionsService;
     }
 
@@ -57,5 +61,13 @@ public class WalletController {
             @Valid @RequestBody SaleRequest request) {
         return SaleResponse.from(saleService.sell(principal.accountId(),
                 request.assetId(), request.brokerId(), request.quantityAsLong()));
+    }
+
+    @PostMapping("/transfers")
+    TransferResponse transfer(@AuthenticationPrincipal AccountPrincipal principal,
+            @Valid @RequestBody TransferRequest request) {
+        return TransferResponse.from(transferService.transfer(principal.accountId(),
+                request.originBrokerId(), request.destinationBrokerId(), request.assetId(),
+                request.quantityAsLong()));
     }
 }

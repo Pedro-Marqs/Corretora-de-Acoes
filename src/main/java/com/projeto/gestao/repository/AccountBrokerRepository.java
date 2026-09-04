@@ -8,6 +8,8 @@ import com.projeto.gestao.domain.model.AccountBroker;
 import com.projeto.gestao.domain.model.AssociationStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import jakarta.persistence.LockModeType;
 
 public interface AccountBrokerRepository extends JpaRepository<AccountBroker, UUID> {
@@ -18,4 +20,10 @@ public interface AccountBrokerRepository extends JpaRepository<AccountBroker, UU
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<AccountBroker> findForUpdateByIdAndAccountIdAndStatus(
             UUID id, UUID accountId, AssociationStatus status);
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select association from AccountBroker association "
+            + "where association.account.id = :accountId and association.id in :ids "
+            + "order by association.id")
+    List<AccountBroker> findAllForUpdateOrdered(@Param("accountId") UUID accountId,
+            @Param("ids") List<UUID> ids);
 }

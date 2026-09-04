@@ -122,6 +122,8 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 - Para viabilizar a T29, `GET /api/assets/search` passou a expor o `assetId` (UUID opaco) da entidade de catálogo já persistida nos dois caminhos do cache, decisão registrada como suposição reversível mínima; nenhum endpoint novo, migração ou regra financeira foi alterada, e compra/venda continuam revalidando o identificador na execução.
 - O Revisor apontou um CRÍTICO (símbolo `assetId` indeclarado em dois testes), um ALTO (mojibake UTF-8 duplo-codificado no texto novo da T29) e dois MÉDIOS (foco do modal de confirmação e `aria-describedby` dos erros de campo); todos foram corrigidos pelo Codex e comprovados por testes novos.
 - A validação final da T29 passou com 268 testes backend sem falhas ou erros (10 ignorados por opt-in/Testcontainers; Docker não foi usado), 196 testes frontend, ESLint sem avisos, build Vite, `git diff --check` e `openspec validate --strict`. O change está pronto para archive, que ainda não foi executado.
+- A T30 foi concluída no change `implementar-t30-transferencia-posicoes`: a transferência autenticada parcial ou total entre corretoras próprias ativas valida propriedade, atividade, ativo, quantidade e concorrência sob transação; preserva custo e média ponderada, mantém o saldo inalterado e registra movimentação e ponto patrimonial atomicamente, com rollback coberto.
+- A validação final da T30 passou com suíte focada 17/17 e suíte completa 278/278, sem falhas. A task 3.2 foi marcada como concluída; o change está pronto para archive, que ainda não foi executado.
 
 ## Decisões funcionais confirmadas
 
@@ -203,7 +205,7 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 
 ## Próximo passo
 
-As implementações da T28 e da T29 estão concluídas; `implementar-t28-venda-ativos` já foi arquivado e `implementar-t29-interface-compra-venda` permanece não arquivado conforme solicitação, pronto para archive. A próxima tarefa lógica é a T30 — transferência de posições (backend), que ainda não possui change criado.
+As implementações da T29 e da T30 estão concluídas; `implementar-t29-interface-compra-venda` e `implementar-t30-transferencia-posicoes` permanecem não arquivados conforme solicitação, prontos para archive. A próxima tarefa lógica é a T31 — interface de transferência.
 
 ### Forma de trabalho para as próximas tarefas
 
