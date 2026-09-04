@@ -31,11 +31,14 @@ class MarketCachePersistenceServiceTests {
     @Autowired PatrimonialPointRepository patrimonialPoints;
 
     @Test void storesOneAssetPerTickerAndMarketAndRejectsOlderSnapshot() {
-        cache.store(quote("10.00", NOW.minusSeconds(10), "first"), freshness);
+        CachedAssetQuote first = cache.store(quote("10.00", NOW.minusSeconds(10), "first"), freshness);
         CachedAssetQuote result = cache.store(quote("9.00", NOW.minusSeconds(20), "older"), freshness);
 
         assertThat(result.price()).isEqualByComparingTo("10.00");
         assertThat(result.source()).isEqualTo("first");
+        assertThat(result.assetId()).isEqualTo(first.assetId())
+                .isEqualTo(assets.findByTickerIgnoreCaseAndMarket("PETR4", Market.BR).orElseThrow().getId());
+        assertThat(cache.find("PETR4", Market.BR, freshness).assetId()).isEqualTo(first.assetId());
         assertThat(assets.count()).isEqualTo(1);
     }
 

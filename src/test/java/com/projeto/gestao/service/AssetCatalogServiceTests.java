@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.UUID;
 import com.projeto.gestao.api.exception.ExternalDependencyException;
 import com.projeto.gestao.api.exception.MarketDataUnavailableException;
 import com.projeto.gestao.domain.model.Currency;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class AssetCatalogServiceTests {
+    private static final UUID ASSET_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
     BrazilMarketDataPort brazil = mock(BrazilMarketDataPort.class);
     UsMarketDataPort unitedStates = mock(UsMarketDataPort.class);
     MarketCachePersistenceService cache = mock(MarketCachePersistenceService.class);
@@ -33,7 +35,9 @@ class AssetCatalogServiceTests {
         CachedAssetQuote cached = cached(Market.BR, Currency.BRL, "10.00");
         when(brazil.findQuote("PETR4")).thenReturn(external);
         when(cache.store(external, freshness)).thenReturn(cached);
-        assertThat(service.find("petr4", Market.BR).priceBrl()).isEqualByComparingTo("10.00");
+        AssetPriceView result = service.find("petr4", Market.BR);
+        assertThat(result.priceBrl()).isEqualByComparingTo("10.00");
+        assertThat(result.assetId()).isEqualTo(ASSET_ID);
         verify(cache).store(external, freshness);
     }
 
@@ -41,7 +45,9 @@ class AssetCatalogServiceTests {
         when(brazil.findQuote("PETR4")).thenThrow(new ExternalDataFailure(
                 ExternalDataFailure.Reason.TIMEOUT, "brapi", "timeout"));
         when(cache.find("PETR4", Market.BR, freshness)).thenReturn(cached(Market.BR, Currency.BRL, "9.00"));
-        assertThat(service.find("PETR4", Market.BR).originalPrice()).isEqualByComparingTo("9.00");
+        AssetPriceView result = service.find("PETR4", Market.BR);
+        assertThat(result.originalPrice()).isEqualByComparingTo("9.00");
+        assertThat(result.assetId()).isEqualTo(ASSET_ID);
         verify(cache, never()).store(any(MarketQuote.class), any(MarketDataFreshness.class));
     }
 
@@ -57,6 +63,7 @@ class AssetCatalogServiceTests {
         when(exchange.resolveUsdBrl()).thenReturn(new CachedExchangeRate(new BigDecimal("5.00"),
                 "awesome", Instant.EPOCH, Instant.EPOCH, false));
         assertThat(service.find("AAPL", Market.US).priceBrl()).isEqualByComparingTo("50.05");
+        assertThat(service.find("AAPL", Market.US).assetId()).isEqualTo(ASSET_ID);
         verifyNoInteractions(brazil, unitedStates);
     }
 
@@ -72,6 +79,7 @@ class AssetCatalogServiceTests {
 
         assertThat(result.originalPrice()).isEqualByComparingTo("10.005");
         assertThat(result.priceBrl()).isEqualByComparingTo("50.05");
+        assertThat(result.assetId()).isEqualTo(ASSET_ID);
         verify(cache).store(external, freshness);
     }
 
@@ -122,7 +130,7 @@ class AssetCatalogServiceTests {
                 new BigDecimal(price), Instant.EPOCH, Instant.EPOCH, "twelve-data");
     }
     private static CachedAssetQuote cached(Market market, Currency currency, String price) {
-        return new CachedAssetQuote(market == Market.US ? "AAPL" : "PETR4", "Asset", market,
+        return new CachedAssetQuote(ASSET_ID, market == Market.US ? "AAPL" : "PETR4", "Asset", market,
                 currency, new BigDecimal(price), "cache", Instant.EPOCH, Instant.EPOCH, true);
     }
 }

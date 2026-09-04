@@ -7,11 +7,12 @@ export class MarketApiError extends ApiError {
 function validText(value) { return typeof value === 'string' && value.trim().length > 0 }
 function validNumber(value) { return (typeof value === 'number' || validText(value)) && Number.isFinite(Number(value)) }
 function validInstant(value) { return validText(value) && !Number.isNaN(new Date(value).getTime()) }
+function validUuid(value) { return validText(value) && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value) }
 
 function requireAsset(body) {
   if (body === null) return null
   const common = body && typeof body === 'object' && !Array.isArray(body)
-    && validText(body.ticker) && validText(body.name) && ['BR', 'US'].includes(body.market)
+    && validUuid(body.assetId) && validText(body.ticker) && validText(body.name) && ['BR', 'US'].includes(body.market)
     && ['BRL', 'USD'].includes(body.currency) && validNumber(body.originalPrice)
     && validNumber(body.priceBrl) && validText(body.quoteSource) && validInstant(body.quoteQuotedAt)
     && typeof body.quoteStale === 'boolean'

@@ -118,6 +118,11 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 
 - A T28 foi implementada no change `implementar-t28-venda-ativos`, incluindo venda transacional, atualização de posição e saldo, histórico, patrimônio, concorrência e rollback; a migração V8 `V8__movement_sale_financial_inputs.sql` ajusta as constraints financeiras para compras e vendas. A verificação final foi aprovada com 31 testes focados de venda/HTTP/regressão de compra, `mvn package`, `git diff --check` e `openspec validate --strict`; o change está pronto para archive, que ainda não foi executado.
 
+- A T29 foi concluída no change `implementar-t29-interface-compra-venda`: a rota privada `/app/operacoes` compõe corretora própria ativa, ticker, operação e quantidade inteira positiva, resolvendo o ativo exclusivamente pelo `assetId` devolvido pela busca; payload mínimo, confirmação simples na mesma etapa com gestão de foco, cancelamento preservando contexto, e saldo/posição atualizados somente pela resposta do backend, com avisos independentes de cotação/USD-BRL desatualizados, erros funcionais com solicitado/disponível, 401 conduzindo ao login e prevenção de envio duplicado desde 320 px.
+- Para viabilizar a T29, `GET /api/assets/search` passou a expor o `assetId` (UUID opaco) da entidade de catálogo já persistida nos dois caminhos do cache, decisão registrada como suposição reversível mínima; nenhum endpoint novo, migração ou regra financeira foi alterada, e compra/venda continuam revalidando o identificador na execução.
+- O Revisor apontou um CRÍTICO (símbolo `assetId` indeclarado em dois testes), um ALTO (mojibake UTF-8 duplo-codificado no texto novo da T29) e dois MÉDIOS (foco do modal de confirmação e `aria-describedby` dos erros de campo); todos foram corrigidos pelo Codex e comprovados por testes novos.
+- A validação final da T29 passou com 268 testes backend sem falhas ou erros (10 ignorados por opt-in/Testcontainers; Docker não foi usado), 196 testes frontend, ESLint sem avisos, build Vite, `git diff --check` e `openspec validate --strict`. O change está pronto para archive, que ainda não foi executado.
+
 ## Decisões funcionais confirmadas
 
 - O sistema é um simulador acadêmico para pessoa física, com um único tipo de usuário: `Investidor`. Cadastro, login e reativação são realizados pelo investidor ainda não autenticado; as demais funções exigem autenticação.
@@ -198,7 +203,7 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 
 ## Próximo passo
 
-A implementação da T28 está concluída em `openspec/changes/implementar-t28-venda-ativos`. O próximo passo correto é arquivar esse change pelo fluxo responsável; nenhuma implementação adicional ou alteração de requisitos é necessária antes do archive.
+As implementações da T28 e da T29 estão concluídas; `implementar-t28-venda-ativos` já foi arquivado e `implementar-t29-interface-compra-venda` permanece não arquivado conforme solicitação, pronto para archive. A próxima tarefa lógica é a T30 — transferência de posições (backend), que ainda não possui change criado.
 
 ### Forma de trabalho para as próximas tarefas
 

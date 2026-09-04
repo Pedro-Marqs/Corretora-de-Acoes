@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 class PurchaseServiceTests {
+    private static final UUID ASSET_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
     private final AccountRepository accounts = mock(AccountRepository.class);
     private final AccountBrokerRepository associations = mock(AccountBrokerRepository.class);
     private final AssetRepository assets = mock(AssetRepository.class);
@@ -62,7 +63,7 @@ class PurchaseServiceTests {
     @Test
     void resolvesAndConvertsMarketBeforeCallingTransactionalPhase() {
         when(market.find("AAPL", Market.US)).thenReturn(new AssetPriceView(
-                "AAPL", "Apple", Market.US, Currency.USD, new BigDecimal("10.005"),
+                ASSET_ID, "AAPL", "Apple", Market.US, Currency.USD, new BigDecimal("10.005"),
                 new BigDecimal("50.15"), "TwelveData", Instant.parse("2026-09-03T13:00:00Z"),
                 false, new BigDecimal("5.005"), "AwesomeAPI",
                 Instant.parse("2026-09-03T12:00:00Z"), false));

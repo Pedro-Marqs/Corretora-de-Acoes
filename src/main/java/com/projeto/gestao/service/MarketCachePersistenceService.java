@@ -100,7 +100,7 @@ public class MarketCachePersistenceService {
     }
 
     private static CachedAssetQuote view(Asset asset, Quote quote, MarketDataFreshness freshness) {
-        return new CachedAssetQuote(asset.getTicker(), asset.getName(), asset.getMarket(),
+        return new CachedAssetQuote(asset.getId(), asset.getTicker(), asset.getName(), asset.getMarket(),
                 quote.getCurrency(), quote.getPrice(), quote.getSource(),
                 quote.getQuotedAt().toInstant(), quote.getCollectedAt().toInstant(),
                 quote.isStale() || freshness.quoteIsStale(quote.getQuotedAt().toInstant()));

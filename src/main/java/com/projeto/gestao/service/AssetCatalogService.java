@@ -35,14 +35,14 @@ public class AssetCatalogService {
         String ticker = normalize(rawTicker);
         CachedAssetQuote quote = market == Market.BR ? findBrazil(ticker) : findUnitedStates(ticker);
         if (market == Market.BR) {
-            return new AssetPriceView(quote.ticker(), quote.name(), quote.market(), quote.currency(),
+            return new AssetPriceView(quote.assetId(), quote.ticker(), quote.name(), quote.market(), quote.currency(),
                     quote.price(), quote.price(), quote.source(), quote.quotedAt(), quote.stale(),
                     null, null, null, null);
         }
         CachedExchangeRate rate = exchangeRates.resolveUsdBrl();
         FinancialAmount priceBrl = new FinancialAmount(quote.price())
                 .convertUsdToBrl(rate.rate());
-        return new AssetPriceView(quote.ticker(), quote.name(), quote.market(), quote.currency(),
+        return new AssetPriceView(quote.assetId(), quote.ticker(), quote.name(), quote.market(), quote.currency(),
                 quote.price(), priceBrl.value(),
                 quote.source(), quote.quotedAt(), quote.stale(), rate.rate(), rate.source(),
                 rate.quotedAt(), rate.stale());

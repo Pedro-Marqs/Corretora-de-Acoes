@@ -36,7 +36,15 @@ O sistema SHALL permitir pesquisar corretoras exclusivamente por CNPJ e SHALL ma
 - **THEN** o sistema SHALL rejeitar a conclusão da pesquisa ou associação sem tratar a indisponibilidade como reprovação cadastral ou regulatória
 
 ### Requirement: Associar corretora a conta
-O sistema SHALL permitir que a conta autenticada associe corretoras válidas e ativas, SHALL impedir mais de uma associação ativa da mesma corretora na mesma conta e MUST limitar consulta e administração às associações pertencentes ao próprio investidor. Uma compra SHALL aceitar somente uma associação ativa pertencente à conta autenticada.
+O sistema SHALL permitir que a conta autenticada associe corretoras válidas e ativas, SHALL impedir mais de uma associação ativa da mesma corretora na mesma conta e MUST limitar consulta e administração às associações pertencentes ao próprio investidor. Uma compra ou venda SHALL aceitar somente uma associação ativa pertencente à conta autenticada.
+
+#### Scenario: Venda com corretora não elegível
+- **WHEN** o investidor tentar vender usando corretora inativa, inexistente ou pertencente a outra conta
+- **THEN** o sistema SHALL rejeitar a operação sem expor ou modificar dados da corretora ou da posição
+
+#### Scenario: Venda com corretora própria ativa
+- **WHEN** o investidor vender usando uma associação ativa própria
+- **THEN** o sistema SHALL permitir a operação somente sobre a posição vinculada àquela associação
 
 #### Scenario: Associacao valida
 - **WHEN** o investidor autenticado confirmar a associação de uma corretora válida sem associação ativa equivalente

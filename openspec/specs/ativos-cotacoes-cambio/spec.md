@@ -30,7 +30,23 @@ O sistema SHALL manter ativos brasileiros e norte-americanos com identificação
 - **THEN** o sistema SHALL consultar somente ativos ativos que estejam presentes em alguma posicao
 
 ### Requirement: Cotacoes e cambio
-O sistema SHALL registrar cotações e câmbio válidos com fonte, instante, moeda e indicação de desatualização, utilizando o último valor válido armazenado quando uma atualização externa não puder fornecer um valor utilizável. O sistema SHALL atualizar cotações brasileiras a cada cinco minutos e cotações norte-americanas e USD/BRL uma vez por dia às 10h no horário de Brasília. Uma falha da fonte externa SHALL preservar o último valor válido armazenado e sinalizar sua desatualização. Operações de compra SHALL usar a cotação/câmbio atual ou o último valor armazenado utilizável, informando o instante original; sem valor utilizável, SHALL bloquear a compra.
+ O sistema SHALL registrar cotações e câmbio válidos com fonte, instante, moeda e indicação de desatualização, utilizando o último valor válido armazenado quando uma atualização externa não puder fornecer um valor utilizável. O sistema SHALL atualizar cotações brasileiras a cada cinco minutos e cotações norte-americanas e USD/BRL uma vez por dia às 10h no horário de Brasília. Uma falha da fonte externa SHALL preservar o último valor válido armazenado e sinalizar sua desatualização. Operações de compra ou venda SHALL usar a cotação/câmbio atual ou o último valor armazenado utilizável, informando o instante original; sem valor utilizável, SHALL bloquear a operação.
+
+#### Scenario: Fallback usado na venda
+- **WHEN** a consulta externa falhar e existir cotação válida armazenada para o ativo e, se necessário, USD/BRL válido
+- **THEN** o sistema SHALL usar os últimos valores armazenados, informar seus instantes originais e permitir o cálculo da venda
+
+#### Scenario: Ausência de cotação utilizável na venda
+- **WHEN** uma venda depender de uma cotação e não existir valor atual nem valor válido armazenado
+- **THEN** o sistema SHALL bloquear a venda sem alterar saldo, posição, histórico ou patrimônio
+
+#### Scenario: Ausência de câmbio utilizável na venda
+- **WHEN** uma venda de ativo norte-americano exigir conversão para BRL e não existir USD/BRL utilizável
+- **THEN** o sistema SHALL bloquear a venda sem alterar saldo, posição, histórico ou patrimônio
+
+#### Scenario: Cotação antiga usada na venda
+- **WHEN** a cotação utilizada tiver mais de 24 horas ou o USD/BRL tiver mais de sete dias
+- **THEN** o sistema SHALL manter o valor armazenado disponível e SHALL indicar o dado como desatualizado
 
 #### Scenario: Fallback usado na compra
 - **WHEN** a consulta externa falhar e existir cotação válida armazenada para o ativo e, se necessário, USD/BRL válido
@@ -45,7 +61,7 @@ O sistema SHALL registrar cotações e câmbio válidos com fonte, instante, moe
 - **THEN** o sistema SHALL utilizar o último USD/BRL válido e SHALL informar seu instante original
 
 #### Scenario: Cotacao indisponivel ou desatualizada
-- **WHEN** a fonte externa falhar ou a cotacao exceder sua validade
+- **WHEN** a fonte externa falhar ou a cotação exceder sua validade
 - **THEN** o sistema SHALL informar o estado desatualizado sem inventar um valor
 
 #### Scenario: Ausencia de cotacao utilizavel

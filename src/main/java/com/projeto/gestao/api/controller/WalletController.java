@@ -4,6 +4,7 @@ import com.projeto.gestao.security.AccountPrincipal;
 import com.projeto.gestao.service.WalletService;
 import com.projeto.gestao.service.PurchaseService;
 import com.projeto.gestao.service.SaleService;
+import com.projeto.gestao.service.WalletPositionsService;
 import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,12 +19,19 @@ public class WalletController {
     private final WalletService walletService;
     private final PurchaseService purchaseService;
     private final SaleService saleService;
+    private final WalletPositionsService walletPositionsService;
 
     public WalletController(WalletService walletService, PurchaseService purchaseService,
-            SaleService saleService) {
+            SaleService saleService, WalletPositionsService walletPositionsService) {
         this.walletService = walletService;
         this.purchaseService = purchaseService;
         this.saleService = saleService;
+        this.walletPositionsService = walletPositionsService;
+    }
+
+    @GetMapping("/positions")
+    WalletPositionsResponse positions(@AuthenticationPrincipal AccountPrincipal principal) {
+        return WalletPositionsResponse.from(walletPositionsService.snapshot(principal.accountId()));
     }
 
     @GetMapping

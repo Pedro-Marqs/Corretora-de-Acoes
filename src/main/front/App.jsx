@@ -14,6 +14,7 @@ import ReactivationPage from './pages/ReactivationPage.jsx'
 import WalletPage from './pages/WalletPage.jsx'
 import BrokersPage from './pages/BrokersPage.jsx'
 import AssetsPage from './pages/AssetsPage.jsx'
+import OperationsPage from './pages/OperationsPage.jsx'
 
 const initialForm = { name: '', cpf: '', email: '', password: '' }
 
@@ -123,7 +124,7 @@ export default function App() {
     <Route path="/cadastro" element={<PublicRoute><RegisterPage /></PublicRoute>} />
     <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
     <Route path="/reativacao" element={<PublicRoute><ReactivationPage /></PublicRoute>} />
-    <Route path="/app" element={<PrivateRoute><AppLayout /></PrivateRoute>}><Route index element={<HomePage />} /><Route path="ativos" element={<AssetsPage />} /><Route path="carteira" element={<WalletPage />} /><Route path="corretoras" element={<BrokersPage />} /><Route path="conta" element={<AccountPage />} /></Route>
+    <Route path="/app" element={<PrivateRoute><AppLayout /></PrivateRoute>}><Route index element={<HomePage />} /><Route path="ativos" element={<AssetsPage />} /><Route path="operacoes" element={<OperationsPage />} /><Route path="carteira" element={<WalletPage />} /><Route path="corretoras" element={<BrokersPage />} /><Route path="conta" element={<AccountPage />} /></Route>
     <Route path="/404" element={<NotFoundPage />} />
     <Route path="*" element={<Navigate to="/404" replace />} />
   </Routes></AuthProvider></BrowserRouter>

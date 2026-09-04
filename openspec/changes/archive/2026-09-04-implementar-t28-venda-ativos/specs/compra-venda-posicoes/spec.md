@@ -19,6 +19,10 @@ O sistema SHALL validar saldo, quantidade inteira positiva, ativo ativo, correto
 - **WHEN** o investidor comprar ativo norte-americano com cotação em USD e USD/BRL utilizável
 - **THEN** o sistema SHALL calcular o débito em reais multiplicando o valor em USD pela cotação USD/BRL e arredondando para duas casas com `HALF_UP`
 
+#### Scenario: Venda valida
+- **WHEN** o investidor vender quantidade disponivel
+- **THEN** o sistema SHALL registrar a movimentacao, creditar o saldo e reduzir a posicao
+
 ### Requirement: Rejeitar operacao inconsistente
 O sistema SHALL rejeitar quantidade, ativo, corretora, posição ou cotação inválidos sem alterar o estado financeiro. A venda SHALL ser rejeitada quando a quantidade exceder a posição disponível ou não houver cotação utilizável ou, para ativo norte-americano, USD/BRL utilizável; dados de preço enviados pelo cliente SHALL ser desconsiderados, não validados como fonte financeira e não persistidos.
 

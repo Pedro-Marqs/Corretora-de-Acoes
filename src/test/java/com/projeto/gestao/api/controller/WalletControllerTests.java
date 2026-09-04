@@ -103,12 +103,19 @@ class WalletControllerTests {
                 "PETR4", "Petrobras", Market.BR, Currency.BRL, new BigDecimal("25.00"),
                 java.time.Instant.parse("2026-09-03T13:00:00Z"),
                 java.time.Instant.parse("2026-09-03T13:00:01Z"), "Brapi"));
+        MvcResult search = mockMvc.perform(get("/api/assets/search")
+                        .param("ticker", "PETR4").param("market", "BR").cookie(session))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.assetId").value(asset.getId().toString()))
+                .andReturn();
+        UUID searchedAssetId = UUID.fromString(objectMapper
+                .readTree(search.getResponse().getContentAsString()).path("assetId").asText());
         CsrfCredentials csrf = csrf();
 
         mockMvc.perform(post("/api/wallet/purchases").cookie(session, csrf.cookie())
                         .header("X-XSRF-TOKEN", csrf.token()).contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of(
-                                "assetId", asset.getId(), "brokerId", association.getId(),
+                                "assetId", searchedAssetId, "brokerId", association.getId(),
                                 "quantity", 2, "accountId", second.getId(), "price", 0.01))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.purchaseAmountBrl").value(50.00))

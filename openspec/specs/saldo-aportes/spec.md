@@ -26,11 +26,19 @@ O sistema SHALL permitir aporte em reais de valor igual ou superior a R$ 10,00 p
 - **THEN** o sistema SHALL reverter integralmente a operação e não manter alteração parcial
 
 ### Requirement: Consistencia do saldo
-O sistema SHALL calcular e persistir saldo usando BigDecimal, duas casas e arredondamento HALF_UP. Uma compra confirmada SHALL debitar integralmente o valor calculado pelo backend do saldo único da conta, e o saldo SHALL permanecer não negativo.
+O sistema SHALL calcular e persistir saldo usando BigDecimal, duas casas e arredondamento HALF_UP. Uma compra confirmada SHALL debitar e uma venda confirmada SHALL creditar integralmente o valor calculado pelo backend no saldo único da conta, e o saldo SHALL permanecer não negativo.
+
+#### Scenario: Venda com saldo creditado
+- **WHEN** uma venda for confirmada
+- **THEN** o saldo SHALL ser creditado exatamente pelo valor calculado pelo backend e permanecer consistente com a posição, o histórico e o patrimônio
+
+#### Scenario: Falha durante a venda
+- **WHEN** qualquer etapa de atualização do saldo, posição, histórico ou patrimônio falhar
+- **THEN** o sistema SHALL reverter integralmente o crédito e não manter alteração parcial
 
 #### Scenario: Saldo apos movimentacao
-- **WHEN** um aporte ou operacao for confirmado
-- **THEN** o saldo SHALL refletir a movimentacao integralmente sem perda de precisao
+- **WHEN** um aporte ou operação for confirmado
+- **THEN** o saldo SHALL refletir a movimentação integralmente sem perda de precisão
 
 #### Scenario: Compra com saldo suficiente
 - **WHEN** o valor da compra for menor ou igual ao saldo disponível no momento da confirmação

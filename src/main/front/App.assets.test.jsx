@@ -10,11 +10,13 @@ vi.mock('./api/market.js', async (load) => ({ ...await load(), searchAsset: vi.f
 
 const account = { name: 'Ana', cpf: '529.***.***-25', email: 'a***@example.com' }
 const brAsset = {
+  assetId: '11111111-1111-4111-8111-111111111111',
   ticker: 'PETR4', name: 'Petrobras PN', market: 'BR', currency: 'BRL', originalPrice: '38.50',
   priceBrl: '38.50', quoteSource: 'Brapi', quoteQuotedAt: '2026-09-03T12:00:00Z', quoteStale: false,
   usdBrlRate: null, exchangeRateSource: null, exchangeRateQuotedAt: null, exchangeRateStale: null,
 }
 const usAsset = {
+  assetId: '22222222-2222-4222-8222-222222222222',
   ticker: 'AAPL', name: 'Apple Inc.', market: 'US', currency: 'USD', originalPrice: '225.10',
   priceBrl: '1238.05', quoteSource: 'Twelve Data', quoteQuotedAt: '2026-09-02T20:00:00Z', quoteStale: false,
   usdBrlRate: '5.50', exchangeRateSource: 'AwesomeAPI', exchangeRateQuotedAt: '2026-09-03T10:00:00Z', exchangeRateStale: false,

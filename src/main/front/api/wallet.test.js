@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { deposit, getWalletBalance, WalletApiError } from './wallet.js'
+import { deposit, getWalletBalance, getWalletPositions, purchaseAsset, sellAsset, WalletApiError } from './wallet.js'
 
 function response(body, status = 200) {
   return {
@@ -21,6 +21,18 @@ describe('wallet API', () => {
 
     await expect(getWalletBalance()).resolves.toEqual({ balance: 10000 })
     expect(fetch).toHaveBeenCalledWith('http://localhost:8080/api/wallet', { credentials: 'include' })
+  })
+
+  it('consulta e valida o snapshot autenticado de posições', async () => {
+    const snapshot = { availableBalance: '9000.00', positions: [{ assetId: 'asset', brokerageId: 'broker', ticker: 'PETR4', market: 'BR', quantity: 10, averagePriceBrl: '20.00', quotePriceBrl: '25.00' }] }
+    fetch.mockResolvedValueOnce(response(snapshot))
+    await expect(getWalletPositions()).resolves.toEqual(snapshot)
+    expect(fetch).toHaveBeenCalledWith('http://localhost:8080/api/wallet/positions', { credentials: 'include' })
+  })
+
+  it('rejeita snapshot sem identificadores ou valores obrigatórios', async () => {
+    fetch.mockResolvedValueOnce(response({ availableBalance: '100.00', positions: [{ ticker: 'PETR4' }] }))
+    await expect(getWalletPositions()).rejects.toMatchObject({ message: 'A resposta da carteira não pôde ser processada.' })
   })
 
   it('envia o aporte informado com cookies e CSRF', async () => {
@@ -82,5 +94,22 @@ describe('wallet API', () => {
       status: 401,
     })
     expect(fetch).toHaveBeenCalledTimes(1)
+  })
+
+  it.each([
+    ['compra', purchaseAsset, 'purchases', { ticker: 'PETR4', purchasedQuantity: 2, positionQuantity: 5, remainingBalanceBrl: '9900.00' }],
+    ['venda', sellAsset, 'sales', { ticker: 'PETR4', soldQuantity: 2, positionQuantity: 3, remainingBalanceBrl: '10100.00' }],
+  ])('envia somente a intenção mínima na %s', async (_, action, path, body) => {
+    fetch.mockResolvedValueOnce(response({ token: 'csrf-operation' })).mockResolvedValueOnce(response(body))
+    await expect(action('11111111-1111-4111-8111-111111111111', '22222222-2222-4222-8222-222222222222', 2)).resolves.toEqual(body)
+    const request = fetch.mock.calls[1][1]
+    expect(fetch.mock.calls[1][0]).toBe(`http://localhost:8080/api/wallet/${path}`)
+    expect(JSON.parse(request.body)).toEqual({ assetId: '11111111-1111-4111-8111-111111111111', brokerId: '22222222-2222-4222-8222-222222222222', quantity: 2 })
+    expect(request.body).not.toMatch(/price|exchange|balance|position|result/i)
+  })
+
+  it('preserva erro funcional e contexto retornado pelo backend', async () => {
+    fetch.mockResolvedValueOnce(response({ token: 'csrf-operation' })).mockResolvedValueOnce(response({ message: 'Saldo insuficiente. Valor solicitado: R$ 200,00; saldo disponível: R$ 100,00.' }, 422))
+    await expect(purchaseAsset('asset', 'broker', 2)).rejects.toMatchObject({ status: 422, message: expect.stringContaining('solicitado') })
   })
 })
