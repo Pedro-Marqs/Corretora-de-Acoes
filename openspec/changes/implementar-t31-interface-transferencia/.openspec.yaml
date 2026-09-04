@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-09-04
+goal: Permitir transferências parciais ou totais pela interface com confirmação,
+  validação e estados seguros.

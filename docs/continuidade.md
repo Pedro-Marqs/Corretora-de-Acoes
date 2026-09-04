@@ -124,6 +124,8 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 - A validação final da T29 passou com 268 testes backend sem falhas ou erros (10 ignorados por opt-in/Testcontainers; Docker não foi usado), 196 testes frontend, ESLint sem avisos, build Vite, `git diff --check` e `openspec validate --strict`. O change está pronto para archive, que ainda não foi executado.
 - A T30 foi concluída no change `implementar-t30-transferencia-posicoes`: a transferência autenticada parcial ou total entre corretoras próprias ativas valida propriedade, atividade, ativo, quantidade e concorrência sob transação; preserva custo e média ponderada, mantém o saldo inalterado e registra movimentação e ponto patrimonial atomicamente, com rollback coberto.
 - A validação final da T30 passou com suíte focada 17/17 e suíte completa 278/278, sem falhas. A task 3.2 foi marcada como concluída; o change está pronto para archive, que ainda não foi executado.
+- A T31 foi concluída no change `implementar-t31-interface-transferencia`: a rota privada de transferência lista posições e corretoras próprias ativas, deriva a origem, valida destino e quantidade, confirma sem resumo separado, bloqueia reenvio e atualiza a carteira somente por nova leitura oficial, preservando o saldo exibido.
+- A interface da T31 trata estados de carregamento, vazio, erro recuperável, sucesso e sessão inválida, com mensagens funcionais, foco na confirmação e responsividade a partir de 320 px. A task 3.2 foi comprovada: Vitest 213/213, ESLint, build Vite, `git diff --check` e `openspec validate implementar-t31-interface-transferencia --strict` aprovados; o change está pronto para archive, que ainda não foi executado.
 
 ## Decisões funcionais confirmadas
 
@@ -205,7 +207,7 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 
 ## Próximo passo
 
-As implementações da T29 e da T30 estão concluídas; `implementar-t29-interface-compra-venda` e `implementar-t30-transferencia-posicoes` permanecem não arquivados conforme solicitação, prontos para archive. A próxima tarefa lógica é a T31 — interface de transferência.
+As implementações da T29, T30 e T31 estão concluídas; `implementar-t29-interface-compra-venda`, `implementar-t30-transferencia-posicoes` e `implementar-t31-interface-transferencia` permanecem não arquivados conforme solicitação, prontos para archive. A próxima tarefa lógica é a T32 — consulta paginada do histórico.
 
 ### Forma de trabalho para as próximas tarefas
 

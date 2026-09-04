@@ -61,6 +61,18 @@ function requireOperation(body, operation) {
   return body
 }
 
+function requireTransfer(body) {
+  const identifiers = ['assetId', 'originBrokerId', 'destinationBrokerId']
+  const quantities = ['transferredQuantity', 'originQuantity', 'destinationQuantity']
+  if (!body || typeof body !== 'object' || Array.isArray(body)
+    || identifiers.some((field) => typeof body[field] !== 'string' || !body[field])
+    || quantities.some((field) => !validNumber(body[field]) || Number(body[field]) < 0)
+    || !validNumber(body.remainingBalanceBrl) || typeof body.ticker !== 'string') {
+    throw new WalletApiError('A resposta da transferência não pôde ser processada.')
+  }
+  return body
+}
+
 async function operate(path, operation, assetId, brokerId, quantity) {
   try {
     const token = await getCsrfToken(WalletApiError, 'Não foi possível iniciar a operação. Tente novamente.')
@@ -84,6 +96,23 @@ export function purchaseAsset(assetId, brokerId, quantity) {
 
 export function sellAsset(assetId, brokerId, quantity) {
   return operate('sales', 'sale', assetId, brokerId, quantity)
+}
+
+export async function transferPosition(originBrokerId, destinationBrokerId, assetId, quantity) {
+  try {
+    const token = await getCsrfToken(WalletApiError, 'Não foi possível iniciar a transferência. Tente novamente.')
+    const response = await fetch(`${API_BASE_URL}/api/wallet/transfers`, {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': token },
+      body: JSON.stringify({ originBrokerId, destinationBrokerId, assetId, quantity }),
+    })
+    const body = await parseJson(response)
+    if (!response.ok) throw new WalletApiError(body?.message ?? 'Não foi possível concluir a transferência.', groupFieldErrors(body?.fieldErrors), response.status)
+    return requireTransfer(body)
+  } catch (error) {
+    if (error instanceof WalletApiError) throw error
+    throw new WalletApiError('Não foi possível conectar ao servidor. Verifique se a aplicação está em execução.')
+  }
 }
 
 export async function getWalletBalance() {

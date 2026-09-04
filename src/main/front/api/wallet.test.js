@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { deposit, getWalletBalance, getWalletPositions, purchaseAsset, sellAsset, WalletApiError } from './wallet.js'
+import { deposit, getWalletBalance, getWalletPositions, purchaseAsset, sellAsset, transferPosition, WalletApiError } from './wallet.js'
 
 function response(body, status = 200) {
   return {
@@ -111,5 +111,20 @@ describe('wallet API', () => {
   it('preserva erro funcional e contexto retornado pelo backend', async () => {
     fetch.mockResolvedValueOnce(response({ token: 'csrf-operation' })).mockResolvedValueOnce(response({ message: 'Saldo insuficiente. Valor solicitado: R$ 200,00; saldo disponível: R$ 100,00.' }, 422))
     await expect(purchaseAsset('asset', 'broker', 2)).rejects.toMatchObject({ status: 422, message: expect.stringContaining('solicitado') })
+  })
+
+  it('envia somente os quatro campos de intenção na transferência', async () => {
+    const body = { assetId: 'asset', originBrokerId: 'origin', destinationBrokerId: 'destination', ticker: 'PETR4', transferredQuantity: 2, originQuantity: 8, destinationQuantity: 2, remainingBalanceBrl: '1000.00' }
+    fetch.mockResolvedValueOnce(response({ token: 'csrf-transfer' })).mockResolvedValueOnce(response(body))
+    await expect(transferPosition('origin', 'destination', 'asset', 2)).resolves.toEqual(body)
+    const [url, request] = fetch.mock.calls[1]
+    expect(url).toBe('http://localhost:8080/api/wallet/transfers')
+    expect(JSON.parse(request.body)).toEqual({ originBrokerId: 'origin', destinationBrokerId: 'destination', assetId: 'asset', quantity: 2 })
+    expect(request.body).not.toMatch(/price|cost|balance|account|average/i)
+  })
+
+  it('preserva status e mensagem funcional da transferência', async () => {
+    fetch.mockResolvedValueOnce(response({ token: 'csrf-transfer' })).mockResolvedValueOnce(response({ message: 'Quantidade solicitada: 12; disponível: 10.' }, 422))
+    await expect(transferPosition('origin', 'destination', 'asset', 12)).rejects.toMatchObject({ status: 422, message: expect.stringContaining('disponível') })
   })
 })

@@ -37,6 +37,7 @@ export default function AppLayout() {
         <NavLink to="/app" end>Início</NavLink>
         <NavLink to="/app/ativos">Ativos</NavLink>
         <NavLink to="/app/operacoes">Comprar e vender</NavLink>
+        <NavLink to="/app/transferencias">Transferir</NavLink>
         <NavLink to="/app/carteira">Carteira</NavLink>
         <NavLink to="/app/corretoras">Corretoras</NavLink>
         <NavLink to="/app/conta">Minha conta</NavLink>
