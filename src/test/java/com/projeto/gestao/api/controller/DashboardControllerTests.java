@@ -25,6 +25,7 @@ import com.projeto.gestao.domain.model.Movement;
 import com.projeto.gestao.domain.model.Position;
 import com.projeto.gestao.domain.model.PositionBalance;
 import com.projeto.gestao.domain.model.PositionQuantity;
+import com.projeto.gestao.domain.model.PatrimonialPoint;
 import com.projeto.gestao.domain.model.Quote;
 import com.projeto.gestao.repository.AccountBrokerRepository;
 import com.projeto.gestao.repository.AccountRepository;
@@ -118,6 +119,94 @@ class DashboardControllerTests {
                 .andExpect(jsonPath("$.distributions.byBroker").isEmpty())
                 .andExpect(jsonPath("$.distributions.byMarket").isEmpty())
                 .andExpect(jsonPath("$.warnings").isEmpty());
+
+    }
+
+    @Test
+    void preservesDashboardCompatibilityWithoutPeriodAndReturnsNoSyntheticHistory() throws Exception {
+        Account account = account("84754547068", "no-period@example.com", "10000");
+        addPoint(account, NOW.minusDays(2), "10000");
+
+        mockMvc.perform(get("/api/dashboard").cookie(login(account.getEmail())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.availableBalanceBrl").value(10000.00))
+                .andExpect(jsonPath("$.period").doesNotExist())
+                .andExpect(jsonPath("$.patrimonyHistory").isEmpty());
+    }
+
+    @Test
+    void rejectsInvalidOrBlankPeriodWithUniformValidationAndNoDataLeak() throws Exception {
+        Account account = account("89196800008", "invalid-period@example.com", "10000");
+        addPoint(account, NOW.minusDays(2), "10000");
+
+        for (String invalid : new String[] {"1M", "max", ""}) {
+            mockMvc.perform(get("/api/dashboard").param("period", invalid)
+                            .cookie(login(account.getEmail())))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                    .andExpect(jsonPath("$.fieldErrors[?(@.field == 'period')]").exists())
+                    .andExpect(jsonPath("$.patrimonyHistory").doesNotExist())
+                    .andExpect(jsonPath("$.availableBalanceBrl").doesNotExist());
+        }
+    }
+
+    @Test
+    void maximumUsesAccountCreationAndReturnsOnlyOwnPointsInChronologicalOrder() throws Exception {
+        Account owner = account("83659777080", "history-owner@example.com", "10000",
+                NOW.minusYears(1));
+        Account other = account("43157820009", "history-other@example.com", "20000",
+                NOW.minusYears(1));
+        addPoint(owner, NOW.minusDays(2), "10100");
+        addPoint(owner, NOW.minusDays(8), "10000");
+        addPoint(other, NOW.minusDays(5), "99999");
+
+        mockMvc.perform(get("/api/dashboard").param("period", "MAX")
+                        .cookie(login(owner.getEmail())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.period").value("MAX"))
+                .andExpect(jsonPath("$.patrimonyHistory.length()").value(2))
+                .andExpect(jsonPath("$.patrimonyHistory[0].patrimonyBrl").value(10000.00))
+                .andExpect(jsonPath("$.patrimonyHistory[1].patrimonyBrl").value(10100.00))
+                .andExpect(jsonPath("$.patrimonyHistory[?(@.patrimonyBrl == 99999.00)]").isEmpty())
+                .andExpect(jsonPath("$.patrimonyHistory[0].recordedAt").exists());
+    }
+
+    @Test
+    void relativePeriodReturnsPartialCoverageWithoutBoundaryOrIntermediatePoints() throws Exception {
+        Account account = account("07548611048", "partial-history@example.com", "10000");
+        addPoint(account, NOW.minusDays(40), "9000");
+        addPoint(account, NOW.minusDays(20), "10000");
+        addPoint(account, NOW.minusDays(3), "10500");
+
+        mockMvc.perform(get("/api/dashboard").param("period", "4W")
+                        .cookie(login(account.getEmail())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.patrimonyHistory.length()").value(2))
+                .andExpect(jsonPath("$.patrimonyHistory[0].patrimonyBrl").value(10000.00))
+                .andExpect(jsonPath("$.patrimonyHistory[1].patrimonyBrl").value(10500.00));
+    }
+
+    @Test
+    void emptyCoveredPeriodAndQuoteUpdateCreateNoPointsOrFinancialSideEffects() throws Exception {
+        Account account = account("75422389027", "empty-history@example.com", "10000");
+        addPosition(account, "PETR4", Market.BR, Currency.BRL, 1, "20", "25", false);
+        long pointCount = points.count();
+        long movementCount = movements.count();
+        BigDecimal balance = accounts.findById(account.getId()).orElseThrow().getBalance();
+        Quote quote = quotes.findAll().get(0);
+        quote.replace(amount("27"), Currency.BRL,
+                NOW.plusMinutes(1), NOW.plusMinutes(1), "refresh");
+        quotes.save(quote);
+
+        mockMvc.perform(get("/api/dashboard").param("period", "4W")
+                        .cookie(login(account.getEmail())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.patrimonyHistory").isEmpty());
+
+        assertThat(points.count()).isEqualTo(pointCount);
+        assertThat(movements.count()).isEqualTo(movementCount);
+        assertThat(accounts.findById(account.getId()).orElseThrow().getBalance())
+                .isEqualByComparingTo(balance);
     }
 
     @Test
@@ -335,8 +424,23 @@ class DashboardControllerTests {
     }
 
     private Account account(String cpf, String email, String balance) {
+        return account(cpf, email, balance, NOW);
+    }
+
+    private Account account(
+            String cpf, String email, String balance, OffsetDateTime createdAt) {
         return accounts.save(Account.create(UUID.randomUUID(), "Investor", cpf, email,
-                passwordEncoder.encode(PASSWORD), amount(balance), NOW));
+                passwordEncoder.encode(PASSWORD), amount(balance), createdAt));
+    }
+
+    private void addPoint(Account account, OffsetDateTime recordedAt, String patrimony) {
+        transactions.executeWithoutResult(status -> {
+            Account managed = accounts.findById(account.getId()).orElseThrow();
+            Movement movement = movements.save(Movement.initialBalance(
+                    UUID.randomUUID(), managed, amount(patrimony), recordedAt));
+            points.save(PatrimonialPoint.initial(
+                    UUID.randomUUID(), managed, movement, amount(patrimony), recordedAt));
+        });
     }
 
     private AccountBroker addPosition(Account account, String ticker, Market market, Currency currency,

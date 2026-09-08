@@ -8,6 +8,6 @@ import com.projeto.gestao.domain.model.PatrimonialPoint;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface PatrimonialPointRepository extends JpaRepository<PatrimonialPoint, UUID> {
-    List<PatrimonialPoint> findByAccountIdAndRecordedAtBetweenOrderByRecordedAt(
+    List<PatrimonialPoint> findByAccountIdAndRecordedAtBetweenOrderByRecordedAtAscIdAsc(
             UUID accountId, OffsetDateTime start, OffsetDateTime end);
 }

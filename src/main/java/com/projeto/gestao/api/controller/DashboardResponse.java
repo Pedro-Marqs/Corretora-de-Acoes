@@ -7,6 +7,7 @@ import java.util.UUID;
 import com.projeto.gestao.service.DashboardDistributionsView;
 import com.projeto.gestao.service.DashboardExchangeRateView;
 import com.projeto.gestao.service.DashboardPositionView;
+import com.projeto.gestao.service.DashboardPatrimonialPointView;
 import com.projeto.gestao.service.DashboardSnapshot;
 import com.projeto.gestao.service.DashboardWarningView;
 
@@ -22,13 +23,15 @@ public record DashboardResponse(
         BigDecimal totalResultBrl,
         DashboardDistributionsView distributions,
         DashboardExchangeRateView exchangeRate,
-        List<DashboardWarningView> warnings) {
+        List<DashboardWarningView> warnings,
+        String period,
+        List<DashboardPatrimonialPointView> patrimonyHistory) {
     static DashboardResponse from(DashboardSnapshot snapshot) {
         return new DashboardResponse(snapshot.availableBalanceBrl(), snapshot.balanceShared(),
                 snapshot.selectedBrokerAssociationId(), snapshot.positions(),
                 snapshot.positionsMarketValueBrl(), snapshot.patrimonyBrl(),
                 snapshot.realizedResultBrl(), snapshot.unrealizedResultBrl(),
                 snapshot.totalResultBrl(), snapshot.distributions(), snapshot.exchangeRate(),
-                snapshot.warnings());
+                snapshot.warnings(), snapshot.period(), snapshot.patrimonyHistory());
     }
 }

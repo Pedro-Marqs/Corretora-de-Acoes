@@ -16,4 +16,6 @@ public record DashboardSnapshot(
         BigDecimal totalResultBrl,
         DashboardDistributionsView distributions,
         DashboardExchangeRateView exchangeRate,
-        List<DashboardWarningView> warnings) { }
+        List<DashboardWarningView> warnings,
+        String period,
+        List<DashboardPatrimonialPointView> patrimonyHistory) { }

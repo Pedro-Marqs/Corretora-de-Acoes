@@ -1,6 +1,7 @@
 package com.projeto.gestao.service;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -30,6 +31,7 @@ import com.projeto.gestao.repository.AccountBrokerRepository;
 import com.projeto.gestao.repository.ExchangeRateRepository;
 import com.projeto.gestao.repository.MovementRepository;
 import com.projeto.gestao.repository.PositionRepository;
+import com.projeto.gestao.repository.PatrimonialPointRepository;
 import com.projeto.gestao.repository.QuoteRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
@@ -46,19 +48,24 @@ public class DashboardService {
     private final MovementRepository movements;
     private final QuoteRepository quotes;
     private final ExchangeRateRepository exchangeRates;
+    private final PatrimonialPointRepository patrimonialPoints;
     private final MarketDataFreshness freshness;
+    private final Clock clock;
 
     public DashboardService(AccountRepository accounts, AccountBrokerRepository accountBrokers,
             PositionRepository positions,
             MovementRepository movements, QuoteRepository quotes,
-            ExchangeRateRepository exchangeRates, MarketDataFreshness freshness) {
+            ExchangeRateRepository exchangeRates, PatrimonialPointRepository patrimonialPoints,
+            MarketDataFreshness freshness, Clock clock) {
         this.accounts = accounts;
         this.accountBrokers = accountBrokers;
         this.positions = positions;
         this.movements = movements;
         this.quotes = quotes;
         this.exchangeRates = exchangeRates;
+        this.patrimonialPoints = patrimonialPoints;
         this.freshness = freshness;
+        this.clock = clock;
     }
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
@@ -68,6 +75,12 @@ public class DashboardService {
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public DashboardSnapshot query(UUID accountId, UUID brokerAssociationId) {
+        return query(accountId, brokerAssociationId, null);
+    }
+
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
+    public DashboardSnapshot query(
+            UUID accountId, UUID brokerAssociationId, DashboardPeriod period) {
         if (accountId == null) {
             throw new AuthenticationException();
         }
@@ -144,11 +157,27 @@ public class DashboardService {
                 new FinancialAmount(account.getBalance()), new FinancialAmount(realized), valuations);
         DashboardDistributionsView distributions = new DashboardDistributionsView(
                 slices(byAsset), slices(byBroker), slices(byMarket));
+        List<DashboardPatrimonialPointView> history = history(account, period);
         return new DashboardSnapshot(results.balance().value(), true, brokerAssociationId,
                 List.copyOf(positionViews),
                 results.marketValue().value(), results.patrimony().value(),
                 results.realizedResult().value(), results.unrealizedResult().value(),
-                results.totalResult().value(), distributions, rateView, List.copyOf(warnings));
+                results.totalResult().value(), distributions, rateView, List.copyOf(warnings),
+                period == null ? null : period.value(), history);
+    }
+
+    private List<DashboardPatrimonialPointView> history(Account account, DashboardPeriod period) {
+        if (period == null) {
+            return List.of();
+        }
+        OffsetDateTime now = OffsetDateTime.now(clock);
+        OffsetDateTime start = period.start(now, account.getCreatedAt());
+        return patrimonialPoints.findByAccountIdAndRecordedAtBetweenOrderByRecordedAtAscIdAsc(
+                        account.getId(), start, now).stream()
+                .map(point -> new DashboardPatrimonialPointView(
+                        brasilia(point.getRecordedAt()),
+                        new FinancialAmount(point.getPatrimonyBrl()).value()))
+                .toList();
     }
 
     private static void accumulate(Map<String, DistributionAccumulator> distribution,
