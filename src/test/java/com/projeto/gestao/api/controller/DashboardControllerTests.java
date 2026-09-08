@@ -105,6 +105,8 @@ class DashboardControllerTests {
         mockMvc.perform(get("/api/dashboard").cookie(login(account.getEmail())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.availableBalanceBrl").value(10000.00))
+                .andExpect(jsonPath("$.balanceShared").value(true))
+                .andExpect(jsonPath("$.selectedBrokerAssociationId").doesNotExist())
                 .andExpect(jsonPath("$.positions").isEmpty())
                 .andExpect(jsonPath("$.positionsMarketValueBrl").value(0.00))
                 .andExpect(jsonPath("$.patrimonyBrl").value(10000.00))
@@ -112,7 +114,129 @@ class DashboardControllerTests {
                 .andExpect(jsonPath("$.unrealizedResultBrl").value(0.00))
                 .andExpect(jsonPath("$.totalResultBrl").value(0.00))
                 .andExpect(jsonPath("$.exchangeRate").doesNotExist())
+                .andExpect(jsonPath("$.distributions.byAsset").isEmpty())
+                .andExpect(jsonPath("$.distributions.byBroker").isEmpty())
+                .andExpect(jsonPath("$.distributions.byMarket").isEmpty())
                 .andExpect(jsonPath("$.warnings").isEmpty());
+    }
+
+    @Test
+    void filtersSameAssetByActiveBrokerAndKeepsSharedBalance() throws Exception {
+        Account account = account("28001238938", "filtered-dashboard@example.com", "4321");
+        Asset asset = assets.save(new Asset("PETR4", "Petrobras", Market.BR, Currency.BRL));
+        AccountBroker first = associate(account, "First Broker");
+        AccountBroker second = associate(account, "Second Broker");
+        addPosition(account, first, asset, 10, "20", "25", false);
+        addPosition(account, second, asset, 4, "20", "25", false);
+
+        mockMvc.perform(get("/api/dashboard")
+                        .param("brokerAssociationId", first.getId().toString())
+                        .cookie(login(account.getEmail())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.availableBalanceBrl").value(4321.00))
+                .andExpect(jsonPath("$.balanceShared").value(true))
+                .andExpect(jsonPath("$.selectedBrokerAssociationId")
+                        .value(first.getId().toString()))
+                .andExpect(jsonPath("$.positions.length()").value(1))
+                .andExpect(jsonPath("$.positions[0].brokerageName").value("First Broker"))
+                .andExpect(jsonPath("$.positionsMarketValueBrl").value(250.00))
+                .andExpect(jsonPath("$.patrimonyBrl").value(4571.00))
+                .andExpect(jsonPath("$.distributions.byAsset.length()").value(1))
+                .andExpect(jsonPath("$.distributions.byAsset[0].valueBrl").value(250.00))
+                .andExpect(jsonPath("$.distributions.byBroker.length()").value(1))
+                .andExpect(jsonPath("$.distributions.byBroker[0].identifier")
+                        .value(first.getId().toString()))
+                .andExpect(jsonPath("$.distributions.byMarket[0].valueBrl").value(250.00));
+    }
+
+    @Test
+    void returnsBrlDistributionsWhoseDimensionsReconcileWithMarketValue() throws Exception {
+        Account account = account("74415353000", "distributions-dashboard@example.com", "1000");
+        AccountBroker first = addPosition(account, "PETR4", Market.BR, Currency.BRL,
+                10, "20", "25", false);
+        AccountBroker second = addPosition(account, "AAPL", Market.US, Currency.USD,
+                2, "40", "10", false);
+        exchangeRates.save(new ExchangeRate("USD/BRL", amount("5"), NOW, NOW, "cache"));
+
+        MvcResult result = mockMvc.perform(get("/api/dashboard").cookie(login(account.getEmail())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.positionsMarketValueBrl").value(350.00))
+                .andExpect(jsonPath("$.distributions.byAsset.length()").value(2))
+                .andExpect(jsonPath("$.distributions.byBroker.length()").value(2))
+                .andExpect(jsonPath("$.distributions.byMarket.length()").value(2))
+                .andReturn();
+
+        JsonNode body = objectMapper.readTree(result.getResponse().getContentAsString());
+        for (String dimension : new String[] {"byAsset", "byBroker", "byMarket"}) {
+            BigDecimal total = BigDecimal.ZERO;
+            for (JsonNode slice : body.path("distributions").path(dimension)) {
+                total = total.add(slice.path("valueBrl").decimalValue());
+            }
+            assertThat(total).isEqualByComparingTo(body.path("positionsMarketValueBrl").decimalValue());
+        }
+        assertThat(body.path("distributions").path("byBroker").toString())
+                .contains(first.getId().toString(), second.getId().toString());
+    }
+
+    @Test
+    void restrictsRealizedResultsToSelectedBroker() throws Exception {
+        Account account = account("65337751000", "results-dashboard@example.com", "1000");
+        AccountBroker first = associate(account, "Results One");
+        associate(account, "Results Two");
+        movements.save(Movement.sale(UUID.randomUUID(), account, "PETR4", Market.BR,
+                amount("25"), amount("25"), null, 2, amount("50"), Currency.BRL,
+                "Results One", amount("1000"), amount("10"), NOW));
+        movements.save(Movement.sale(UUID.randomUUID(), account, "VALE3", Market.BR,
+                amount("30"), amount("30"), null, 1, amount("30"), Currency.BRL,
+                "Results Two", amount("1000"), amount("-5"), NOW));
+
+        mockMvc.perform(get("/api/dashboard")
+                        .param("brokerAssociationId", first.getId().toString())
+                        .cookie(login(account.getEmail())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.realizedResultBrl").value(10.00))
+                .andExpect(jsonPath("$.unrealizedResultBrl").value(0.00))
+                .andExpect(jsonPath("$.totalResultBrl").value(10.00));
+    }
+
+    @Test
+    void rejectsBrokerFromAnotherAccountOrInactiveBrokerWithoutLeakingData() throws Exception {
+        Account owner = account("29550677002", "owner-dashboard@example.com", "1000");
+        Account intruder = account("36687563006", "intruder-dashboard@example.com", "2000");
+        AccountBroker foreign = addPosition(owner, "VALE3", Market.BR, Currency.BRL,
+                2, "30", "40", false);
+        AccountBroker inactive = associate(intruder, "Inactive Broker");
+        transactions.executeWithoutResult(status -> {
+            AccountBroker managed = associations.findById(inactive.getId()).orElseThrow();
+            managed.inactivate(NOW);
+            associations.save(managed);
+        });
+
+        for (UUID brokerId : new UUID[] {foreign.getId(), inactive.getId()}) {
+            mockMvc.perform(get("/api/dashboard")
+                            .param("brokerAssociationId", brokerId.toString())
+                            .cookie(login(intruder.getEmail())))
+                    .andExpect(status().isForbidden())
+                    .andExpect(jsonPath("$.code").value("AUTHORIZATION_ERROR"))
+                    .andExpect(jsonPath("$.positions").doesNotExist())
+                    .andExpect(jsonPath("$.distributions").doesNotExist());
+        }
+    }
+
+    @Test
+    void filteredViewIgnoresUsdPositionsAndMissingRateFromAnotherBroker() throws Exception {
+        Account account = account("71428793860", "filtered-rate-dashboard@example.com", "1000");
+        AccountBroker brBroker = addPosition(account, "ITUB4", Market.BR, Currency.BRL,
+                5, "20", "30", false);
+        addPosition(account, "MSFT", Market.US, Currency.USD, 2, "40", "10", false);
+
+        mockMvc.perform(get("/api/dashboard")
+                        .param("brokerAssociationId", brBroker.getId().toString())
+                        .cookie(login(account.getEmail())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.positions.length()").value(1))
+                .andExpect(jsonPath("$.positions[0].ticker").value("ITUB4"))
+                .andExpect(jsonPath("$.exchangeRate").doesNotExist());
     }
 
     @Test
@@ -215,9 +339,9 @@ class DashboardControllerTests {
                 passwordEncoder.encode(PASSWORD), amount(balance), NOW));
     }
 
-    private void addPosition(Account account, String ticker, Market market, Currency currency,
+    private AccountBroker addPosition(Account account, String ticker, Market market, Currency currency,
             long quantity, String averagePriceBrl, String quotePrice, boolean stale) {
-        transactions.executeWithoutResult(status -> {
+        return transactions.execute(status -> {
             Account managedAccount = accounts.findById(account.getId()).orElseThrow();
             Asset asset = assets.save(new Asset(ticker, ticker + " Company", market, currency));
             Broker broker = brokers.save(Broker.create(UUID.randomUUID(), randomCnpj(),
@@ -234,6 +358,36 @@ class DashboardControllerTests {
             if (stale) {
                 quote.markStale();
             }
+            quotes.save(quote);
+            return association;
+        });
+    }
+
+    private AccountBroker associate(Account account, String tradeName) {
+        return transactions.execute(status -> {
+            Account managedAccount = accounts.findById(account.getId()).orElseThrow();
+            Broker broker = brokers.save(Broker.create(UUID.randomUUID(), randomCnpj(),
+                    tradeName + " SA", tradeName, "ATIVA", "CTVM", "01001000",
+                    "Rua A", "1", null, "Centro", "Sao Paulo", "SP", NOW));
+            return associations.save(AccountBroker.create(
+                    UUID.randomUUID(), managedAccount, broker, NOW));
+        });
+    }
+
+    private void addPosition(Account account, AccountBroker association, Asset asset,
+            long quantity, String averagePriceBrl, String quotePrice, boolean stale) {
+        transactions.executeWithoutResult(status -> {
+            Account managedAccount = accounts.findById(account.getId()).orElseThrow();
+            AccountBroker managedAssociation = associations.findById(association.getId()).orElseThrow();
+            Asset managedAsset = assets.findById(asset.getId()).orElseThrow();
+            FinancialAmount average = new FinancialAmount(amount(averagePriceBrl));
+            positions.save(Position.create(UUID.randomUUID(), managedAccount, managedAssociation,
+                    managedAsset, new PositionBalance(PositionQuantity.positive(quantity),
+                            average.multiply(quantity), average)));
+            Quote quote = quotes.findById(managedAsset.getId()).orElseGet(() ->
+                    new Quote(managedAsset, amount(quotePrice), managedAsset.getCurrency(),
+                            stale ? NOW.minusDays(2) : NOW, NOW, "cache"));
+            if (stale) quote.markStale();
             quotes.save(quote);
         });
     }

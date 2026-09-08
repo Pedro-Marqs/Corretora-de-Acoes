@@ -19,4 +19,11 @@ public interface MovementRepository extends JpaRepository<Movement, UUID>, JpaSp
             + "where movement.account.id = :accountId and movement.movementType = :type")
     BigDecimal sumRealizedResultByAccountIdAndType(
             @Param("accountId") UUID accountId, @Param("type") MovementType type);
+
+    @Query("select coalesce(sum(movement.realizedResult), 0) from Movement movement "
+            + "where movement.account.id = :accountId and movement.movementType = :type "
+            + "and movement.brokerName = :brokerName")
+    BigDecimal sumRealizedResultByAccountIdAndTypeAndBrokerName(
+            @Param("accountId") UUID accountId, @Param("type") MovementType type,
+            @Param("brokerName") String brokerName);
 }
