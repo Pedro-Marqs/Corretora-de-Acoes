@@ -23,7 +23,7 @@ describe('transfer private route', () => {
     getCurrentAccount.mockResolvedValue({ name: 'Ana', cpf: '529.***.***-25', email: 'a***@example.com' })
     render(<App />)
     expect(await screen.findByRole('heading', { name: 'Transferir posição' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Transferir' })).toHaveClass('active')
+    expect(screen.getByRole('link', { name: 'Investimentos' })).toHaveClass('active')
     expect(getWalletPositions).toHaveBeenCalledOnce()
   })
 

@@ -28,7 +28,8 @@ describe('wallet private route', () => {
     render(<App />)
 
     expect(await screen.findByRole('heading', { name: 'Minha carteira' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Carteira' })).toHaveClass('active')
+    expect(screen.getByRole('main')).toContainElement(screen.getByRole('heading', { name: 'Minha carteira' }))
+    expect(screen.getByRole('link', { name: 'Banco' })).toHaveClass('active')
     expect(screen.getByText('R$ 10.000,00')).toBeInTheDocument()
     expect(getCurrentAccount).toHaveBeenCalledTimes(1)
     expect(getWalletBalance).toHaveBeenCalledTimes(1)

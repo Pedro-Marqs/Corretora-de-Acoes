@@ -21,11 +21,19 @@ afterEach(cleanup)
 describe('DashboardPage', () => {
   beforeEach(() => { vi.clearAllMocks(); getActiveBrokers.mockResolvedValue(brokers); getDashboard.mockResolvedValue(complete) })
 
+  it('mantém transferências e histórico acessíveis dentro de Investimentos', async () => {
+    setup()
+    expect(await screen.findByRole('heading', { name: 'Investimentos' })).toBeInTheDocument()
+    const shortcuts = screen.getByRole('navigation', { name: 'Ações de investimentos' })
+    expect(within(shortcuts).getByRole('link', { name: 'Transferências' })).toHaveAttribute('href', '/app/transferencias')
+    expect(within(shortcuts).getByRole('link', { name: 'Histórico' })).toHaveAttribute('href', '/app/historico')
+  })
+
   it('exibe exclusivamente os indicadores, posições e parcelas oficiais formatados', async () => {
     setup(); expect(screen.getByRole('status')).toHaveTextContent('Carregando dashboard')
     expect((await screen.findAllByText('R$ 1.250,30')).length).toBeGreaterThan(0)
-    expect(screen.getByText('R$ 1.000,10')).toBeInTheDocument(); expect(screen.getAllByText('R$ 250,20').length).toBeGreaterThan(1)
-    expect(screen.getAllByText('PETR4').length).toBeGreaterThan(0); expect(screen.getByText('Compartilhado pela conta')).toBeInTheDocument()
+    expect(screen.getAllByText('R$ 1.000,10').length).toBeGreaterThan(0); expect(screen.getAllByText('R$ 250,20').length).toBeGreaterThan(1)
+    expect(screen.getAllByText('PETR4').length).toBeGreaterThan(0); expect(screen.getAllByText('Compartilhado pela conta').length).toBeGreaterThan(0)
     expect(screen.queryByText(/%/)).not.toBeInTheDocument()
   })
 
@@ -36,7 +44,7 @@ describe('DashboardPage', () => {
     expect(screen.queryByText('PETR4')).not.toBeInTheDocument(); expect(screen.getByRole('status')).toHaveTextContent('Carregando')
     pending.resolve({ ...complete, selectedBrokerAssociationId: 'broker-1', positions: [{ ...positions[0], ticker: 'VALE3' }] })
     expect(await screen.findByText('VALE3')).toBeInTheDocument(); expect(getDashboard).toHaveBeenLastCalledWith({ brokerAssociationId: 'broker-1', period: '4W' })
-    expect(screen.getByText('Compartilhado pela conta')).toBeInTheDocument(); expect(screen.getAllByText('Corretora Um').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Compartilhado pela conta').length).toBeGreaterThan(0); expect(screen.getAllByText('Corretora Um').length).toBeGreaterThan(0)
   })
 
   it('oferece todos os períodos e apresenta somente os pontos devolvidos na ordem recebida', async () => {
@@ -51,7 +59,7 @@ describe('DashboardPage', () => {
 
   it('distingue vazios de posições, distribuições e histórico sem criar parcelas ou pontos', async () => {
     getDashboard.mockResolvedValue({ ...complete, positions: [], distributions: { byAsset: [], byBroker: [], byMarket: [] }, patrimonyHistory: [] })
-    setup(); expect(await screen.findByText('Nenhuma posição nesta visão')).toBeInTheDocument()
+    setup(); expect(await screen.findByText('Sua carteira ainda está vazia')).toBeInTheDocument()
     expect(screen.getAllByText('Sem parcelas')).toHaveLength(3); expect(screen.getByText('Sem pontos neste período')).toBeInTheDocument()
     expect(document.querySelectorAll('.dashboard-distribution li')).toHaveLength(0); expect(document.querySelectorAll('.dashboard-history li')).toHaveLength(0)
   })

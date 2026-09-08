@@ -5,7 +5,8 @@ import { ErrorState, LoadingState, Message } from '../components/common/AsyncSta
 import { useAuth } from '../context/auth-context.js'
 import { currencyInputToDecimal, formatCurrency, formatCurrencyInput } from '../utils/formatters.js'
 
-export default function WalletPage() {
+export default function WalletPage({ embedded = false }) {
+  const PageRoot = embedded ? 'section' : 'main'
   const { clear: clearAuth } = useAuth()
   const navigate = useNavigate()
   const [state, setState] = useState({ status: 'loading', balance: null, message: '' })
@@ -96,17 +97,17 @@ export default function WalletPage() {
     }
   }
 
-  if (state.status === 'loading') return <main className="wallet-page"><LoadingState message="Carregando saldo…" /></main>
-  if (state.status === 'error') return <main className="wallet-page"><ErrorState message={state.message} onRetry={loadBalance} /></main>
+  if (state.status === 'loading') return <PageRoot className="wallet-page"><LoadingState message="Carregando saldo…" /></PageRoot>
+  if (state.status === 'error') return <PageRoot className="wallet-page"><ErrorState message={state.message} onRetry={loadBalance} /></PageRoot>
   if (state.status !== 'ready') return null
 
   return (
-    <main className="wallet-page">
-      <header className="wallet-heading">
+    <PageRoot className="wallet-page">
+      {!embedded && <header className="wallet-heading">
         <p className="eyebrow">Área financeira</p>
         <h1>Minha carteira</h1>
         <p>Consulte o saldo compartilhado entre todas as suas corretoras.</p>
-      </header>
+      </header>}
       <section className="wallet-balance" aria-labelledby="wallet-balance-title">
         <div>
           <p id="wallet-balance-title">Saldo disponível</p>
@@ -139,7 +140,7 @@ export default function WalletPage() {
           onConfirm={confirmDeposit}
         />
       )}
-    </main>
+    </PageRoot>
   )
 }
 

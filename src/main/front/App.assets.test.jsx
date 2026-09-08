@@ -39,7 +39,7 @@ describe('assets private route', () => {
   it('integra rota e navegação privadas e inicia vazio, sem atualização manual', async () => {
     render(<App />)
     expect(await screen.findByRole('heading', { name: 'Pesquisa de ativos' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Ativos' })).toHaveClass('active')
+    expect(screen.getByRole('link', { name: 'Bolsa' })).toHaveClass('active')
     expect(screen.getByText('Nenhuma pesquisa realizada')).toBeInTheDocument()
     expect(screen.getByLabelText(/Ticker/)).toBeRequired()
     expect(screen.getByLabelText(/Mercado/)).toBeRequired()

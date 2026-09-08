@@ -8,7 +8,8 @@ const onlyDigits = (value) => value.replace(/\D/g, '').slice(0, 14)
 function formatCnpj(value) { return onlyDigits(value).replace(/^(\d{2})(\d)/, '$1.$2').replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3').replace(/\.(\d{3})(\d)/, '.$1/$2').replace(/(\/\d{4})(\d)/, '$1-$2') }
 const address = (broker) => [broker.street, broker.complement, broker.district, `${broker.city} - ${broker.state}`, broker.postalCode].filter(Boolean).join(', ')
 
-export default function BrokersPage() {
+export default function BrokersPage({ embedded = false }) {
+  const PageRoot = embedded ? 'section' : 'main'
   const { clear } = useAuth(); const navigate = useNavigate()
   const [list, setList] = useState({ status: 'loading', items: [], message: '' })
   const [cnpj, setCnpj] = useState(''); const [cnpjError, setCnpjError] = useState(''); const [preview, setPreview] = useState(null)
@@ -46,14 +47,14 @@ export default function BrokersPage() {
     finally { removalLocks.current.delete(associationId); setRemoval((current) => ({ ...current, pendingId: current.pendingId === associationId ? null : current.pendingId })) }
   }
 
-  if (list.status === 'loading') return <main className="brokers-page"><LoadingState message="Carregando corretoras…" /></main>
-  if (list.status === 'error') return <main className="brokers-page"><ErrorState message={list.message} onRetry={() => load()} /></main>
+  if (list.status === 'loading') return <PageRoot className="brokers-page"><LoadingState message="Carregando corretoras…" /></PageRoot>
+  if (list.status === 'error') return <PageRoot className="brokers-page"><ErrorState message={list.message} onRetry={() => load()} /></PageRoot>
   if (list.status !== 'ready') return null
-  return <main className="brokers-page"><header className="brokers-heading"><p className="eyebrow">Instituições</p><h1>Minhas corretoras</h1><p>Pesquise uma instituição por CNPJ e escolha quais corretoras fazem parte da sua conta.</p></header>
+  return <PageRoot className="brokers-page">{!embedded && <header className="brokers-heading"><p className="eyebrow">Instituições</p><h1>Minhas corretoras</h1><p>Pesquise uma instituição por CNPJ e escolha quais corretoras fazem parte da sua conta.</p></header>}
     <section className="broker-search-card" aria-labelledby="broker-search-title"><div><p className="eyebrow">Nova associação</p><h2 id="broker-search-title">Pesquisar corretora</h2><p>A validação cadastral é feita pelo servidor antes da associação.</p></div><form onSubmit={submitSearch} noValidate><div className="form-field"><label htmlFor="brokerCnpj">CNPJ</label><input id="brokerCnpj" inputMode="numeric" placeholder="00.000.000/0000-00" value={cnpj} onChange={(event) => { searchGeneration.current += 1; setCnpj(formatCnpj(event.target.value)); setCnpjError(''); setPreview(null); setSearch({ pending: false, error: '' }); setAssociation({ pending: false, message: '', error: '' }) }} aria-invalid={Boolean(cnpjError)} aria-describedby={cnpjError ? 'brokerCnpj-error' : 'brokerCnpj-hint'} />{cnpjError ? <span id="brokerCnpj-error" className="field-error">{cnpjError}</span> : <span id="brokerCnpj-hint" className="field-hint">Digite os 14 dígitos do CNPJ.</span>}</div><button className="primary-button" type="submit" disabled={search.pending}>{search.pending ? 'Pesquisando…' : 'Pesquisar'}</button></form></section>
     {search.error && <Message kind="error">{search.error}</Message>}{preview && <Preview broker={preview} pending={association.pending} error={association.error} onAssociate={associate} />}{association.message && <Message kind="success">{association.message}</Message>}{list.message && <Message kind="error">{list.message}</Message>}
     <section className="brokers-list-section" aria-labelledby="brokers-list-title"><div className="brokers-list-heading"><div><p className="eyebrow">Associações ativas</p><h2 id="brokers-list-title">Corretoras da conta</h2></div><span>{list.items.length}</span></div>{list.items.length === 0 ? <EmptyState title="Nenhuma corretora associada" description="Pesquise um CNPJ para fazer a primeira associação." /> : <div className="broker-grid">{list.items.map((broker) => <Card key={broker.associationId} broker={broker} pending={removal.pendingId === broker.associationId} disabled={removal.pendingId !== null} error={removal.errors[broker.associationId]} onRemove={() => remove(broker.associationId)} />)}</div>}</section>
-  </main>
+  </PageRoot>
 }
 
 function Details({ broker }) { return <dl><div><dt>Razão social</dt><dd>{broker.corporateName}</dd></div><div><dt>Nome fantasia</dt><dd>{broker.tradeName}</dd></div><div><dt>CNPJ</dt><dd>{formatCnpj(broker.cnpj)}</dd></div><div><dt>Situação cadastral</dt><dd>{broker.registrationStatus}</dd></div><div><dt>Categoria CVM</dt><dd>{broker.cvmCategory}</dd></div><div className="broker-address"><dt>Endereço</dt><dd>{address(broker)}</dd></div></dl> }

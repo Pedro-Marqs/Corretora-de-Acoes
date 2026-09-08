@@ -24,6 +24,11 @@ function fillForm() {
   fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'Senha@123' } })
 }
 
+async function findLogoutButton() {
+  fireEvent.click(await screen.findByRole('button', { name: 'Ana Silva' }))
+  return screen.getByRole('menuitem', { name: 'Sair' })
+}
+
 describe('Cadastro', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -107,10 +112,10 @@ describe('Cadastro', () => {
     fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'Senha@123' } })
     fireEvent.click(screen.getByRole('button', { name: 'Entrar' }))
 
-    expect(await screen.findByRole('heading', { name: 'Olá, Ana Silva.' })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Ana Silva' })).toBeInTheDocument()
     expect(login).toHaveBeenCalledWith({ email: 'ana@example.com', password: 'Senha@123' })
     expect(screen.queryByText(/saldo disponível/i)).not.toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Sair da conta' }))
+    fireEvent.click(await findLogoutButton())
     expect(await screen.findByRole('heading', { name: 'Bem-vindo de volta.' })).toBeInTheDocument()
   })
 
@@ -121,9 +126,9 @@ describe('Cadastro', () => {
     fireEvent.change(screen.getByLabelText('E-mail'), { target: { value: 'ana@example.com' } })
     fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'Senha@123' } })
     fireEvent.click(screen.getByRole('button', { name: 'Entrar' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'Sair da conta' }))
+    fireEvent.click(await findLogoutButton())
     expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível encerrar a sessão.')
-    expect(screen.getByRole('heading', { name: 'Olá, Ana Silva.' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Ana Silva' })).toBeInTheDocument()
   })
 
   it('remove o estado visual autenticado quando logout retorna 401', async () => {
@@ -133,10 +138,10 @@ describe('Cadastro', () => {
     fireEvent.change(screen.getByLabelText('E-mail'), { target: { value: 'ana@example.com' } })
     fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'Senha@123' } })
     fireEvent.click(screen.getByRole('button', { name: 'Entrar' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'Sair da conta' }))
+    fireEvent.click(await findLogoutButton())
 
     expect(await screen.findByRole('heading', { name: 'Bem-vindo de volta.' })).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'Olá, Ana Silva.' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Ana Silva' })).not.toBeInTheDocument()
   })
 
   it('limpa o formulário de cadastro ao alternar para login e voltar', () => {
@@ -177,10 +182,10 @@ describe('Cadastro', () => {
     fireEvent.change(screen.getByLabelText('E-mail'), { target: { value: 'ana@example.com' } })
     fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'Senha@123' } })
     fireEvent.click(screen.getByRole('button', { name: 'Entrar' }))
-    const button = await screen.findByRole('button', { name: 'Sair da conta' })
+    const button = await findLogoutButton()
     fireEvent.click(button); fireEvent.click(button)
     expect(logout).toHaveBeenCalledTimes(1)
-    expect(screen.getByRole('button', { name: 'Saindo…' })).toBeDisabled()
+    expect(screen.getByRole('menuitem', { name: 'Saindo…' })).toBeDisabled()
   })
 
   it('acessa a reativação pelo login e volta ao login após sucesso sem autenticar automaticamente', async () => {
@@ -194,7 +199,7 @@ describe('Cadastro', () => {
 
     expect(await screen.findByRole('heading', { name: 'Bem-vindo de volta.' })).toBeInTheDocument()
     expect(screen.getByRole('status')).toHaveTextContent('Conta reativada. Entre com seu e-mail e senha.')
-    expect(screen.queryByText('Olá, Ana Silva.')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Ana Silva' })).not.toBeInTheDocument()
   })
 
   it('reutiliza o cadastro existente para criar uma conta independente após a consulta', async () => {
@@ -235,6 +240,6 @@ describe('Cadastro', () => {
     window.dispatchEvent(new PopStateEvent('popstate'))
     await waitFor(() => expect(window.location.pathname).toBe('/login'))
     expect(screen.getByRole('heading', { name: 'Bem-vindo de volta.' })).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'Olá, Ana Silva.' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Ana Silva' })).not.toBeInTheDocument()
   })
 })

@@ -38,6 +38,7 @@ describe('WalletPage balance', () => {
 
     resolve({ balance: 10000 })
     expect(await screen.findByText('R$ 10.000,00')).toBeInTheDocument()
+    expect(screen.getByRole('main')).toContainElement(screen.getByRole('heading', { name: 'Minha carteira' }))
   })
 
   it('apresenta erro funcional e permite nova tentativa', async () => {

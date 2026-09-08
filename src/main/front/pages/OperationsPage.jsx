@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { getActiveBrokers } from '../api/brokers.js'
 import { searchAsset } from '../api/market.js'
 import { getWalletPositions, purchaseAsset, sellAsset } from '../api/wallet.js'
@@ -11,6 +11,7 @@ const initialSearch = { ticker: '', market: 'BR' }
 export default function OperationsPage() {
   const auth = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [search, setSearch] = useState(initialSearch)
   const [snapshot, setSnapshot] = useState(null)
   const [brokers, setBrokers] = useState([])
@@ -24,6 +25,7 @@ export default function OperationsPage() {
     try {
       const [positions, activeBrokers] = await Promise.all([getWalletPositions(), getActiveBrokers()])
       setSnapshot(positions); setBrokers(activeBrokers)
+      if (location.state?.asset) { setSelected({ asset: location.state.asset, position: null }); navigate(location.pathname, { replace: true, state: null }) }
     } catch (failure) {
       if (failure?.status === 401) { setSnapshot(null); auth?.clear?.(); navigate('/login', { replace: true }); return }
       setSnapshot(null); setError(failure?.message || 'Não foi possível carregar sua carteira.')
@@ -85,7 +87,6 @@ function OperationModal({ context, brokers, positions, availableBalance, openerR
   const [sending, setSending] = useState(false)
   const asset = context.asset
   const priceBrl = asset.quotePriceBrl ?? asset.priceBrl ?? null
-  const estimate = priceBrl != null && Number.isInteger(Number(quantity)) && Number(quantity) > 0 ? Number(priceBrl) * Number(quantity) : null
 
   function close() { onClose(); queueMicrotask(() => openerRef.current?.focus()) }
   useEffect(() => { quantityRef.current?.focus() }, [])
@@ -119,7 +120,7 @@ function OperationModal({ context, brokers, positions, availableBalance, openerR
     <div className="operation-price"><span>Preço fixo do backend</span><strong>{priceBrl == null ? 'Indisponível' : formatCurrency(priceBrl)}</strong>{asset.quotePrice != null && asset.currency === 'USD' && <small>{formatMoney(asset.quotePrice, 'USD')} na moeda original</small>}{asset.quoteQuotedAt && <small>Cotação de {formatBrasiliaDateTime(asset.quoteQuotedAt)}</small>}</div>
     {(asset.quoteStale || asset.exchangeRateStale) && <div className="warning-banner">{asset.quoteStale && <p>Cotação desatualizada</p>}{asset.exchangeRateStale && <p>USD/BRL desatualizado</p>}</div>}
     <div className="operation-modal-grid"><div className="form-field"><label htmlFor="operation-quantity">Quantidade</label><input ref={quantityRef} id="operation-quantity" inputMode="numeric" value={quantity} onChange={(event) => setQuantity(event.target.value.replace(/\D/g, ''))} aria-describedby={error ? 'operation-error' : undefined} /></div><div className="form-field"><label htmlFor="operation-broker">Corretora</label><select id="operation-broker" value={brokerageId} onChange={(event) => setBrokerageId(event.target.value)}><option value="">Selecione</option>{brokers.map((broker) => <option key={broker.associationId} value={broker.associationId}>{broker.tradeName}</option>)}</select></div></div>
-    <dl className="operation-snapshot operation-balance"><div><dt>Saldo disponível</dt><dd>{availableBalance == null ? 'Indisponível' : formatCurrency(availableBalance)}</dd><small>Limite informativo para compra</small></div><div><dt>Valor estimado</dt><dd>{estimate == null ? 'Informe a quantidade' : formatCurrency(estimate)}</dd></div></dl>
+    <dl className="operation-snapshot operation-balance"><div><dt>Saldo disponível</dt><dd>{availableBalance == null ? 'Indisponível' : formatCurrency(availableBalance)}</dd><small>Limite informativo para compra</small></div><div><dt>Preço oficial unitário</dt><dd>{priceBrl == null ? 'Indisponível' : formatCurrency(priceBrl)}</dd><small>O total será calculado pelo servidor</small></div></dl>
     {position && <dl className="operation-snapshot operation-position" aria-label="Posição atual"><div><dt>Corretora da posição</dt><dd>{position.brokerageName}</dd></div><div><dt>Quantidade da posição</dt><dd>{position.quantity}</dd></div><div><dt>Preço médio acumulado</dt><dd>{position.averagePriceBrl == null ? 'Indisponível' : formatCurrency(position.averagePriceBrl)}</dd></div><div><dt>Lucro / perda</dt><dd>{position.unrealizedResultBrl == null ? 'Indisponível' : formatCurrency(position.unrealizedResultBrl)}</dd></div></dl>}
     <p id="operation-error" className="field-error" aria-live="polite">{error}</p>
     <div className="modal-actions"><button type="button" className="secondary-button negative-action" onClick={() => operate('sale')} disabled={sending || priceBrl == null}>Vender</button><button type="button" className="primary-button" onClick={() => operate('purchase')} disabled={sending || priceBrl == null}>{sending ? 'Enviando…' : 'Comprar'}</button></div>
