@@ -17,6 +17,7 @@ import AssetsPage from './pages/AssetsPage.jsx'
 import OperationsPage from './pages/OperationsPage.jsx'
 import TransfersPage from './pages/TransfersPage.jsx'
 import HistoryPage from './pages/HistoryPage.jsx'
+import DashboardPage from './pages/DashboardPage.jsx'
 
 const initialForm = { name: '', cpf: '', email: '', password: '' }
 
@@ -126,7 +127,7 @@ export default function App() {
     <Route path="/cadastro" element={<PublicRoute><RegisterPage /></PublicRoute>} />
     <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
     <Route path="/reativacao" element={<PublicRoute><ReactivationPage /></PublicRoute>} />
-    <Route path="/app" element={<PrivateRoute><AppLayout /></PrivateRoute>}><Route index element={<HomePage />} /><Route path="ativos" element={<AssetsPage />} /><Route path="operacoes" element={<OperationsPage />} /><Route path="transferencias" element={<TransfersPage />} /><Route path="carteira" element={<WalletPage />} /><Route path="historico" element={<HistoryPage />} /><Route path="corretoras" element={<BrokersPage />} /><Route path="conta" element={<AccountPage />} /></Route>
+    <Route path="/app" element={<PrivateRoute><AppLayout /></PrivateRoute>}><Route index element={<HomePage />} /><Route path="dashboard" element={<DashboardPage />} /><Route path="ativos" element={<AssetsPage />} /><Route path="operacoes" element={<OperationsPage />} /><Route path="transferencias" element={<TransfersPage />} /><Route path="carteira" element={<WalletPage />} /><Route path="historico" element={<HistoryPage />} /><Route path="corretoras" element={<BrokersPage />} /><Route path="conta" element={<AccountPage />} /></Route>
     <Route path="/404" element={<NotFoundPage />} />
     <Route path="*" element={<Navigate to="/404" replace />} />
   </Routes></AuthProvider></BrowserRouter>

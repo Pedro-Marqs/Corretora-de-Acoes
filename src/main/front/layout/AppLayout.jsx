@@ -35,6 +35,7 @@ export default function AppLayout() {
       <span className="brand brand-dark"><span className="brand-mark" aria-hidden="true">C</span>Carteira Clara</span>
       <nav aria-label="Navegação principal">
         <NavLink to="/app" end>Início</NavLink>
+        <NavLink to="/app/dashboard">Dashboard</NavLink>
         <NavLink to="/app/ativos">Ativos</NavLink>
         <NavLink to="/app/operacoes">Comprar e vender</NavLink>
         <NavLink to="/app/transferencias">Transferir</NavLink>
