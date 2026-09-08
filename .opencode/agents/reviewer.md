@@ -1,7 +1,7 @@
 ---
 description: Revisa o diff contra o OpenSpec sem modificar arquivos
 mode: subagent
-model: opencode-go/glm-5.3
+model: opencode-go/glm-5.3-flash
 temperature: 0.1
 steps: 12
 

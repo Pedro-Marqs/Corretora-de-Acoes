@@ -208,9 +208,13 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 
 ## Próximo passo
 
-As implementações da T29, T30, T31 e T32 estão concluídas; `implementar-t29-interface-compra-venda`, `implementar-t30-transferencia-posicoes`, `implementar-t31-interface-transferencia` e `implementar-t32-consulta-historico` permanecem não arquivados conforme solicitação, prontos para archive. A próxima tarefa lógica é a T33 — interface do histórico.
+- As implementações da T29, T30, T31 e T32 estão concluídas; `implementar-t29-interface-compra-venda`, `implementar-t30-transferencia-posicoes`, `implementar-t31-interface-transferencia` e `implementar-t32-consulta-historico` permanecem não arquivados conforme solicitação, prontos para archive.
 
-As implementações da T33 estão concluídas no change `implementar-t33-interface-historico`, que permanece não arquivado conforme solicitação e está pronto para archive. A interface adicionou a rota privada `/app/historico`, filtros combináveis, paginação oficial de 20 registros, estados de carregamento/vazio/erro/sessão inválida e apresentação somente leitura. A próxima tarefa lógica é a T34.
+- As implementações da T33 estão concluídas no change `implementar-t33-interface-historico`, que permanece não arquivado conforme solicitação e está pronto para archive. A interface adicionou a rota privada `/app/historico`, filtros combináveis, paginação oficial de 20 registros, estados de carregamento/vazio/erro/sessão inválida e apresentação somente leitura.
+
+- A T34 foi concluída no change `implementar-t34-indicadores-dashboard`: `GET /api/dashboard` autenticado consolida saldo, posições, patrimônio, preço médio e resultados usando as regras financeiras da T26, converte posições norte-americanas com USD/BRL, sinaliza cotações desatualizadas e exclui saldo inicial/aportes dos resultados.
+- A validação final da T34 passou com `DashboardControllerTests` 8/8 e suíte Maven 291/291. Embora o agente Tester tenha ficado bloqueado para executar `git diff --check` e `openspec validate`, ambas as verificações foram executadas posteriormente e passaram; todas as tasks estão marcadas como concluídas. O change está pronto para archive, que ainda não foi executado.
+- A próxima tarefa lógica é a T35 — distribuições do dashboard.
 
 ### Forma de trabalho para as próximas tarefas
 
