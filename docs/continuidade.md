@@ -210,6 +210,8 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 
 As implementações da T29, T30, T31 e T32 estão concluídas; `implementar-t29-interface-compra-venda`, `implementar-t30-transferencia-posicoes`, `implementar-t31-interface-transferencia` e `implementar-t32-consulta-historico` permanecem não arquivados conforme solicitação, prontos para archive. A próxima tarefa lógica é a T33 — interface do histórico.
 
+As implementações da T33 estão concluídas no change `implementar-t33-interface-historico`, que permanece não arquivado conforme solicitação e está pronto para archive. A interface adicionou a rota privada `/app/historico`, filtros combináveis, paginação oficial de 20 registros, estados de carregamento/vazio/erro/sessão inválida e apresentação somente leitura. A próxima tarefa lógica é a T34.
+
 ### Forma de trabalho para as próximas tarefas
 
 - Trabalhar com base no change correspondente em `C:\Projetos\corretora\openspec\changes`, usando os artefatos do OpenSpec como fonte de verdade.
