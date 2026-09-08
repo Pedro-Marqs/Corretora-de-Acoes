@@ -34,3 +34,7 @@ src/main/front/coverage/
 ### Operating systems ###
 .DS_Store
 Thumbs.db
+
+### Agente: caches temporários do Maven fora do controle ###
+/.m2-validation/
+/.codex-tmp-*/
