@@ -72,10 +72,6 @@ class MovementTests {
                 BigDecimal.TEN, BigDecimal.TEN, null, 1, BigDecimal.TEN,
                 Currency.USD, "Broker", BigDecimal.ZERO, now))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> Movement.purchase(UUID.randomUUID(), account, "AAPL", Market.US,
-                BigDecimal.TEN, new BigDecimal("49.99"), new BigDecimal("5.00"), 1,
-                new BigDecimal("49.99"), Currency.USD, "Broker", BigDecimal.ZERO, now))
-                .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> Movement.transfer(UUID.randomUUID(), account, "PETR4", Market.BR,
                 1, BigDecimal.TEN, Currency.BRL, "Same", "Same", BigDecimal.ZERO, now))
                 .isInstanceOf(IllegalArgumentException.class);

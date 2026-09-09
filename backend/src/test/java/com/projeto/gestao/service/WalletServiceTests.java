@@ -72,4 +72,30 @@ class WalletServiceTests {
         assertThat(movementRepository.count()).isZero();
         assertThat(patrimonialPointRepository.count()).isZero();
     }
+
+    @Test
+    void withdrawsBalanceAndRegistersNegativeCashMovementAtomically() {
+        BigDecimal result = walletService.withdraw(account.getId(), new BigDecimal("125.005"));
+
+        assertThat(result).isEqualByComparingTo("9874.99");
+        assertThat(accountRepository.findById(account.getId()).orElseThrow().getBalance())
+                .isEqualByComparingTo("9874.99");
+        assertThat(movementRepository.findAll()).singleElement().satisfies(movement -> {
+            assertThat(movement.getMovementType()).isEqualTo(MovementType.WITHDRAWAL);
+            assertThat(movement.getTotalAmount()).isEqualByComparingTo("125.01");
+            assertThat(movement.getRemainingBalance()).isEqualByComparingTo("9874.99");
+        });
+        assertThat(patrimonialPointRepository.count()).isEqualTo(1);
+    }
+
+    @Test
+    void rejectsWithdrawalAboveBalanceWithoutChangingState() {
+        assertThatThrownBy(() -> walletService.withdraw(account.getId(), new BigDecimal("10000.01")))
+                .isInstanceOf(com.projeto.gestao.api.exception.BusinessRuleException.class);
+
+        assertThat(accountRepository.findById(account.getId()).orElseThrow().getBalance())
+                .isEqualByComparingTo("10000.00");
+        assertThat(movementRepository.count()).isZero();
+        assertThat(patrimonialPointRepository.count()).isZero();
+    }
 }

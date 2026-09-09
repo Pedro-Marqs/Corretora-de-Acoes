@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom/vitest'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App.jsx'
 import { getCurrentAccount } from './api/accounts.js'
@@ -29,7 +29,7 @@ describe('wallet private route', () => {
 
     expect(await screen.findByRole('heading', { name: 'Minha carteira' })).toBeInTheDocument()
     expect(screen.getByRole('main')).toContainElement(screen.getByRole('heading', { name: 'Minha carteira' }))
-    expect(screen.getByRole('link', { name: 'Banco' })).toHaveClass('active')
+    expect(within(screen.getByRole('navigation', { name: 'Navegação principal' })).getByRole('link', { name: 'Carteira' })).toHaveClass('active')
     expect(screen.getByText('R$ 10.000,00')).toBeInTheDocument()
     expect(getCurrentAccount).toHaveBeenCalledTimes(1)
     expect(getWalletBalance).toHaveBeenCalledTimes(1)

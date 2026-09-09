@@ -39,7 +39,7 @@ describe('assets private route', () => {
   it('integra rota e navegação privadas e inicia vazio, sem atualização manual', async () => {
     render(<App />)
     expect(await screen.findByRole('heading', { name: 'Pesquisa de ativos' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Bolsa' })).toHaveClass('active')
+    expect(screen.getByRole('link', { name: 'Ativos' })).toHaveClass('active')
     expect(screen.getByText('Nenhuma pesquisa realizada')).toBeInTheDocument()
     expect(screen.getByLabelText(/Ticker/)).toBeRequired()
     expect(screen.getByLabelText(/Mercado/)).toBeRequired()
@@ -129,7 +129,7 @@ describe('assets private route', () => {
   it('renderiza avisos independentes pelas flags e preserva valores e horários', async () => {
     searchAsset.mockResolvedValue({ ...usAsset, quoteStale: true, exchangeRateStale: true })
     render(<App />); await screen.findByRole('heading', { name: 'Pesquisa de ativos' }); submit('AAPL', 'US')
-    expect(await screen.findByText('Cotação desatualizada')).toBeInTheDocument()
+    expect(await screen.findByText('Preço de fechamento')).toBeInTheDocument()
     expect(screen.getByText('USD/BRL desatualizado')).toBeInTheDocument()
     expect(screen.getByText(/US\$\s*225,10/)).toBeInTheDocument()
     expect(screen.getByText(/R\$\s*1\.238,05/)).toBeInTheDocument()

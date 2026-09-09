@@ -19,6 +19,8 @@ import com.projeto.gestao.domain.model.Currency;
 import com.projeto.gestao.domain.model.Market;
 import com.projeto.gestao.domain.model.MarketQuote;
 import com.projeto.gestao.domain.port.BrazilMarketDataPort;
+import com.projeto.gestao.domain.port.CompanyRegistryPort;
+import com.projeto.gestao.domain.port.RegulatoryRegistryPort;
 import com.projeto.gestao.repository.AccountBrokerRepository;
 import com.projeto.gestao.repository.AccountRepository;
 import com.projeto.gestao.repository.AssetRepository;
@@ -35,6 +37,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+import com.projeto.gestao.support.ExternalRegistryTestStubs;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -49,12 +52,15 @@ class PurchaseRollbackTests {
     @MockitoSpyBean private MovementRepository movements;
     @MockitoSpyBean private PatrimonialPointRepository points;
     @MockitoBean private BrazilMarketDataPort brazil;
+    @MockitoBean private CompanyRegistryPort companies;
+    @MockitoBean private RegulatoryRegistryPort regulatoryRegistry;
     private UUID accountId;
     private UUID assetId;
     private UUID associationId;
 
     @BeforeEach
     void setUp() {
+        ExternalRegistryTestStubs.active(companies, regulatoryRegistry);
         cleanup();
         Account account = accounts.save(Account.create(UUID.randomUUID(), "Investor", "52998224725",
                 "rollback-purchase@example.com", "hash", new BigDecimal("1000.00"), now()));

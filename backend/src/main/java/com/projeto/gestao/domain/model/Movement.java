@@ -53,6 +53,14 @@ public class Movement {
                 occurredAt, remainingBalance);
     }
 
+    public static Movement withdrawal(
+            UUID id, Account account, BigDecimal amount, BigDecimal remainingBalance,
+            OffsetDateTime occurredAt) {
+        money(amount, "amount", false);
+        return base(id, account, MovementType.WITHDRAWAL, amount, Currency.BRL,
+                occurredAt, remainingBalance);
+    }
+
     public static Movement purchase(
             UUID id, Account account, String ticker, Market market, BigDecimal quotePrice,
             BigDecimal unitPriceBrl, BigDecimal usdBrlRate, long quantity,
@@ -64,15 +72,8 @@ public class Movement {
         movement.unitPriceBrl = money(unitPriceBrl, "unitPriceBrl", false);
         if (market == Market.US) {
             movement.usdBrlRate = money(usdBrlRate, "usdBrlRate", false);
-            BigDecimal converted = new FinancialAmount(movement.quotePrice)
-                    .convertUsdToBrl(movement.usdBrlRate).value();
-            if (converted.compareTo(movement.unitPriceBrl) != 0) {
-                throw new IllegalArgumentException("unitPriceBrl must match USD/BRL conversion");
-            }
         } else if (usdBrlRate != null) {
             throw new IllegalArgumentException("usdBrlRate applies only to US movements");
-        } else if (movement.quotePrice.compareTo(movement.unitPriceBrl) != 0) {
-            throw new IllegalArgumentException("unitPriceBrl must match BRL quote price");
         }
         if (new FinancialAmount(movement.unitPriceBrl).multiply(quantity).value()
                 .compareTo(movement.totalAmount) != 0) {
@@ -98,15 +99,8 @@ public class Movement {
         unitPriceBrl = money(valueBrl, "unitPriceBrl", false);
         if (market == Market.US) {
             usdBrlRate = money(rate, "usdBrlRate", false);
-            BigDecimal converted = new FinancialAmount(quotePrice)
-                    .convertUsdToBrl(usdBrlRate).value();
-            if (converted.compareTo(unitPriceBrl) != 0) {
-                throw new IllegalArgumentException("unitPriceBrl must match USD/BRL conversion");
-            }
         } else if (rate != null) {
             throw new IllegalArgumentException("usdBrlRate applies only to US movements");
-        } else if (quotePrice.compareTo(unitPriceBrl) != 0) {
-            throw new IllegalArgumentException("unitPriceBrl must match BRL quote price");
         }
         if (new FinancialAmount(unitPriceBrl).multiply(quantity).value()
                 .compareTo(totalAmount) != 0) {

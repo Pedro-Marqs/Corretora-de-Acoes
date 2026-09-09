@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+    <changeSet id="v10-withdrawal-movement-constraint" author="project">
+        <sql splitStatements="true"><![CDATA[
+ALTER TABLE movement DROP CONSTRAINT ck_movement_fields_by_type;
+
+ALTER TABLE movement ADD CONSTRAINT ck_movement_fields_by_type CHECK (
+    (movement_type = 'INITIAL_BALANCE' AND total_amount > 0 AND currency = 'BRL'
+        AND ticker IS NULL AND market IS NULL AND quote_price IS NULL AND quantity IS NULL
+        AND broker_name IS NULL AND origin_broker_name IS NULL AND destination_broker_name IS NULL AND realized_result IS NULL)
+ OR (movement_type IN ('DEPOSIT', 'WITHDRAWAL') AND total_amount > 0 AND currency = 'BRL'
+        AND ticker IS NULL AND market IS NULL AND quote_price IS NULL AND quantity IS NULL
+        AND broker_name IS NULL AND origin_broker_name IS NULL AND destination_broker_name IS NULL AND realized_result IS NULL)
+ OR (movement_type = 'PURCHASE' AND ticker IS NOT NULL AND market IS NOT NULL
+        AND quote_price > 0 AND quantity > 0 AND total_amount > 0 AND broker_name IS NOT NULL
+        AND origin_broker_name IS NULL AND destination_broker_name IS NULL AND realized_result IS NULL
+        AND ((market = 'BR' AND currency = 'BRL') OR (market = 'US' AND currency = 'USD')))
+ OR (movement_type = 'SALE' AND ticker IS NOT NULL AND market IS NOT NULL
+        AND quote_price > 0 AND quantity > 0 AND total_amount > 0 AND broker_name IS NOT NULL
+        AND origin_broker_name IS NULL AND destination_broker_name IS NULL AND realized_result IS NOT NULL
+        AND ((market = 'BR' AND currency = 'BRL') OR (market = 'US' AND currency = 'USD')))
+ OR (movement_type = 'TRANSFER' AND ticker IS NOT NULL AND market IS NOT NULL
+        AND quote_price IS NULL AND quantity > 0 AND total_amount > 0 AND broker_name IS NULL
+        AND origin_broker_name IS NOT NULL AND destination_broker_name IS NOT NULL
+        AND origin_broker_name <> destination_broker_name AND realized_result IS NULL
+        AND ((market = 'BR' AND currency = 'BRL') OR (market = 'US' AND currency = 'USD')))
+);
+        ]]></sql>
+    </changeSet>
+</databaseChangeLog>

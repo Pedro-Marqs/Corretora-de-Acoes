@@ -33,8 +33,10 @@ describe('DashboardPage', () => {
     setup(); expect(screen.getByRole('status')).toHaveTextContent('Carregando dashboard')
     expect((await screen.findAllByText('R$ 1.250,30')).length).toBeGreaterThan(0)
     expect(screen.getAllByText('R$ 1.000,10').length).toBeGreaterThan(0); expect(screen.getAllByText('R$ 250,20').length).toBeGreaterThan(1)
+    expect(screen.getByRole('img', { name: /gráfico de pizza/i })).toBeInTheDocument()
+    expect(screen.getByText('Saldo em carteira')).toBeInTheDocument(); expect(screen.getAllByText('Ações nacionais').length).toBeGreaterThan(0); expect(screen.getAllByText('Ações internacionais').length).toBeGreaterThan(0)
     expect(screen.getAllByText('PETR4').length).toBeGreaterThan(0); expect(screen.getAllByText('Compartilhado pela conta').length).toBeGreaterThan(0)
-    expect(screen.queryByText(/%/)).not.toBeInTheDocument()
+    expect(screen.getByText('80,0%')).toBeInTheDocument(); expect(screen.getByText('20,0%')).toBeInTheDocument()
   })
 
   it('consulta novamente ao trocar corretora, oculta resposta anterior e mantém saldo compartilhado oficial', async () => {
@@ -66,8 +68,8 @@ describe('DashboardPage', () => {
 
   it('mostra avisos e instantes em Brasília sem ocultar valores confirmados', async () => {
     getDashboard.mockResolvedValue({ ...complete, positions: [{ ...positions[0], quoteStale: true }], warnings: [{ type: 'STALE_QUOTE', ticker: 'PETR4', observedAt: '2026-09-08T13:00:00Z' }, { type: 'STALE_EXCHANGE_RATE', ticker: null, observedAt: '2026-09-08T13:00:00Z' }] })
-    setup(); expect(await screen.findByText('Cotação de PETR4 desatualizada')).toBeInTheDocument()
-    expect(screen.getByText('Cotação USD/BRL desatualizada')).toBeInTheDocument(); expect(screen.getAllByText(/08\/09\/2026.*10:00/).length).toBeGreaterThan(1); expect(screen.getAllByText('R$ 1.250,30').length).toBeGreaterThan(0)
+    setup(); expect(await screen.findByText('Preço de fechamento')).toBeInTheDocument()
+    expect(screen.getByText(/Última cotação observada em/)).toBeInTheDocument(); expect(screen.queryByText('Dados desatualizados')).not.toBeInTheDocument(); expect(screen.getAllByText('R$ 1.250,30').length).toBeGreaterThan(0)
   })
 
   it('preserva filtros em erro recuperável e impede consulta duplicada equivalente', async () => {

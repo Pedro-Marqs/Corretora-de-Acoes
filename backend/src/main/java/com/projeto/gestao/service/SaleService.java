@@ -1,5 +1,8 @@
 package com.projeto.gestao.service;
 
+import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import com.projeto.gestao.api.exception.AuthenticationException;
@@ -23,20 +26,39 @@ public class SaleService {
     private final AssetRepository assets;
     private final AssetCatalogService market;
     private final SaleTransactionService transactions;
+    private final Clock clock;
 
     public SaleService(AccountRepository accounts, AccountBrokerRepository accountBrokers,
             AssetRepository assets, AssetCatalogService market,
             SaleTransactionService transactions) {
+        this(accounts, accountBrokers, assets, market, transactions, null);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public SaleService(AccountRepository accounts, AccountBrokerRepository accountBrokers,
+            AssetRepository assets, AssetCatalogService market,
+            SaleTransactionService transactions, Clock clock) {
         this.accounts = accounts;
         this.accountBrokers = accountBrokers;
         this.assets = assets;
         this.market = market;
         this.transactions = transactions;
+        this.clock = clock;
     }
 
     public SaleResult sell(UUID accountId, UUID assetId, UUID brokerAssociationId, long quantity) {
+        return sell(accountId, assetId, brokerAssociationId, quantity, null, null);
+    }
+
+    public SaleResult sell(UUID accountId, UUID assetId, UUID brokerAssociationId, long quantity,
+            BigDecimal requestedUnitPrice, OffsetDateTime occurredAt) {
         if (accountId == null) throw new AuthenticationException();
         if (quantity <= 0) throw new IllegalArgumentException("Quantity must be positive");
+        if (requestedUnitPrice != null && (requestedUnitPrice.signum() <= 0
+                || requestedUnitPrice.setScale(2, java.math.RoundingMode.HALF_UP).signum() <= 0)) {
+            throw new IllegalArgumentException("Unit price must be positive");
+        }
+        OffsetDateTime effectiveOccurredAt = effectiveOccurredAt(occurredAt);
         accounts.findByIdAndStatus(accountId, AccountStatus.ACTIVE)
                 .orElseThrow(AuthenticationException::new);
         Asset asset = assets.findByIdAndStatus(assetId, AssetStatus.ACTIVE)
@@ -47,13 +69,27 @@ public class SaleService {
 
         AssetPriceView price = market.find(asset.getTicker(), asset.getMarket());
         FinancialAmount originalPrice = new FinancialAmount(price.originalPrice());
+        BigDecimal confirmedOriginalPrice = requestedUnitPrice == null
+                ? originalPrice.value() : requestedUnitPrice.setScale(2, java.math.RoundingMode.HALF_UP);
+        FinancialAmount confirmedNative = new FinancialAmount(confirmedOriginalPrice);
         FinancialAmount unitPriceBrl = asset.getMarket() == Market.US
-                ? originalPrice.convertUsdToBrl(price.usdBrlRate()) : originalPrice;
+                ? confirmedNative.convertUsdToBrl(price.usdBrlRate()) : confirmedNative;
         SaleQuote quote = new SaleQuote(asset.getId(), price.ticker(), price.market(),
                 price.currency(), originalPrice.value(), unitPriceBrl.value(), price.quoteSource(),
                 price.quoteQuotedAt(), price.quoteStale(), price.usdBrlRate(),
                 price.exchangeRateSource(), price.exchangeRateQuotedAt(),
-                price.exchangeRateStale());
-        return transactions.sell(accountId, brokerAssociationId, quantity, quote);
+                price.exchangeRateStale(), confirmedOriginalPrice);
+        if (requestedUnitPrice == null && occurredAt == null) {
+            return transactions.sell(accountId, brokerAssociationId, quantity, quote);
+        }
+        return transactions.sell(accountId, brokerAssociationId, quantity, quote, effectiveOccurredAt);
+    }
+
+    private OffsetDateTime effectiveOccurredAt(OffsetDateTime occurredAt) {
+        OffsetDateTime now = clock == null ? OffsetDateTime.now() : OffsetDateTime.now(clock);
+        if (occurredAt != null && occurredAt.isAfter(now)) {
+            throw new IllegalArgumentException("Operation instant cannot be in the future");
+        }
+        return occurredAt == null ? now : occurredAt;
     }
 }

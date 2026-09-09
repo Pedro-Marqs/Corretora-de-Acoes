@@ -1,5 +1,6 @@
 package com.projeto.gestao.service;
 
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -39,11 +40,21 @@ public class SaleTransactionService {
     private final ExchangeRateRepository rates;
     private final FinancialHistoryService history;
     private final Clock clock;
+    private final BrokerStatusValidationService brokerStatus;
 
     public SaleTransactionService(AccountRepository accounts,
             AccountBrokerRepository accountBrokers, AssetRepository assets,
             PositionRepository positions, QuoteRepository quotes,
             ExchangeRateRepository rates, FinancialHistoryService history, Clock clock) {
+        this(accounts, accountBrokers, assets, positions, quotes, rates, history, clock, null);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public SaleTransactionService(AccountRepository accounts,
+            AccountBrokerRepository accountBrokers, AssetRepository assets,
+            PositionRepository positions, QuoteRepository quotes,
+            ExchangeRateRepository rates, FinancialHistoryService history, Clock clock,
+            BrokerStatusValidationService brokerStatus) {
         this.accounts = accounts;
         this.accountBrokers = accountBrokers;
         this.assets = assets;
@@ -52,16 +63,26 @@ public class SaleTransactionService {
         this.rates = rates;
         this.history = history;
         this.clock = clock;
+        this.brokerStatus = brokerStatus;
     }
 
     @Transactional
     public SaleResult sell(UUID accountId, UUID brokerAssociationId, long quantity,
             SaleQuote marketData) {
+        return sell(accountId, brokerAssociationId, quantity, marketData, OffsetDateTime.now(clock));
+    }
+
+    @Transactional
+    public SaleResult sell(UUID accountId, UUID brokerAssociationId, long quantity,
+            SaleQuote marketData, OffsetDateTime occurredAt) {
         Account account = accounts.findForUpdateByIdAndStatus(accountId, AccountStatus.ACTIVE)
                 .orElseThrow(AuthenticationException::new);
         AccountBroker association = accountBrokers.findForUpdateByIdAndAccountIdAndStatus(
                 brokerAssociationId, accountId, AssociationStatus.ACTIVE)
                 .orElseThrow(AuthorizationException::new);
+        if (brokerStatus != null) {
+            brokerStatus.validate(association);
+        }
         Asset asset = assets.findByIdAndStatus(marketData.assetId(), AssetStatus.ACTIVE)
                 .orElseThrow(() -> new MarketDataUnavailableException("Ativo indisponível."));
         validateSnapshot(asset, marketData);
@@ -79,8 +100,9 @@ public class SaleTransactionService {
         position.apply(financial.position());
         account.credit(financial.proceeds().value());
 
-        OffsetDateTime occurredAt = OffsetDateTime.now(clock);
-        history.record(account, occurredAt, (id, owner, instant) -> Movement.sale(
+        OffsetDateTime effectiveOccurredAt = occurredAt == null
+                ? OffsetDateTime.now(clock) : occurredAt;
+        history.record(account, effectiveOccurredAt, (id, owner, instant) -> Movement.sale(
                 id, owner, asset.getTicker(), asset.getMarket(), marketData.originalPrice(),
                 unitPriceBrl.value(), marketData.usdBrlRate(), quantity,
                 financial.proceeds().value(), asset.getCurrency(),
@@ -89,12 +111,12 @@ public class SaleTransactionService {
 
         return new SaleResult(asset.getId(), association.getId(), asset.getTicker(),
                 asset.getMarket(), asset.getCurrency(), quantity, position.getQuantity(),
-                marketData.originalPrice(), unitPriceBrl.value(), financial.proceeds().value(),
+                marketData.confirmedOriginalUnitPrice(), unitPriceBrl.value(), financial.proceeds().value(),
                 financial.realizedResult().value(), position.getAveragePrice(),
                 position.getTotalCost(), account.getBalance(), marketData.quoteSource(),
                 marketData.quoteQuotedAt(), marketData.quoteStale(), marketData.usdBrlRate(),
                 marketData.exchangeRateSource(), marketData.exchangeRateQuotedAt(),
-                marketData.exchangeRateStale(), occurredAt);
+                marketData.exchangeRateStale(), effectiveOccurredAt);
     }
 
     private void validateSnapshot(Asset asset, SaleQuote marketData) {
@@ -103,6 +125,7 @@ public class SaleTransactionService {
                 || asset.getMarket() != marketData.market()
                 || asset.getCurrency() != marketData.currency()
                 || marketData.originalPrice() == null || marketData.originalPrice().signum() <= 0
+                || marketData.quoteQuotedAt() == null
                 || marketData.unitPriceBrl() == null || marketData.unitPriceBrl().signum() <= 0) {
             throw new MarketDataUnavailableException("Cotação indisponível.");
         }
@@ -112,6 +135,12 @@ public class SaleTransactionService {
                 || !quote.getQuotedAt().toInstant().equals(marketData.quoteQuotedAt())) {
             throw new MarketDataUnavailableException("Cotação indisponível.");
         }
+        BigDecimal confirmedNativePrice = marketData.confirmedOriginalUnitPrice();
+        if (confirmedNativePrice == null || confirmedNativePrice.signum() <= 0
+                || confirmedNativePrice.setScale(2, java.math.RoundingMode.HALF_UP).signum() <= 0) {
+            throw new MarketDataUnavailableException("Preço unitário indisponível.");
+        }
+        FinancialAmount confirmedNative = new FinancialAmount(confirmedNativePrice);
         if (asset.getMarket() == Market.US) {
             var rate = rates.findById(PatrimonyCalculator.USD_BRL).orElseThrow(
                     () -> new MarketDataUnavailableException("Cotação USD/BRL indisponível."));
@@ -120,12 +149,11 @@ public class SaleTransactionService {
                     || !rate.getQuotedAt().toInstant().equals(marketData.exchangeRateQuotedAt())) {
                 throw new MarketDataUnavailableException("Cotação USD/BRL indisponível.");
             }
-            FinancialAmount expected = new FinancialAmount(marketData.originalPrice())
-                    .convertUsdToBrl(marketData.usdBrlRate());
+            FinancialAmount expected = confirmedNative.convertUsdToBrl(marketData.usdBrlRate());
             if (expected.value().compareTo(marketData.unitPriceBrl()) != 0) {
                 throw new MarketDataUnavailableException("Cotação USD/BRL indisponível.");
             }
-        } else if (new FinancialAmount(marketData.originalPrice()).value()
+        } else if (confirmedNative.value()
                 .compareTo(marketData.unitPriceBrl()) != 0) {
             throw new MarketDataUnavailableException("Cotação indisponível.");
         }

@@ -15,7 +15,7 @@ describe('brokers private route', () => {
     getCurrentAccount.mockResolvedValue({ name: 'Ana', cpf: '529.***.***-25', email: 'a***@example.com' }); render(<App />)
     expect(await screen.findByRole('heading', { name: 'Minhas corretoras' })).toBeInTheDocument()
     expect(screen.getByRole('main')).toContainElement(screen.getByRole('heading', { name: 'Minhas corretoras' }))
-    expect(screen.getByRole('link', { name: 'Banco' })).toHaveClass('active')
+    expect(screen.getByRole('link', { name: 'Corretoras' })).toHaveClass('active')
     expect(getCurrentAccount).toHaveBeenCalledTimes(1); expect(getActiveBrokers).toHaveBeenCalledTimes(1)
   })
   it('não expõe a página sem autenticação', async () => {

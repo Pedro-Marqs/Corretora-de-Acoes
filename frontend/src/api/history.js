@@ -7,7 +7,7 @@ export class HistoryApiError extends ApiError {
   }
 }
 
-const TYPES = ['INITIAL_BALANCE', 'DEPOSIT', 'PURCHASE', 'SALE', 'TRANSFER']
+const TYPES = ['INITIAL_BALANCE', 'DEPOSIT', 'WITHDRAWAL', 'PURCHASE', 'SALE', 'TRANSFER']
 
 function numeric(value) {
   return (typeof value === 'number' || (typeof value === 'string' && value.trim())) && Number.isFinite(Number(value))

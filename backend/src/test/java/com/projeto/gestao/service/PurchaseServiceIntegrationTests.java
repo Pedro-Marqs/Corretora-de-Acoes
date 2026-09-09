@@ -24,7 +24,9 @@ import com.projeto.gestao.domain.model.MarketQuote;
 import com.projeto.gestao.domain.model.MovementType;
 import com.projeto.gestao.domain.model.UsdBrlRate;
 import com.projeto.gestao.domain.port.BrazilMarketDataPort;
+import com.projeto.gestao.domain.port.CompanyRegistryPort;
 import com.projeto.gestao.domain.port.ExternalDataFailure;
+import com.projeto.gestao.domain.port.RegulatoryRegistryPort;
 import com.projeto.gestao.domain.port.UsMarketDataPort;
 import com.projeto.gestao.domain.port.UsdBrlExchangeRatePort;
 import com.projeto.gestao.repository.AccountBrokerRepository;
@@ -43,6 +45,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import com.projeto.gestao.support.ExternalRegistryTestStubs;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -59,6 +62,8 @@ class PurchaseServiceIntegrationTests {
     @Autowired private MovementRepository movements;
     @Autowired private PatrimonialPointRepository points;
     @MockitoBean private BrazilMarketDataPort brazil;
+    @MockitoBean private CompanyRegistryPort companies;
+    @MockitoBean private RegulatoryRegistryPort regulatoryRegistry;
     @MockitoBean private UsMarketDataPort unitedStates;
     @MockitoBean private UsdBrlExchangeRatePort exchange;
 
@@ -68,6 +73,7 @@ class PurchaseServiceIntegrationTests {
 
     @BeforeEach
     void setUp() {
+        ExternalRegistryTestStubs.active(companies, regulatoryRegistry);
         cleanup();
         account = saveAccount("52998224725", "buyer@example.com", "1000.00");
         otherAccount = saveAccount("11144477735", "other@example.com", "1000.00");

@@ -24,7 +24,11 @@ import com.projeto.gestao.domain.model.Currency;
 import com.projeto.gestao.domain.model.Market;
 import com.projeto.gestao.domain.model.MarketQuote;
 import com.projeto.gestao.domain.model.MovementType;
+import com.projeto.gestao.domain.model.CompanyRegistration;
+import com.projeto.gestao.domain.model.RegulatoryRegistration;
 import com.projeto.gestao.domain.port.BrazilMarketDataPort;
+import com.projeto.gestao.domain.port.CompanyRegistryPort;
+import com.projeto.gestao.domain.port.RegulatoryRegistryPort;
 import com.projeto.gestao.repository.AccountBrokerRepository;
 import com.projeto.gestao.repository.AccountRepository;
 import com.projeto.gestao.repository.AssetRepository;
@@ -60,6 +64,8 @@ class TransferServiceIntegrationTests {
     @Autowired private PatrimonialPointRepository points;
     @Autowired private JdbcTemplate jdbc;
     @MockitoBean private BrazilMarketDataPort brazil;
+    @MockitoBean private CompanyRegistryPort companies;
+    @MockitoBean private RegulatoryRegistryPort regulatoryRegistry;
 
     private Account account;
     private Account other;
@@ -79,6 +85,12 @@ class TransferServiceIntegrationTests {
         alternate = association(account, "34028316000103", "Alternativa");
         foreign = association(other, "60872504000123", "Terceira");
         asset = assets.save(new Asset("PETR4", "Petrobras", Market.BR, Currency.BRL));
+        when(companies.findByCnpj(org.mockito.ArgumentMatchers.anyString()))
+            .thenAnswer(invocation -> new CompanyRegistration(invocation.getArgument(0),
+                "Corretora", "Corretora", "ATIVA", "01001000"));
+        when(regulatoryRegistry.findByCnpj(org.mockito.ArgumentMatchers.anyString()))
+            .thenAnswer(invocation -> new RegulatoryRegistration(invocation.getArgument(0),
+                true, true, List.of()));
     }
 
     @AfterEach

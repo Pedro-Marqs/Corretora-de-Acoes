@@ -25,6 +25,8 @@ import com.projeto.gestao.domain.model.Position;
 import com.projeto.gestao.domain.model.PositionBalance;
 import com.projeto.gestao.domain.model.PositionQuantity;
 import com.projeto.gestao.domain.port.BrazilMarketDataPort;
+import com.projeto.gestao.domain.port.CompanyRegistryPort;
+import com.projeto.gestao.domain.port.RegulatoryRegistryPort;
 import com.projeto.gestao.repository.AccountBrokerRepository;
 import com.projeto.gestao.repository.AccountRepository;
 import com.projeto.gestao.repository.AssetRepository;
@@ -48,6 +50,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import com.projeto.gestao.support.ExternalRegistryTestStubs;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -72,12 +75,15 @@ class WalletControllerTests {
     @Autowired private JdbcTemplate jdbc;
     @Autowired private PlatformTransactionManager transactionManager;
     @MockitoBean private BrazilMarketDataPort brazil;
+    @MockitoBean private CompanyRegistryPort companies;
+    @MockitoBean private RegulatoryRegistryPort regulatoryRegistry;
 
     private Account first;
     private Account second;
 
     @BeforeEach
     void createAccounts() {
+        ExternalRegistryTestStubs.active(companies, regulatoryRegistry);
         cleanup();
         first = saveAccount("52998224725", "first-wallet@example.com");
         second = saveAccount("11144477735", "second-wallet@example.com");
@@ -98,7 +104,7 @@ class WalletControllerTests {
     }
 
     @Test
-    void purchaseUsesSessionAccountAndBackendPriceWhileIgnoringInjectedFields() throws Exception {
+        void purchaseUsesSessionAccountAndAcceptsEditableUnitPrice() throws Exception {
         Cookie session = login(first.getEmail());
         Asset asset = assetRepository.save(new Asset("PETR4", "Petrobras", Market.BR, Currency.BRL));
         Broker broker = brokerRepository.save(Broker.create(UUID.randomUUID(), "02332886000104",
@@ -125,8 +131,8 @@ class WalletControllerTests {
                                 "assetId", searchedAssetId, "brokerId", association.getId(),
                                 "quantity", 2, "accountId", second.getId(), "price", 0.01))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.purchaseAmountBrl").value(50.00))
-                .andExpect(jsonPath("$.remainingBalanceBrl").value(9950.00))
+                .andExpect(jsonPath("$.purchaseAmountBrl").value(0.02))
+                .andExpect(jsonPath("$.remainingBalanceBrl").value(9999.98))
                 .andExpect(jsonPath("$.accountId").doesNotExist())
                 .andExpect(jsonPath("$.price").doesNotExist());
         assertThat(accountRepository.findById(second.getId()).orElseThrow().getBalance())
@@ -153,7 +159,7 @@ class WalletControllerTests {
     }
 
     @Test
-    void saleUsesSessionAccountAndBackendPriceWhileIgnoringInjectedFields() throws Exception {
+        void saleUsesSessionAccountAndAcceptsEditableUnitPrice() throws Exception {
         Cookie session = login(first.getEmail());
         Asset asset = assetRepository.save(new Asset("PETR4", "Petrobras", Market.BR, Currency.BRL));
         Broker broker = brokerRepository.save(Broker.create(UUID.randomUUID(), "02332886000104",
@@ -182,9 +188,9 @@ class WalletControllerTests {
                                 "assetId", asset.getId(), "brokerId", association.getId(),
                                 "quantity", 1, "accountId", second.getId(), "price", 0.01))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.saleAmountBrl").value(30.00))
-                .andExpect(jsonPath("$.realizedResultBrl").value(5.00))
-                .andExpect(jsonPath("$.remainingBalanceBrl").value(9980.00))
+                .andExpect(jsonPath("$.saleAmountBrl").value(0.01))
+                .andExpect(jsonPath("$.realizedResultBrl").value(-24.99))
+                .andExpect(jsonPath("$.remainingBalanceBrl").value(9950.01))
                 .andExpect(jsonPath("$.accountId").doesNotExist())
                 .andExpect(jsonPath("$.price").doesNotExist());
         assertThat(accountRepository.findById(second.getId()).orElseThrow().getBalance())

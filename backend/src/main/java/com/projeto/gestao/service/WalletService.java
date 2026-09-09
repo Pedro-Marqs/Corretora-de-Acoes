@@ -7,10 +7,12 @@ import java.util.UUID;
 import com.projeto.gestao.api.exception.AuthenticationException;
 import com.projeto.gestao.domain.model.Account;
 import com.projeto.gestao.domain.model.AccountStatus;
+import com.projeto.gestao.domain.model.FinancialAmount;
 import com.projeto.gestao.domain.model.Movement;
 import com.projeto.gestao.repository.AccountRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.projeto.gestao.api.exception.BusinessRuleException;
 
 @Service
 public class WalletService {
@@ -42,11 +44,39 @@ public class WalletService {
         return resultingBalance;
     }
 
+    @Transactional
+    public BigDecimal withdraw(UUID accountId, BigDecimal amount) {
+        BigDecimal normalizedAmount = validWithdrawal(amount);
+        Account account = activeAccountForUpdate(accountId);
+        FinancialAmount requested = new FinancialAmount(normalizedAmount);
+        FinancialAmount available = new FinancialAmount(account.getBalance());
+        if (requested.value().compareTo(available.value()) > 0) {
+            throw BusinessRuleException.insufficientBalance(requested, available);
+        }
+        account.debit(requested);
+        BigDecimal resultingBalance = account.getBalance();
+        financialHistoryService.record(account,
+                (id, owner, occurredAt) -> Movement.withdrawal(
+                        id, owner, normalizedAmount, resultingBalance, occurredAt));
+        return resultingBalance;
+    }
+
     private BigDecimal validDeposit(BigDecimal amount) {
         if (amount == null || amount.compareTo(MINIMUM_DEPOSIT) < 0) {
             throw new IllegalArgumentException("Deposit must be at least BRL 10.00");
         }
         return amount.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal validWithdrawal(BigDecimal amount) {
+        if (amount == null || amount.signum() <= 0) {
+            throw new IllegalArgumentException("Withdrawal must be positive");
+        }
+        BigDecimal normalized = amount.setScale(2, RoundingMode.HALF_UP);
+        if (normalized.signum() <= 0) {
+            throw new IllegalArgumentException("Withdrawal must be positive");
+        }
+        return normalized;
     }
 
     private Account activeAccount(UUID accountId) {

@@ -49,18 +49,26 @@ public class WalletController {
         return new WalletBalanceResponse(walletService.deposit(principal.accountId(), request.amount()));
     }
 
+    @PostMapping("/withdrawals")
+    WalletBalanceResponse withdraw(@AuthenticationPrincipal AccountPrincipal principal,
+            @Valid @RequestBody WithdrawalRequest request) {
+        return new WalletBalanceResponse(walletService.withdraw(principal.accountId(), request.amount()));
+    }
+
     @PostMapping("/purchases")
     PurchaseResponse purchase(@AuthenticationPrincipal AccountPrincipal principal,
             @Valid @RequestBody PurchaseRequest request) {
         return PurchaseResponse.from(purchaseService.purchase(principal.accountId(),
-                request.assetId(), request.brokerId(), request.quantity()));
+                request.assetId(), request.brokerId(), request.quantity(), request.unitPrice(),
+                request.occurredAt()));
     }
 
     @PostMapping("/sales")
     SaleResponse sale(@AuthenticationPrincipal AccountPrincipal principal,
             @Valid @RequestBody SaleRequest request) {
         return SaleResponse.from(saleService.sell(principal.accountId(),
-                request.assetId(), request.brokerId(), request.quantityAsLong()));
+                request.assetId(), request.brokerId(), request.quantityAsLong(), request.unitPrice(),
+                request.occurredAt()));
     }
 
     @PostMapping("/transfers")

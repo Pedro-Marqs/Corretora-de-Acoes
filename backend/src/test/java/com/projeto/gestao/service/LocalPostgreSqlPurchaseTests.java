@@ -16,6 +16,8 @@ import com.projeto.gestao.domain.model.Currency;
 import com.projeto.gestao.domain.model.Market;
 import com.projeto.gestao.domain.model.MarketQuote;
 import com.projeto.gestao.domain.port.BrazilMarketDataPort;
+import com.projeto.gestao.domain.port.CompanyRegistryPort;
+import com.projeto.gestao.domain.port.RegulatoryRegistryPort;
 import com.projeto.gestao.repository.AccountBrokerRepository;
 import com.projeto.gestao.repository.AccountRepository;
 import com.projeto.gestao.repository.AssetRepository;
@@ -32,6 +34,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
+import com.projeto.gestao.support.ExternalRegistryTestStubs;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -62,9 +65,12 @@ class LocalPostgreSqlPurchaseTests {
     @Autowired private MovementRepository movements;
     @Autowired private PatrimonialPointRepository points;
     @MockitoBean private BrazilMarketDataPort brazil;
+    @MockitoBean private CompanyRegistryPort companies;
+    @MockitoBean private RegulatoryRegistryPort regulatoryRegistry;
 
     @Test
     void persistsLockedPurchaseAtomicallyInIsolatedLocalPostgreSql() {
+        ExternalRegistryTestStubs.active(companies, regulatoryRegistry);
         OffsetDateTime now = OffsetDateTime.parse("2026-09-03T10:00:00-03:00");
         Account account = accounts.save(Account.create(UUID.randomUUID(), "Investor", "52998224725",
                 "t27-postgres@example.com", "hash", new BigDecimal("1000.00"), now));

@@ -9,6 +9,8 @@ import { formatBrasiliaDateTime, formatCurrency, formatMoney } from '../utils/fo
 const EMPTY_FILTERS = { from: '', to: '', type: '', ticker: '', brokerId: '', market: '' }
 const LABELS = { INITIAL_BALANCE: 'Saldo inicial', DEPOSIT: 'Aporte', PURCHASE: 'Compra', SALE: 'Venda', TRANSFER: 'Transferência' }
 
+LABELS.WITHDRAWAL = 'Retirada'
+
 function brasiliaOffsetDateTime(value) {
   return value ? `${value.length === 16 ? value : value.slice(0, 16)}:00-03:00` : ''
 }
@@ -160,6 +162,7 @@ function MovementCard({ movement }) {
   const trading = movement.type === 'PURCHASE' || movement.type === 'SALE'
   const transfer = movement.type === 'TRANSFER'
   const deposit = movement.type === 'DEPOSIT' || movement.type === 'INITIAL_BALANCE'
+  const withdrawal = movement.type === 'WITHDRAWAL'
   return <article className="history-card">
     <header><span className={`history-type history-type-${movement.type.toLowerCase()}`}>{LABELS[movement.type]}</span><time dateTime={movement.occurredAt}>{formatBrasiliaDateTime(movement.occurredAt)}</time></header>
     <dl className="history-card-grid">
@@ -170,7 +173,7 @@ function MovementCard({ movement }) {
       {transfer && <Detail label="Destino" value={movement.destinationBrokerName} />}
       {trading && <Detail label="Preço da cotação" value={formatMoney(movement.quotePrice, movement.currency)} />}
       {trading && <Detail label="Preço unitário em reais" value={formatCurrency(movement.unitPriceBrl)} />}
-      {(trading || transfer || deposit) && <Detail label={deposit ? 'Valor' : 'Total'} value={formatCurrency(movement.totalAmount)} />}
+      {(trading || transfer || deposit || withdrawal) && <Detail label={deposit || withdrawal ? 'Valor' : 'Total'} value={formatCurrency(movement.totalAmount)} />}
       {movement.type === 'SALE' && <Detail label="Resultado realizado" value={formatCurrency(movement.realizedResult)} />}
       <Detail label="Saldo após movimento" value={formatCurrency(movement.remainingBalance)} />
     </dl>

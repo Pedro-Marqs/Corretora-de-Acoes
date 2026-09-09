@@ -73,13 +73,13 @@ function requireTransfer(body) {
   return body
 }
 
-async function operate(path, operation, assetId, brokerId, quantity) {
+async function operate(path, operation, assetId, brokerId, quantity, unitPrice, occurredAt) {
   try {
     const token = await getCsrfToken(WalletApiError, 'Não foi possível iniciar a operação. Tente novamente.')
     const response = await fetch(`${API_BASE_URL}/api/wallet/${path}`, {
       method: 'POST', credentials: 'include',
       headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': token },
-      body: JSON.stringify({ assetId, brokerId, quantity }),
+      body: JSON.stringify({ assetId, brokerId, quantity, ...(unitPrice == null ? {} : { unitPrice }), ...(occurredAt == null ? {} : { occurredAt }) }),
     })
     const body = await parseJson(response)
     if (!response.ok) throw new WalletApiError(body?.message ?? 'Não foi possível concluir a operação.', groupFieldErrors(body?.fieldErrors), response.status)
@@ -90,12 +90,12 @@ async function operate(path, operation, assetId, brokerId, quantity) {
   }
 }
 
-export function purchaseAsset(assetId, brokerId, quantity) {
-  return operate('purchases', 'purchase', assetId, brokerId, quantity)
+export function purchaseAsset(assetId, brokerId, quantity, unitPrice, occurredAt) {
+  return operate('purchases', 'purchase', assetId, brokerId, quantity, unitPrice, occurredAt)
 }
 
-export function sellAsset(assetId, brokerId, quantity) {
-  return operate('sales', 'sale', assetId, brokerId, quantity)
+export function sellAsset(assetId, brokerId, quantity, unitPrice, occurredAt) {
+  return operate('sales', 'sale', assetId, brokerId, quantity, unitPrice, occurredAt)
 }
 
 export async function transferPosition(originBrokerId, destinationBrokerId, assetId, quantity) {
@@ -151,6 +151,26 @@ export async function deposit(amount) {
       )
     }
     return requireBalance(body, 'A resposta do aporte não pôde ser processada.')
+  } catch (error) {
+    if (error instanceof WalletApiError) throw error
+    throw new WalletApiError('Não foi possível conectar ao servidor. Verifique se a aplicação está em execução.')
+  }
+}
+
+export async function withdraw(amount) {
+  try {
+    const token = await getCsrfToken(WalletApiError, 'Não foi possível iniciar a retirada. Tente novamente.')
+    const response = await fetch(`${API_BASE_URL}/api/wallet/withdrawals`, {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': token },
+      body: JSON.stringify({ amount }),
+    })
+    const body = await parseJson(response)
+    if (!response.ok) throw new WalletApiError(
+      body?.message ?? 'Não foi possível realizar a retirada. Tente novamente.',
+      groupFieldErrors(body?.fieldErrors), response.status,
+    )
+    return requireBalance(body, 'A resposta da retirada nÃ£o pÃ´de ser processada.')
   } catch (error) {
     if (error instanceof WalletApiError) throw error
     throw new WalletApiError('Não foi possível conectar ao servidor. Verifique se a aplicação está em execução.')

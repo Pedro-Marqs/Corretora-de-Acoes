@@ -127,7 +127,7 @@ describe('Cadastro', () => {
     fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'Senha@123' } })
     fireEvent.click(screen.getByRole('button', { name: 'Entrar' }))
     fireEvent.click(await findLogoutButton())
-    expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível encerrar a sessão.')
+    expect(await screen.findByText('Não foi possível encerrar a sessão.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Ana Silva' })).toBeInTheDocument()
   })
 

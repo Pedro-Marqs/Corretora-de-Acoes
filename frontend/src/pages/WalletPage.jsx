@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { deposit, getWalletBalance } from '../api/wallet.js'
+import { deposit, getWalletBalance, withdraw } from '../api/wallet.js'
 import { ErrorState, LoadingState, Message } from '../components/common/AsyncStates.jsx'
 import { useAuth } from '../context/auth-context.js'
 import { currencyInputToDecimal, formatCurrency, formatCurrencyInput } from '../utils/formatters.js'
 
-export default function WalletPage({ embedded = false }) {
+export default function WalletPage({ embedded = false, showWithdrawal = false }) {
   const PageRoot = embedded ? 'section' : 'main'
   const { clear: clearAuth } = useAuth()
   const navigate = useNavigate()
@@ -15,6 +15,11 @@ export default function WalletPage({ embedded = false }) {
   const [confirmationAmount, setConfirmationAmount] = useState(null)
   const depositLock = useRef(false)
   const [depositState, setDepositState] = useState({ pending: false, message: '', error: '' })
+  const [withdrawalAmount, setWithdrawalAmount] = useState('')
+  const [withdrawalError, setWithdrawalError] = useState('')
+  const [withdrawalConfirmation, setWithdrawalConfirmation] = useState(null)
+  const withdrawalLock = useRef(false)
+  const [withdrawalState, setWithdrawalState] = useState({ pending: false, message: '', error: '' })
 
   const loadBalance = useCallback(async () => {
     setState({ status: 'loading', balance: null, message: '' })
@@ -97,6 +102,43 @@ export default function WalletPage({ embedded = false }) {
     }
   }
 
+  function requestWithdrawal(event) {
+    event.preventDefault()
+    if (withdrawalLock.current) return
+    const normalized = currencyInputToDecimal(withdrawalAmount)
+    const numericAmount = Number(normalized)
+    let message = ''
+    if (!normalized) message = 'Informe o valor da retirada.'
+    else if (!Number.isFinite(numericAmount)) message = 'Informe um valor numérico válido.'
+    else if (numericAmount <= 0) message = 'O valor da retirada deve ser positivo.'
+    if (message) { setWithdrawalError(message); setWithdrawalConfirmation(null); return }
+    setWithdrawalError('')
+    setWithdrawalState({ pending: false, message: '', error: '' })
+    setWithdrawalConfirmation(normalized)
+  }
+
+  async function confirmWithdrawal() {
+    if (withdrawalLock.current || !withdrawalConfirmation) return
+    withdrawalLock.current = true
+    setWithdrawalState({ pending: true, message: '', error: '' })
+    try {
+      const wallet = await withdraw(withdrawalConfirmation)
+      setState({ status: 'ready', balance: wallet.balance, message: '' })
+      setWithdrawalAmount('')
+      setWithdrawalConfirmation(null)
+      setWithdrawalState({ pending: false, message: 'Retirada realizada. O saldo foi atualizado.', error: '' })
+    } catch (error) {
+      if (error.status === 401) {
+        setState({ status: 'unauthenticated', balance: null, message: '' })
+        clearAuth()
+        navigate('/login', { replace: true, state: { message: 'Sua sessão foi encerrada. Entre novamente.' } })
+      } else {
+        setWithdrawalError(error.fieldErrors?.amount?.[0] ?? '')
+        setWithdrawalState({ pending: false, message: '', error: error.message })
+      }
+    } finally { withdrawalLock.current = false }
+  }
+
   if (state.status === 'loading') return <PageRoot className="wallet-page"><LoadingState message="Carregando saldo…" /></PageRoot>
   if (state.status === 'error') return <PageRoot className="wallet-page"><ErrorState message={state.message} onRetry={loadBalance} /></PageRoot>
   if (state.status !== 'ready') return null
@@ -131,6 +173,14 @@ export default function WalletPage({ embedded = false }) {
           <button className="primary-button" type="submit" disabled={depositState.pending}>Continuar</button>
         </form>
       </section>
+      {showWithdrawal && <section className="withdrawal-card" aria-labelledby="withdrawal-title">
+        <div><p className="eyebrow">Retirada</p><h2 id="withdrawal-title">Retirar saldo</h2><p>Retire um valor positivo do saldo compartilhado da conta.</p></div>
+        <form onSubmit={requestWithdrawal} noValidate>
+          {withdrawalState.message && <Message kind="success">{withdrawalState.message}</Message>}
+          <div className="form-field"><label htmlFor="withdrawalAmount">Valor da retirada <span aria-hidden="true">*</span></label><input id="withdrawalAmount" name="amount" type="text" inputMode="numeric" autoComplete="off" placeholder="R$ 0,00" value={withdrawalAmount} onChange={(event) => { setWithdrawalAmount(formatCurrencyInput(event.target.value)); setWithdrawalError('') }} aria-invalid={Boolean(withdrawalError)} aria-describedby={withdrawalError ? 'withdrawalAmount-error' : 'withdrawalAmount-hint'} />{withdrawalError ? <span className="field-error" id="withdrawalAmount-error">{withdrawalError}</span> : <span className="field-hint" id="withdrawalAmount-hint">Saldo disponível: {formatCurrency(state.balance)}.</span>}</div>
+          <button className="secondary-button" type="submit" disabled={withdrawalState.pending}>Continuar</button>
+        </form>
+      </section>}
       {confirmationAmount && (
         <DepositConfirmation
           amount={confirmationAmount}
@@ -140,8 +190,22 @@ export default function WalletPage({ embedded = false }) {
           onConfirm={confirmDeposit}
         />
       )}
+      {withdrawalConfirmation && <WithdrawalConfirmation amount={withdrawalConfirmation} error={withdrawalState.error} pending={withdrawalState.pending} onCancel={() => { setWithdrawalConfirmation(null); setWithdrawalState({ pending: false, message: '', error: '' }) }} onConfirm={confirmWithdrawal} />}
     </PageRoot>
   )
+}
+
+function WithdrawalConfirmation({ amount, error, pending, onCancel, onConfirm }) {
+  const cancelRef = useRef(null)
+  const confirmRef = useRef(null)
+  useEffect(() => { const previousFocus = document.activeElement; cancelRef.current?.focus(); return () => previousFocus?.focus() }, [])
+  function handleKeyDown(event) {
+    if (event.key === 'Escape' && !pending) { event.preventDefault(); onCancel(); return }
+    if (event.key !== 'Tab' || pending) return
+    if (event.shiftKey && document.activeElement === cancelRef.current) { event.preventDefault(); confirmRef.current?.focus() }
+    else if (!event.shiftKey && document.activeElement === confirmRef.current) { event.preventDefault(); cancelRef.current?.focus() }
+  }
+  return <section className="deposit-confirmation" role="dialog" aria-modal="true" aria-labelledby="withdrawal-confirmation-title" onKeyDown={handleKeyDown}><div><h2 id="withdrawal-confirmation-title">Confirmar retirada</h2><p>Deseja retirar <strong>{formatCurrency(amount)}</strong> do saldo da carteira?</p>{error && <Message kind="error">{error}</Message>}<div className="confirmation-actions"><button ref={cancelRef} className="secondary-button" type="button" onClick={onCancel} disabled={pending}>Cancelar</button><button ref={confirmRef} className="primary-button" type="button" onClick={onConfirm} disabled={pending}>{pending ? 'Enviando retirada…' : 'Confirmar retirada'}</button></div></div></section>
 }
 
 function DepositConfirmation({ amount, error, pending, onCancel, onConfirm }) {
