@@ -182,3 +182,60 @@ A tela privada de histórico SHALL apresentar estados distinguíveis de carregam
 #### Scenario: Histórico em viewport estreito
 - **WHEN** o investidor acessar a tela em 320 px, tablet ou desktop
 - **THEN** filtros, registros, mensagens e paginação SHALL permanecer utilizáveis sem rolagem horizontal da página, com datas e valores formatados conforme os padrões da aplicação
+
+### Requirement: Estados da interface do dashboard
+
+A tela privada do dashboard SHALL distinguir carregamento, sucesso, vazio, erro recuperável, sessão inválida e dados desatualizados. Enquanto uma consulta equivalente estiver em andamento, SHALL impedir novo envio duplicado e SHALL preservar os filtros selecionados quando a falha permitir nova tentativa.
+
+#### Scenario: Carregamento do dashboard
+
+- **WHEN** a tela solicitar indicadores, distribuições ou série histórica
+- **THEN** SHALL indicar carregamento e SHALL evitar apresentar a resposta anterior como se fosse o resultado confirmado da nova seleção
+
+#### Scenario: Erro recuperável
+
+- **WHEN** a consulta falhar por rede, erro funcional ou erro de servidor
+- **THEN** SHALL exibir mensagem funcional sem detalhes técnicos, preservar os filtros aplicáveis e permitir nova tentativa
+
+#### Scenario: Sessão inválida
+
+- **WHEN** a API responder HTTP 401
+- **THEN** SHALL ocultar os dados privados do dashboard e direcionar o investidor ao login conforme a proteção de rotas existente
+
+#### Scenario: Consulta sem dados
+
+- **WHEN** a consulta válida retornar posições, distribuições ou histórico vazios
+- **THEN** SHALL apresentar estado vazio específico da seção sem tratar a ausência como erro
+
+### Requirement: Responsividade do dashboard
+
+A tela de dashboard SHALL funcionar em viewport de 320 px, tablet e desktop sem rolagem horizontal da página. Cartões, filtros, distribuições, avisos e histórico SHALL permanecer acessíveis e os valores monetários SHALL usar duas casas decimais.
+
+#### Scenario: Dashboard em celular
+
+- **WHEN** o investidor acessar o dashboard em viewport estreito
+- **THEN** SHALL conseguir ler e operar os filtros e seções sem sobreposição ou rolagem horizontal da página
+
+### Requirement: Estados do shell e dos fluxos reorganizados
+
+O novo shell e suas páginas SHALL apresentar estados distinguíveis de carregamento, sucesso, vazio, erro recuperável, sessão inválida e dados desatualizados quando aplicáveis. Enquanto uma ação estiver em andamento, SHALL impedir duplicidade e SHALL preservar o contexto recuperável em falhas.
+
+#### Scenario: Carregamento de uma seção
+- **WHEN** Investimentos, Banco ou Bolsa aguardar dados da API
+- **THEN** a interface SHALL indicar carregamento sem apresentar valores financeiros não confirmados
+
+#### Scenario: Falha recuperável
+- **WHEN** uma consulta ou ação falhar por erro funcional, rede ou servidor
+- **THEN** a interface SHALL mostrar mensagem segura, preservar seleção/entrada aplicável e permitir nova tentativa quando possível
+
+### Requirement: Responsividade e acessibilidade do novo fluxo
+
+Header, menu do usuário, cartões, listas, detalhe e negociação SHALL permanecer utilizáveis a partir de 320 px, sem rolagem horizontal da página, com foco visível, nomes acessíveis e controles de menu operáveis por teclado.
+
+#### Scenario: Visualização móvel
+- **WHEN** o investidor acessar qualquer seção em viewport de 320 px ou maior
+- **THEN** o conteúdo SHALL permanecer legível e acionável sem sobreposição ou rolagem horizontal da página
+
+#### Scenario: Navegação por teclado
+- **WHEN** o investidor navegar pelo header e pelo menu usando teclado
+- **THEN** a ordem de foco SHALL ser compreensível, o menu SHALL poder ser aberto/fechado e nenhum controle SHALL ficar inacessível
