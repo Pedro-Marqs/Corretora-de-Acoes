@@ -22,9 +22,9 @@ target/
 .vscode/
 
 ### Frontend ###
-src/main/front/node_modules/
-src/main/front/dist/
-src/main/front/coverage/
+front/node_modules/
+front/dist/
+front/coverage/
 
 ### Local configuration and secrets ###
 .env
@@ -41,3 +41,4 @@ Thumbs.db
 /.m2-repo/
 /.m2-repo.bak/
 /.mvn/validation-cache-*/
+**/.codex-test-tmp/
