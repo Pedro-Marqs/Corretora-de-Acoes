@@ -51,8 +51,6 @@ class LocalPostgreSqlSessionTests {
         registry.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
         registry.add("spring.datasource.username", () -> requiredEnvironment("LOCAL_POSTGRES_TEST_USER"));
         registry.add("spring.datasource.password", () -> requiredEnvironment("LOCAL_POSTGRES_TEST_PASSWORD"));
-        registry.add("spring.flyway.locations", () ->
-                "classpath:db/migration/common,classpath:db/migration/postgresql");
     }
 
     private static String requiredEnvironment(String name) {

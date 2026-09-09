@@ -52,4 +52,14 @@ class ProfileConfigurationTests {
                 .isEqualTo(TimeZone.getTimeZone("America/Sao_Paulo"));
     }
 
+    @Test
+    void applicationUsesLiquibaseAndHibernateValidation() {
+        assertThat(environment.getProperty("spring.liquibase.enabled", Boolean.class))
+                .isTrue();
+        assertThat(environment.getProperty("spring.liquibase.change-log"))
+                .isEqualTo("classpath:db/changelog/db.changelog-master.xml");
+        assertThat(environment.getProperty("spring.jpa.hibernate.ddl-auto"))
+                .isEqualTo("validate");
+    }
+
 }

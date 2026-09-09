@@ -4,12 +4,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
+import java.sql.Connection;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import org.flywaydb.core.Flyway;
+import liquibase.Contexts;
+import liquibase.LabelExpression;
+import liquibase.Liquibase;
+import liquibase.database.Database;
+import liquibase.database.DatabaseFactory;
+import liquibase.database.jvm.JdbcConnection;
+import liquibase.resource.ClassLoaderResourceAccessor;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -29,13 +36,16 @@ class PostgreSqlMigrationTests {
     private static JdbcTemplate jdbc;
 
     @BeforeAll
-    static void migrateSchema() {
-        Flyway.configure()
-                .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
-                .locations("classpath:db/migration/common", "classpath:db/migration/postgresql")
-                .load()
-                .migrate();
-
+    static void migrateSchema() throws Exception {
+        try (Connection connection = new DriverManagerDataSource(
+                POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword()).getConnection()) {
+            Database database = DatabaseFactory.getInstance()
+                    .findCorrectDatabaseImplementation(new JdbcConnection(connection));
+            Liquibase liquibase = new Liquibase(
+                    "db/changelog/db.changelog-master.xml",
+                    new ClassLoaderResourceAccessor(), database);
+            liquibase.update(new Contexts(), new LabelExpression());
+        }
         jdbc = new JdbcTemplate(new DriverManagerDataSource(
                 POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword()));
     }
@@ -43,8 +53,8 @@ class PostgreSqlMigrationTests {
     @Test
     void migratesEmptyPostgreSqlDatabase() {
         Integer appliedMigrations = jdbc.queryForObject(
-                "SELECT COUNT(*) FROM flyway_schema_history WHERE success", Integer.class);
-        assertThat(appliedMigrations).isEqualTo(5);
+                "SELECT COUNT(*) FROM databasechangelog WHERE exectype = 'EXECUTED'", Integer.class);
+        assertThat(appliedMigrations).isEqualTo(8);
     }
 
     @Test

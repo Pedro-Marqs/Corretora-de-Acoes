@@ -52,7 +52,7 @@ class SchemaMigrationTests {
     }
 
     @Test
-    void flywayCreatesDomainAndSpringSessionTables() {
+    void liquibaseCreatesDomainAndSpringSessionTables() {
         List<String> tables = jdbc.queryForList("""
                 SELECT LOWER(table_name)
                   FROM information_schema.tables
@@ -62,7 +62,21 @@ class SchemaMigrationTests {
         assertThat(tables).contains(
                 "account", "broker", "account_broker", "asset", "quote",
                 "exchange_rate", "position", "movement", "patrimonial_point",
-                "spring_session", "spring_session_attributes", "flyway_schema_history");
+                "spring_session", "spring_session_attributes", "databasechangelog", "databasechangeloglock");
+    }
+
+    @Test
+    void h2UsesTheH2ActiveUniquenessRepresentation() {
+        List<String> columns = jdbc.queryForList("""
+                SELECT LOWER(column_name) FROM information_schema.columns
+                 WHERE table_name IN ('ACCOUNT', 'ACCOUNT_BROKER', 'ASSET')
+                """, String.class);
+
+        assertThat(columns).contains(
+                "active_cpf", "active_email", "active_broker_id", "normalized_ticker");
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM databasechangelog WHERE id = 'v2-active-uniqueness'", Integer.class))
+                .isEqualTo(1);
     }
 
     @Test

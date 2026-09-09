@@ -1,3 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+    <changeSet id="v3-patrimonial-point-inputs" author="project">
+        <sql splitStatements="true"><![CDATA[
 ALTER TABLE patrimonial_point ADD COLUMN balance_brl NUMERIC(19, 2);
 ALTER TABLE patrimonial_point ADD COLUMN positions_value_brl NUMERIC(19, 2);
 ALTER TABLE patrimonial_point ADD COLUMN usd_brl_rate NUMERIC(19, 2);
@@ -35,3 +42,6 @@ ALTER TABLE movement ADD CONSTRAINT ck_movement_fields_by_type CHECK (
         AND origin_broker_name <> destination_broker_name AND realized_result IS NULL
         AND ((market = 'BR' AND currency = 'BRL') OR (market = 'US' AND currency = 'USD')))
 );
+        ]]></sql>
+    </changeSet>
+</databaseChangeLog>

@@ -1,3 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+    <changeSet id="v1-initial-schema" author="project">
+        <sql splitStatements="true" stripComments="false"><![CDATA[
 CREATE TABLE account (
     id UUID PRIMARY KEY,
     name VARCHAR(150) NOT NULL,
@@ -157,3 +164,6 @@ CREATE TABLE SPRING_SESSION_ATTRIBUTES (
     CONSTRAINT SPRING_SESSION_ATTRIBUTES_FK FOREIGN KEY (SESSION_PRIMARY_ID)
         REFERENCES SPRING_SESSION (PRIMARY_ID) ON DELETE CASCADE
 );
+        ]]></sql>
+    </changeSet>
+</databaseChangeLog>

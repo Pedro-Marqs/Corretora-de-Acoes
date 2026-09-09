@@ -51,8 +51,6 @@ class LocalPostgreSqlPurchaseTests {
         registry.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
         registry.add("spring.datasource.username", () -> required("LOCAL_POSTGRES_TEST_USER"));
         registry.add("spring.datasource.password", () -> required("LOCAL_POSTGRES_TEST_PASSWORD"));
-        registry.add("spring.flyway.locations", () ->
-                "classpath:db/migration/common,classpath:db/migration/postgresql");
     }
 
     @Autowired private PurchaseService service;

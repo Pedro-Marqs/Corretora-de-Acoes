@@ -1,3 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+    <changeSet id="v2-active-uniqueness" author="project" dbms="h2">
+        <sql splitStatements="true"><![CDATA[
 ALTER TABLE account ADD COLUMN active_cpf VARCHAR(11)
     GENERATED ALWAYS AS (CASE WHEN status = 'ACTIVE' THEN cpf ELSE NULL END);
 ALTER TABLE account ADD COLUMN active_email VARCHAR(254)
@@ -11,3 +18,6 @@ CREATE UNIQUE INDEX uq_account_active_cpf ON account (active_cpf);
 CREATE UNIQUE INDEX uq_account_active_email ON account (active_email);
 CREATE UNIQUE INDEX uq_account_broker_active ON account_broker (account_id, active_broker_id);
 CREATE UNIQUE INDEX uq_asset_ticker_market ON asset (normalized_ticker, market);
+        ]]></sql>
+    </changeSet>
+</databaseChangeLog>

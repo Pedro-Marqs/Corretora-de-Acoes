@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+    <changeSet id="v4-unique-account-broker-history" author="project">
+        <sql splitStatements="true"><![CDATA[
+ALTER TABLE account_broker
+    ADD CONSTRAINT uq_account_broker_account_broker UNIQUE (account_id, broker_id);
+        ]]></sql>
+    </changeSet>
+</databaseChangeLog>

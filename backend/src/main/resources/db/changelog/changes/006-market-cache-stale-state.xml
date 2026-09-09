@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+    <changeSet id="v6-market-cache-stale-state" author="project">
+        <sql splitStatements="true"><![CDATA[
+ALTER TABLE quote ADD COLUMN stale BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE exchange_rate ADD COLUMN stale BOOLEAN NOT NULL DEFAULT FALSE;
+        ]]></sql>
+    </changeSet>
+</databaseChangeLog>

@@ -1,3 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+    <changeSet id="v8-movement-sale-financial-inputs" author="project">
+        <sql splitStatements="true"><![CDATA[
 ALTER TABLE movement DROP CONSTRAINT ck_movement_purchase_financial_inputs;
 
 ALTER TABLE movement ADD CONSTRAINT ck_movement_trade_financial_inputs CHECK (
@@ -8,3 +15,6 @@ ALTER TABLE movement ADD CONSTRAINT ck_movement_trade_financial_inputs CHECK (
  OR (movement_type NOT IN ('PURCHASE', 'SALE')
         AND unit_price_brl IS NULL AND usd_brl_rate IS NULL)
 );
+        ]]></sql>
+    </changeSet>
+</databaseChangeLog>

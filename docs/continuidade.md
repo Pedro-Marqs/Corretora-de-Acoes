@@ -14,6 +14,8 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 
 ## Estado atual
 
+- A migração Flyway para Liquibase foi concluída no change `migrar-flyway-para-liquibase`: as migrations foram convertidas para o changelog mestre em `backend/src/main/resources/db/changelog/`, o banco PostgreSQL principal foi preservado e recebeu baseline dos oito changeSets já aplicados, e duas inicializações consecutivas confirmaram `Run: 0`, `Previously run: 8`, com o lock liberado. A conversão também foi aplicada em schema PostgreSQL vazio isolado, criando oito changeSets e 13 tabelas. A suíte backend passou com 309 testes, 10 ignorados; as migrations Flyway foram removidas somente após essas validações.
+
 - A entrevista de visão foi encerrada.
 - A visão consolidada está em `docs/01-visao.md`.
 - A pesquisa técnica está em `docs/02-pesquisa.md`.
@@ -222,6 +224,9 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 - Após a correção do finding do Reviewer, a validação final da T37 passou com 25 arquivos e 260 testes frontend, ESLint sem avisos, build Vite, `git diff --check` e `openspec validate implementar-t37-interface-dashboards --strict`; o Reviewer aprovou. Todas as 7 tasks estão concluídas, sem pendências técnicas conhecidas, e o change está pronto para archive, que ainda não foi executado.
 - A T38 foi implementada no change `implementar-t38-interface-investimentos-banco-bolsa`: a área privada foi reorganizada em `Investimentos`, `Banco` e `Bolsa`, com menu acessível da conta e fluxo progressivo da carteira ou pesquisa até detalhe e negociação, reutilizando exclusivamente os contratos financeiros existentes.
 - Após a correção do finding médio do Reviewer, a validação final da T38 passou com 28 arquivos e 268 testes frontend, ESLint sem avisos, build Vite, `git diff --check` e `openspec validate implementar-t38-interface-investimentos-banco-bolsa --strict`; o Reviewer aprovou. Todas as 6 tasks estão concluídas e não há pendências técnicas conhecidas; o archive ainda não foi executado.
+
+- O change `migrar-flyway-para-liquibase` iniciou a conversão: o `pom.xml` e as propriedades apontam para o master Liquibase, os nove includes XML reproduzem as migrations V1, V2 PostgreSQL/H2 e V3–V8, e `db/migration/` permanece preservado como referência. A validação estática, a comparação do SQL e uma execução PostgreSQL transacional com rollback passaram.
+- A validação dinâmica deste change está bloqueada nesta sessão porque `org.liquibase:liquibase-core:4.29.2` não existe no cache Maven local e o shell não tem acesso à rede; os bancos `gestao_acoes` e `gestao_acoes_test` foram apenas consultados e não alterados. As tasks dependentes de Maven/Liquibase permanecem pendentes.
 
 ### Forma de trabalho para as próximas tarefas
 
