@@ -23,10 +23,10 @@ permission:
     "npm run lint*": allow
     "npm run build*": allow
 
-    "npm --prefix src/main/front test*": allow
-    "npm --prefix src/main/front run test*": allow
-    "npm --prefix src/main/front run lint*": allow
-    "npm --prefix src/main/front run build*": allow
+    "npm --prefix frontend test*": allow
+    "npm --prefix frontend run test*": allow
+    "npm --prefix frontend run lint*": allow
+    "npm --prefix frontend run build*": allow
 ---
 
 # Papel

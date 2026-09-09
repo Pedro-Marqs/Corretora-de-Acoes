@@ -53,7 +53,7 @@ O OpenSpec foi configurado para o adaptador Codex em `.agents/skills/`.
 ## Frontend
 
 ```powershell
-Set-Location src/main/front
+Set-Location frontend
 npm ci
 npm run lint
 npm test

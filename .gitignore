@@ -22,9 +22,9 @@ target/
 .vscode/
 
 ### Frontend ###
-front/node_modules/
-front/dist/
-front/coverage/
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
 
 ### Local configuration and secrets ###
 .env

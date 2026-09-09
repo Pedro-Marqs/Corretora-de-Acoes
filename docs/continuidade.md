@@ -54,7 +54,7 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 - Teste frontend, ESLint e build Vite também passaram no fechamento da T07.
 - A pedido do usuário, foi criada antecipadamente uma interface mínima para testar o cadastro da T07, sem implementar a fundação completa da T11 nem os demais fluxos da T12. A tela não inclui login, área da conta, rotas privadas ou dashboard.
 - A tela pública obtém o token em `GET /api/csrf`, envia `POST /api/accounts` com cookie e cabeçalho CSRF, bloqueia reenvios, mostra erros gerais e por campo e confirma o saldo inicial sem exibir CPF, e-mail, senha ou identificador técnico.
-- O frontend de cadastro é responsivo, usa o breakpoint de 860px para evitar rolagem horizontal, executa em `http://localhost:5173` com porta estrita e aceita `VITE_API_BASE_URL` configurada em `src/main/front/.env` a partir do exemplo local.
+- O frontend de cadastro é responsivo, usa o breakpoint de 860px para evitar rolagem horizontal, executa em `http://localhost:5173` com porta estrita e aceita `VITE_API_BASE_URL` configurada em `frontend/.env` a partir do exemplo local.
 - A validação da interface passou com nove testes, ESLint sem avisos e build Vite. O agente Revisor aprovou a entrega após a correção do breakpoint responsivo.
 - Após um cadastro concluído, o frontend agora troca o formulário por uma tela inicial transitória da conta, exibindo somente o nome, o saldo devolvido pela API e o estado `Ativa`. A tela não persiste dados e volta ao cadastro se a página for recarregada.
 - Essa tela inicial ainda não representa uma sessão autenticada: login, dados privados, carteira, corretoras, ativos e histórico continuam aguardando suas tarefas próprias. O aviso na interface informa explicitamente essa limitação.
@@ -162,7 +162,7 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 - Frontend: React com JavaScript e Vite.
 - Backend: Java 17, Spring Boot 3.4.0 como ponto de partida e Maven Wrapper.
 - Arquitetura: monólito em camadas; portas/adapters apenas nas integrações externas.
-- Estrutura interna própria, apenas inspirada na organização observada no repositório de referência, usando os pacotes `api`, `config`, `domain`, `infra`, `repository`, `service` e `scheduler`; o React permanece diretamente em `src/main/front` com `components`, `pages`, `services` e `styles`.
+- Estrutura interna própria, apenas inspirada na organização observada no repositório de referência, usando os pacotes `api`, `config`, `domain`, `infra`, `repository`, `service` e `scheduler`; o React permanece em `frontend`, com o código em `src/api`, `src/components`, `src/pages`, `src/context` e demais módulos de `src`.
 - Um único processo Spring Boot e um único PostgreSQL; sem microsserviços, Redis, mensageria ou gateway.
 - Banco principal: PostgreSQL.
 - Antes de iniciar ou validar o backend localmente, sempre verificar a conexão com o PostgreSQL. Se o banco `gestao_acoes` não existir, criá-lo antes de executar a aplicação; se já existir, preservá-lo e apenas aplicar as migrações Flyway pendentes. Nunca recriar, apagar ou sobrescrever um banco existente automaticamente.

@@ -3,7 +3,7 @@ import { resolve } from 'node:path'
 import { cwd } from 'node:process'
 import { describe, expect, it } from 'vitest'
 
-const globalStyles = readFileSync(resolve(cwd(), 'styles/global.css'), 'utf8')
+const globalStyles = readFileSync(resolve(cwd(), 'src/styles/global.css'), 'utf8')
 
 describe('tema global', () => {
   it('centraliza a direção azul usada nas rotas públicas e privadas', () => {

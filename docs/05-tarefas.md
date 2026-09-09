@@ -16,7 +16,7 @@ Criar do zero uma base compilável para o novo projeto, usando o `Corretora-Acoe
 
 - `pom.xml`, Maven Wrapper e `.gitignore`;
 - `src/main/java/com/projeto/gestao/`;
-- `src/main/front/`;
+- `frontend/` e `frontend/src/`;
 - configurações iniciais próprias do backend e do frontend.
 
 ### Dependências
@@ -440,8 +440,8 @@ Preparar navegação, cliente HTTP e componentes comuns sem implementar regras d
 
 ### Arquivos ou componentes envolvidos
 
-- `src/main/front/App.jsx` e `main.jsx`;
-- `components/`, `pages/`, `services/` e `styles/`.
+- `frontend/src/App.jsx` e `frontend/src/main.jsx`;
+- `frontend/src/components/`, `frontend/src/pages/`, `frontend/src/services/` e `frontend/src/styles/`.
 
 ### Dependências
 

@@ -239,15 +239,20 @@ meu-projeto/
 │   │   │   ├── application.properties
 │   │   │   ├── application-dev.properties
 │   │   │   └── application-test.properties
-│   │   └── front/
-│   │       ├── components/
-│   │       ├── pages/
-│   │       ├── services/
-│   │       ├── styles/
-│   │       ├── App.jsx
-│   │       ├── main.jsx
-│   │       ├── index.html
-│   │       └── package.json
+│   └── frontend/
+│       ├── src/
+│       │   ├── api/
+│       │   ├── components/
+│       │   ├── context/
+│       │   ├── pages/
+│       │   ├── services/
+│       │   ├── styles/
+│       │   ├── App.jsx
+│       │   └── main.jsx
+│       ├── public/
+│       ├── index.html
+│       ├── package.json
+│       └── vite.config.js
 │   └── test/
 │       └── java/com/projeto/gestao/
 │           ├── infra/adapter/
@@ -563,7 +568,7 @@ Oferece transações, constraints, índices e tipos decimais adequados aos cálc
 
 ### Organização própria inspirada na referência
 
-Criar os pacotes `api`, `config`, `domain`, `infra`, `repository` e `service`, além do frontend em `src/main/front`, oferece uma separação clara para o porte acadêmico. As funcionalidades continuam identificáveis pelos nomes de controllers, services, modelos e repositories. Nenhum código ou componente do repositório de referência será incorporado.
+Criar os pacotes `api`, `config`, `domain`, `infra`, `repository` e `service`, além do frontend independente em `frontend/src`, oferece uma separação clara para o porte acadêmico. As funcionalidades continuam identificáveis pelos nomes de controllers, services, modelos e repositories. Nenhum código ou componente do repositório de referência será incorporado.
 
 ### Regras financeiras no backend
 
