@@ -11,7 +11,7 @@ describe('auth API', () => {
   it('envia login com CSRF e credenciais do navegador', async () => {
     fetch.mockResolvedValueOnce(response({ token: 'csrf' })).mockResolvedValueOnce(response(null, 204))
     await login({ email: 'ana@example.com', password: 'Senha@123' })
-    expect(fetch).toHaveBeenNthCalledWith(2, 'http://localhost:8080/api/auth/login', expect.objectContaining({ method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': 'csrf' } }))
+    expect(fetch).toHaveBeenNthCalledWith(2, '/api/auth/login', expect.objectContaining({ method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': 'csrf' } }))
   })
 
   it('preserva mensagem neutra e erros estruturais do login', async () => {
@@ -22,7 +22,7 @@ describe('auth API', () => {
   it('envia logout com nova confirmação CSRF', async () => {
     fetch.mockResolvedValueOnce(response({ token: 'novo-csrf' })).mockResolvedValueOnce(response(null, 204))
     await logout()
-    expect(fetch).toHaveBeenNthCalledWith(2, 'http://localhost:8080/api/auth/logout', expect.objectContaining({ method: 'POST', credentials: 'include' }))
+    expect(fetch).toHaveBeenNthCalledWith(2, '/api/auth/logout', expect.objectContaining({ method: 'POST', credentials: 'include' }))
   })
 
   it('retorna mensagem segura em falha de rede', async () => {

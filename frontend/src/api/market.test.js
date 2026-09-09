@@ -7,7 +7,7 @@ describe('market API', () => {
   beforeEach(() => { vi.restoreAllMocks(); vi.stubGlobal('fetch', vi.fn()) })
   it.each([[' petr4 ', ' br ', 'PETR4', 'BR', br], ['aapl', 'us', 'AAPL', 'US', us]])('pesquisa %s usando mercado explícito e sessão', async (input, inputMarket, ticker, market, body) => {
     fetch.mockResolvedValue(response(body)); await expect(searchAsset(input, inputMarket)).resolves.toEqual(body)
-    expect(fetch).toHaveBeenCalledWith(`http://localhost:8080/api/assets/search?ticker=${ticker}&market=${market}`, { credentials: 'include' })
+    expect(fetch).toHaveBeenCalledWith(`/api/assets/search?ticker=${ticker}&market=${market}`, { credentials: 'include' })
     expect(fetch.mock.calls[0][1]).not.toHaveProperty('body'); expect(fetch.mock.calls[0][1]).not.toHaveProperty('method')
   })
   it.each(['', 'B3', 'NASDAQ'])('rejeita mercado ausente ou inválido sem consultar a API: %s', async (market) => { await expect(searchAsset('PETR4', market)).rejects.toMatchObject({ message: 'Selecione um mercado válido.' }); expect(fetch).not.toHaveBeenCalled() })

@@ -12,8 +12,8 @@ describe('createAccount', () => {
     fetch.mockResolvedValueOnce(response({ token: 'csrf-token' })).mockResolvedValueOnce(response({ name: 'Ana Silva' }, 201))
     const payload = { name: 'Ana Silva', cpf: '52998224725', email: 'ana@example.com', password: 'Senha@123' }
     await expect(createAccount(payload)).resolves.toEqual({ name: 'Ana Silva' })
-    expect(fetch).toHaveBeenNthCalledWith(1, 'http://localhost:8080/api/csrf', { credentials: 'include' })
-    expect(fetch).toHaveBeenNthCalledWith(2, 'http://localhost:8080/api/accounts', expect.objectContaining({ method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': 'csrf-token' } }))
+    expect(fetch).toHaveBeenNthCalledWith(1, '/api/csrf', { credentials: 'include' })
+    expect(fetch).toHaveBeenNthCalledWith(2, '/api/accounts', expect.objectContaining({ method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': 'csrf-token' } }))
   })
 
   it('converte todos os erros de campo retornados pela API', async () => {
@@ -46,8 +46,8 @@ describe('createAccount', () => {
       .mockResolvedValueOnce(response({ token: 'csrf-2' })).mockResolvedValueOnce(response(null, 204))
     await changeEmail({ newEmail: 'novo@example.com', currentPassword: 'Atual@123' })
     await changePassword({ currentPassword: 'Atual@123', newPassword: 'Nova@123' })
-    expect(fetch).toHaveBeenNthCalledWith(2, 'http://localhost:8080/api/accounts/me/email', expect.objectContaining({ method: 'PATCH', credentials: 'include' }))
-    expect(fetch).toHaveBeenNthCalledWith(4, 'http://localhost:8080/api/accounts/me/password', expect.objectContaining({ method: 'PATCH', credentials: 'include' }))
+    expect(fetch).toHaveBeenNthCalledWith(2, '/api/accounts/me/email', expect.objectContaining({ method: 'PATCH', credentials: 'include' }))
+    expect(fetch).toHaveBeenNthCalledWith(4, '/api/accounts/me/password', expect.objectContaining({ method: 'PATCH', credentials: 'include' }))
   })
 })
 
@@ -60,8 +60,8 @@ describe('deleteAccount', () => {
 
     await expect(deleteAccount(payload)).resolves.toBeUndefined()
 
-    expect(fetch).toHaveBeenNthCalledWith(1, 'http://localhost:8080/api/csrf', { credentials: 'include' })
-    expect(fetch).toHaveBeenNthCalledWith(2, 'http://localhost:8080/api/accounts/me', {
+    expect(fetch).toHaveBeenNthCalledWith(1, '/api/csrf', { credentials: 'include' })
+    expect(fetch).toHaveBeenNthCalledWith(2, '/api/accounts/me', {
       method: 'DELETE',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': 'csrf-delete' },
@@ -123,8 +123,8 @@ describe('checkReactivation', () => {
     const result = await checkReactivation('529.982.247-25')
 
     expect(result).toEqual({ reactivationAvailable: true })
-    expect(fetch).toHaveBeenNthCalledWith(1, 'http://localhost:8080/api/csrf', { credentials: 'include' })
-    expect(fetch).toHaveBeenNthCalledWith(2, 'http://localhost:8080/api/accounts/reactivation/check', {
+    expect(fetch).toHaveBeenNthCalledWith(1, '/api/csrf', { credentials: 'include' })
+    expect(fetch).toHaveBeenNthCalledWith(2, '/api/accounts/reactivation/check', {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': 'csrf-reactivation' },
@@ -189,8 +189,8 @@ describe('reactivateAccount', () => {
 
     await expect(reactivateAccount('529.982.247-25')).resolves.toBeUndefined()
 
-    expect(fetch).toHaveBeenNthCalledWith(1, 'http://localhost:8080/api/csrf', { credentials: 'include' })
-    expect(fetch).toHaveBeenNthCalledWith(2, 'http://localhost:8080/api/accounts/reactivation', {
+    expect(fetch).toHaveBeenNthCalledWith(1, '/api/csrf', { credentials: 'include' })
+    expect(fetch).toHaveBeenNthCalledWith(2, '/api/accounts/reactivation', {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': 'csrf-reactivate' },

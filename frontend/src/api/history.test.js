@@ -14,13 +14,13 @@ describe('history API', () => {
   it('serializa página zero-based e filtros combinados sem enviar size', async () => {
     fetch.mockResolvedValue(response(page))
     await expect(getHistory({ page: 2, from: ' 2026-09-01T00:00:00-03:00 ', to: '2026-09-05T23:59:00-03:00', type: ' PURCHASE ', ticker: ' PETR4 ', brokerId: ' broker-1 ', market: ' BR ', size: 99 })).resolves.toEqual(page)
-    expect(fetch).toHaveBeenCalledWith('http://localhost:8080/api/history?page=2&from=2026-09-01T00%3A00%3A00-03%3A00&to=2026-09-05T23%3A59%3A00-03%3A00&type=PURCHASE&ticker=PETR4&brokerId=broker-1&market=BR', { credentials: 'include' })
+    expect(fetch).toHaveBeenCalledWith('/api/history?page=2&from=2026-09-01T00%3A00%3A00-03%3A00&to=2026-09-05T23%3A59%3A00-03%3A00&type=PURCHASE&ticker=PETR4&brokerId=broker-1&market=BR', { credentials: 'include' })
   })
 
   it('omite filtros vazios e usa a primeira página por padrão', async () => {
     fetch.mockResolvedValue(response({ ...page, page: 0 }))
     await getHistory({ ticker: '   ' })
-    expect(fetch).toHaveBeenCalledWith('http://localhost:8080/api/history?page=0', { credentials: 'include' })
+    expect(fetch).toHaveBeenCalledWith('/api/history?page=0', { credentials: 'include' })
   })
 
   it('preserva status, mensagem e erros funcionais agrupados', async () => {

@@ -12,13 +12,13 @@ describe('dashboard API', () => {
   it('envia período e visão geral com cookie de sessão', async () => {
     fetch.mockResolvedValue(response(dashboard))
     await expect(getDashboard({ period: '3M' })).resolves.toBe(dashboard)
-    expect(fetch).toHaveBeenCalledWith('http://localhost:8080/api/dashboard?period=3M', { credentials: 'include' })
+    expect(fetch).toHaveBeenCalledWith('/api/dashboard?period=3M', { credentials: 'include' })
   })
 
   it('envia a associação selecionada sem parâmetros extras', async () => {
     fetch.mockResolvedValue(response({ ...dashboard, selectedBrokerAssociationId: 'broker-1' }))
     await getDashboard({ period: 'MAX', brokerAssociationId: ' broker-1 ' })
-    expect(fetch).toHaveBeenCalledWith('http://localhost:8080/api/dashboard?period=MAX&brokerAssociationId=broker-1', { credentials: 'include' })
+    expect(fetch).toHaveBeenCalledWith('/api/dashboard?period=MAX&brokerAssociationId=broker-1', { credentials: 'include' })
   })
 
   it('preserva status, mensagem e erros funcionais', async () => {
