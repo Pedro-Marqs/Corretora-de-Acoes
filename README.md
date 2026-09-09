@@ -59,3 +59,13 @@ npm run lint
 npm test
 npm run build
 ```
+
+## Docker Compose
+
+Copie `.env.example` para `.env` e ajuste os valores locais. Em seguida, suba os três serviços:
+
+```powershell
+docker compose up --build
+```
+
+A aplicação ficará disponível em `http://localhost:3000`. O frontend Nginx encaminha `/api` para o backend, e o backend se conecta ao PostgreSQL pela rede interna do Compose.
