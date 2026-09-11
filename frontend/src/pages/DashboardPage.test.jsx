@@ -49,27 +49,30 @@ describe('DashboardPage', () => {
     expect(screen.getAllByText('Compartilhado pela conta').length).toBeGreaterThan(0); expect(screen.getAllByText('Corretora Um').length).toBeGreaterThan(0)
   })
 
-  it('oferece todos os períodos e apresenta somente os pontos devolvidos na ordem recebida', async () => {
+  it('oferece todos os períodos e apresenta o crescimento patrimonial na ordem cronológica', async () => {
     setup(); await screen.findAllByText('PETR4')
     for (const label of ['4 semanas', '3 meses', '6 meses', '1 ano', '5 anos', 'Máximo']) expect(screen.getByRole('radio', { name: new RegExp(label) })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('radio', { name: /3 meses/ }))
     await waitFor(() => expect(getDashboard).toHaveBeenLastCalledWith({ brokerAssociationId: '', period: '3M' }))
-    const history = screen.getByRole('heading', { name: 'Histórico do patrimônio' }).closest('section')
-    expect(within(history).getAllByRole('listitem')).toHaveLength(2)
-    expect(within(history).getAllByRole('listitem')[0]).toHaveTextContent('R$ 1.100,11')
+    const history = screen.getByRole('heading', { name: 'Crescimento patrimonial' }).closest('section')
+    expect(within(history).getAllByRole('listitem')).toHaveLength(3)
+    expect(within(history).getAllByRole('listitem')[0]).toHaveTextContent('R$ 0,00')
+    expect(within(history).getByText('Valorização')).toBeInTheDocument()
+    expect(within(history).queryByText(/Variação no período/)).not.toBeInTheDocument()
   })
 
-  it('distingue vazios de posições, distribuições e histórico sem criar parcelas ou pontos', async () => {
+  it('distingue carteira vazia e histórico sem criar parcelas ou pontos', async () => {
     getDashboard.mockResolvedValue({ ...complete, positions: [], distributions: { byAsset: [], byBroker: [], byMarket: [] }, patrimonyHistory: [] })
     setup(); expect(await screen.findByText('Sua carteira ainda está vazia')).toBeInTheDocument()
-    expect(screen.getAllByText('Sem parcelas')).toHaveLength(3); expect(screen.getByText('Sem pontos neste período')).toBeInTheDocument()
-    expect(document.querySelectorAll('.dashboard-distribution li')).toHaveLength(0); expect(document.querySelectorAll('.dashboard-history li')).toHaveLength(0)
+    expect(screen.getByText('Sem pontos neste período')).toBeInTheDocument()
+    expect(document.querySelectorAll('.dashboard-distribution')).toHaveLength(0); expect(document.querySelectorAll('.dashboard-history li')).toHaveLength(0)
   })
 
-  it('mostra avisos e instantes em Brasília sem ocultar valores confirmados', async () => {
+  it('mantém a tabela sem o aviso de fechamento, reservado à negociação', async () => {
     getDashboard.mockResolvedValue({ ...complete, positions: [{ ...positions[0], quoteStale: true }], warnings: [{ type: 'STALE_QUOTE', ticker: 'PETR4', observedAt: '2026-09-08T13:00:00Z' }, { type: 'STALE_EXCHANGE_RATE', ticker: null, observedAt: '2026-09-08T13:00:00Z' }] })
-    setup(); expect(await screen.findByText('Preço de fechamento')).toBeInTheDocument()
-    expect(screen.getByText(/Última cotação observada em/)).toBeInTheDocument(); expect(screen.queryByText('Dados desatualizados')).not.toBeInTheDocument(); expect(screen.getAllByText('R$ 1.250,30').length).toBeGreaterThan(0)
+    setup(); await screen.findAllByText('PETR4')
+    expect(screen.queryByText('Preço de fechamento')).not.toBeInTheDocument()
+    expect(screen.queryByText(/Última cotação observada em/)).not.toBeInTheDocument(); expect(screen.queryByText('Dados desatualizados')).not.toBeInTheDocument(); expect(screen.getAllByText('R$ 1.250,30').length).toBeGreaterThan(0)
   })
 
   it('preserva filtros em erro recuperável e impede consulta duplicada equivalente', async () => {

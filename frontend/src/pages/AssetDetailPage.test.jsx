@@ -25,7 +25,7 @@ describe('AssetDetailPage', () => {
   })
 
   it('preserva o ativo no fluxo Detalhe → Negociar → Operations', async () => {
-    render(<AuthContext.Provider value={{ clear: vi.fn() }}><MemoryRouter initialEntries={['/app/bolsa/BR/PETR4']}><Routes><Route path="/app/bolsa/:market/:ticker" element={<AssetDetailPage />} /><Route path="/app/operacoes" element={<OperationsPage />} /></Routes></MemoryRouter></AuthContext.Provider>)
+    render(<AuthContext.Provider value={{ clear: vi.fn() }}><MemoryRouter initialEntries={['/app/bolsa/BR/PETR4']}><Routes><Route path="/app/bolsa/:market/:ticker" element={<AssetDetailPage />} /><Route path="/app/negociar" element={<OperationsPage />} /></Routes></MemoryRouter></AuthContext.Provider>)
     expect(await screen.findByRole('heading', { name: 'PETR4' })).toBeInTheDocument()
     expect(searchAsset).toHaveBeenCalledWith('PETR4', 'BR')
     fireEvent.click(screen.getByRole('button', { name: 'Negociar' }))

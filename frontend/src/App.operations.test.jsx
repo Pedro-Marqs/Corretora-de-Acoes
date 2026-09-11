@@ -26,11 +26,11 @@ const positions = [
 describe('operations private route', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    window.history.replaceState({}, '', '/app/operacoes')
+    window.history.replaceState({}, '', '/app/negociar')
     getActiveBrokers.mockResolvedValue(brokers)
     getWalletPositions.mockResolvedValue({ availableBalance: '1000.00', positions })
   })
-  it('integra a página à rota e navegação privadas', async () => { getCurrentAccount.mockResolvedValue({ name: 'Ana', cpf: '529.***.***-25', email: 'a***@example.com' }); render(<App />); expect(await screen.findByRole('heading', { name: 'Compra e venda' })).toBeInTheDocument(); expect(screen.getByRole('link', { name: 'Operações' })).toHaveClass('active'); await screen.findByRole('columnheader', { name: 'Ticker' }); for (const label of ['Ticker', 'Quantidade', 'Saldo / posição', 'Preço atual', 'Preço médio', 'Rentabilidade']) expect(screen.getByRole('columnheader', { name: label })).toBeInTheDocument(); expect(getActiveBrokers).toHaveBeenCalledOnce() })
+  it('mantém a negociação em uma rota própria e exibe Carteira no menu', async () => { getCurrentAccount.mockResolvedValue({ name: 'Ana', cpf: '529.***.***-25', email: 'a***@example.com' }); render(<App />); expect(await screen.findByRole('heading', { name: 'Compra e venda' })).toBeInTheDocument(); expect(screen.getByRole('link', { name: 'Carteira' })).toBeInTheDocument(); await screen.findByRole('columnheader', { name: 'Ticker' }); for (const label of ['Ticker', 'Quantidade', 'Saldo / posição', 'Preço atual', 'Preço médio', 'Rentabilidade']) expect(screen.getByRole('columnheader', { name: label })).toBeInTheDocument(); expect(getActiveBrokers).toHaveBeenCalledOnce() })
   it('não consulta nem exibe operações sem sessão', async () => { getCurrentAccount.mockRejectedValue({ status: 401 }); render(<App />); expect(await screen.findByRole('heading', { name: 'Bem-vindo de volta.' })).toBeInTheDocument(); expect(screen.queryByRole('heading', { name: 'Compra e venda' })).not.toBeInTheDocument(); expect(getActiveBrokers).not.toHaveBeenCalled() })
 
   it('troca os dados da posição conforme a corretora selecionada no modal', async () => {

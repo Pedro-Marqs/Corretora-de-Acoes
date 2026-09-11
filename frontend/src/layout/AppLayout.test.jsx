@@ -7,7 +7,7 @@ import AppLayout from './AppLayout.jsx'
 
 afterEach(cleanup)
 
-function setup(path = '/app/carteira') {
+function setup(path = '/app/banco') {
   render(<AuthContext.Provider value={{ account: { name: 'Ana Silva' }, clear: vi.fn() }}><MemoryRouter initialEntries={[path]}><Routes><Route path="/app" element={<AppLayout />}><Route path="*" element={<main><h1>Conteúdo privado</h1></main>} /></Route></Routes></MemoryRouter></AuthContext.Provider>)
 }
 
@@ -16,7 +16,8 @@ describe('AppLayout', () => {
     setup()
     const navigation = screen.getByRole('navigation', { name: 'Navegação principal' })
     expect(within(navigation).getByRole('link', { name: 'Dashboard' })).toBeInTheDocument()
-    expect(within(navigation).getByRole('link', { name: 'Carteira' })).toHaveClass('active')
+    expect(within(navigation).getByRole('link', { name: 'Banco' })).toHaveClass('active')
+    expect(within(navigation).getByRole('link', { name: 'Carteira' })).toBeInTheDocument()
     expect(within(navigation).getByRole('link', { name: 'Ativos' })).toBeInTheDocument()
     expect(within(navigation).getByRole('link', { name: 'Transferências' })).toBeInTheDocument()
     expect(within(navigation).getByRole('link', { name: 'Corretoras' })).toBeInTheDocument()
@@ -35,7 +36,7 @@ describe('AppLayout', () => {
     ['/app/historico', 'Histórico'],
     ['/app/transferencias', 'Transferências'],
     ['/app/corretoras', 'Corretoras'],
-    ['/app/operacoes', 'Operações'],
+    ['/app/operacoes', 'Carteira'],
   ])('indica %s no contexto %s', (path, section) => {
     setup(path)
     expect(screen.getByRole('link', { name: section })).toHaveClass('active')

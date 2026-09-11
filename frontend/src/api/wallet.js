@@ -23,6 +23,17 @@ function validNumber(value) {
     && Number.isFinite(Number(value))
 }
 
+function compareText(left, right) {
+  return String(left ?? '').localeCompare(String(right ?? ''), 'pt-BR')
+}
+
+function sortPositions(positions) {
+  return [...positions].sort((left, right) => compareText(left.ticker, right.ticker)
+    || compareText(left.market, right.market)
+    || compareText(left.brokerageName, right.brokerageName)
+    || compareText(left.brokerageId, right.brokerageId))
+}
+
 function requirePositions(body) {
   if (!body || typeof body !== 'object' || Array.isArray(body)
     || !validNumber(body.availableBalance) || !Array.isArray(body.positions)) {
@@ -36,7 +47,7 @@ function requirePositions(body) {
     && validNumber(position.quantity) && Number(position.quantity) > 0
     && validNumber(position.averagePriceBrl))
   if (!valid) throw new WalletApiError('A resposta da carteira não pôde ser processada.')
-  return body
+  return { ...body, positions: sortPositions(body.positions) }
 }
 
 export async function getWalletPositions() {

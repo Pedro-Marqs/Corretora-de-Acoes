@@ -1,17 +1,17 @@
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useRef, useState } from 'react'
 import { logout } from '../api/auth.js'
+import { searchAsset } from '../api/market.js'
 import { useAuth } from '../context/auth-context.js'
 
 const navigation = [
   { label: 'Dashboard', to: '/app', end: true, icon: '▦' },
-  { label: 'Carteira', to: '/app/carteira', icon: '▣' },
+  { label: 'Banco', to: '/app/banco', icon: 'R$', iconClass: 'text-icon' },
   { label: 'Ativos', to: '/app/ativos', activePaths: ['/app/ativos', '/app/bolsa'], icon: '◉' },
-  { label: 'Operações', to: '/app/operacoes', icon: '◇' },
+  { label: 'Carteira', to: '/app/operacoes', icon: '◇' },
   { label: 'Transferências', to: '/app/transferencias', icon: '⇄' },
   { label: 'Histórico', to: '/app/historico', icon: '◷' },
   { label: 'Corretoras', to: '/app/corretoras', icon: '◎' },
-  { label: 'Banco', to: '/app/banco', icon: 'R$', iconClass: 'text-icon' },
 ]
 
 export default function AppLayout() {
@@ -25,6 +25,8 @@ export default function AppLayout() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
+  const [assetSearch, setAssetSearch] = useState('')
+  const [assetSearchPending, setAssetSearchPending] = useState(false)
 
   useEffect(() => {
     function closeOutside(event) { if (!menuRef.current?.contains(event.target)) setMenuOpen(false) }
@@ -56,6 +58,38 @@ export default function AppLayout() {
     }
   }
 
+  async function searchFromHeader(event) {
+    event.preventDefault()
+    const ticker = assetSearch.trim().toUpperCase().replace(/[^A-Z0-9]/g, '')
+    if (!ticker || assetSearchPending) return
+    setAssetSearchPending(true)
+    try {
+      let result = null
+      for (const market of ['BR', 'US']) {
+        try {
+          result = await searchAsset(ticker, market)
+        } catch (error) {
+          if (error?.status === 401) throw error
+        }
+        if (result) {
+          navigate(`/app/bolsa/${result.market}/${result.ticker}`)
+          setAssetSearch('')
+          setMobileSidebarOpen(false)
+          return
+        }
+      }
+      navigate(`/app/ativos?ticker=${encodeURIComponent(ticker)}&market=BR`)
+      setMobileSidebarOpen(false)
+    } catch (error) {
+      if (error?.status === 401) {
+        auth.clear()
+        navigate('/login', { replace: true, state: { message: 'Sua sessão foi encerrada. Entre novamente.' } })
+      }
+    } finally {
+      setAssetSearchPending(false)
+    }
+  }
+
   return <div className={`private-layout${sidebarCollapsed ? ' sidebar-collapsed' : ''}`}>
     <aside className={`app-sidebar${sidebarCollapsed ? ' is-collapsed' : ''}${mobileSidebarOpen ? ' is-mobile-open' : ''}`} aria-label="Navegação principal">
       <div className="sidebar-brand-row">
@@ -70,16 +104,15 @@ export default function AppLayout() {
       </nav>
       <div className="sidebar-footer">
         <NavLink className="sidebar-nav-item" to="/app/conta"><span className="sidebar-nav-icon" aria-hidden="true">⚙</span><span className="sidebar-label">Configurações</span></NavLink>
-        <button className="sidebar-theme" type="button" aria-pressed="true"><span aria-hidden="true">☾</span><span className="sidebar-label">Modo escuro</span><span className="theme-switch" aria-hidden="true"><i /></span></button>
       </div>
     </aside>
     {mobileSidebarOpen && <button className="sidebar-backdrop" type="button" aria-label="Fechar menu" onClick={() => setMobileSidebarOpen(false)} />}
     <div className="app-workspace">
       <header className="app-topbar">
         <button className="mobile-menu-button" type="button" aria-label="Abrir menu" onClick={() => setMobileSidebarOpen(true)}>☰</button>
-        <label className="app-search"><span aria-hidden="true">⌕</span><input type="search" placeholder="Busque ações, FIIs, índices, ETFs e etc" aria-label="Buscar ativos" /></label>
+        <form className="app-search" onSubmit={searchFromHeader} role="search"><span aria-hidden="true">⌕</span><input type="search" value={assetSearch} onChange={(event) => setAssetSearch(event.target.value)} placeholder="Busque ações, FIIs, índices, ETFs e etc" aria-label="Buscar ativos" disabled={assetSearchPending} /><button type="submit" aria-label="Pesquisar no cabeçalho" disabled={assetSearchPending}>↵</button></form>
         <div className="topbar-actions">
-          <NavLink className="topbar-wallet" to="/app/carteira" onClick={() => setMobileSidebarOpen(false)}><span aria-hidden="true">▣</span><span>Carteira</span><span aria-hidden="true">⌄</span></NavLink>
+          <NavLink className="topbar-wallet" to="/app/banco" onClick={() => setMobileSidebarOpen(false)}><span aria-hidden="true">R$</span><span>Banco</span><span aria-hidden="true">⌄</span></NavLink>
           <NavLink className="topbar-add" to="/app/ativos" onClick={() => setMobileSidebarOpen(false)}><span aria-hidden="true">+</span> Adicionar ativo</NavLink>
           <div className="account-menu" ref={menuRef} onKeyDown={menuKeyDown}>
             <button ref={menuButtonRef} className="account-menu-trigger" type="button" aria-haspopup="menu" aria-expanded={menuOpen} onClick={() => setMenuOpen((open) => !open)}><span className="account-avatar" aria-hidden="true">{(auth.account?.name || 'C').slice(0, 1).toUpperCase()}</span><span className="account-menu-name">{auth.account?.name || 'Minha conta'}</span></button>

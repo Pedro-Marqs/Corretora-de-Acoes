@@ -47,6 +47,7 @@ function validWarning(value) {
 }
 
 function validPoint(value) { return value && validDate(value.recordedAt) && numeric(value.patrimonyBrl) }
+function validInvestmentPoint(value) { return value && validDate(value.recordedAt) && numeric(value.positionsValueBrl) }
 
 function requireDashboard(body) {
   const valid = body && typeof body === 'object' && !Array.isArray(body)
@@ -56,6 +57,7 @@ function requireDashboard(body) {
     && validDistributions(body.distributions) && validExchangeRate(body.exchangeRate ?? null)
     && Array.isArray(body.warnings) && body.warnings.every(validWarning)
     && PERIODS.includes(body.period) && Array.isArray(body.patrimonyHistory) && body.patrimonyHistory.every(validPoint)
+    && (body.investmentHistory == null || (Array.isArray(body.investmentHistory) && body.investmentHistory.every(validInvestmentPoint)))
   if (!valid) throw new DashboardApiError('A resposta do dashboard não pôde ser processada.')
   return body
 }

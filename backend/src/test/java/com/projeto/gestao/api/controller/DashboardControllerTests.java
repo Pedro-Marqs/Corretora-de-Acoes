@@ -183,7 +183,8 @@ class DashboardControllerTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.patrimonyHistory.length()").value(2))
                 .andExpect(jsonPath("$.patrimonyHistory[0].patrimonyBrl").value(10000.00))
-                .andExpect(jsonPath("$.patrimonyHistory[1].patrimonyBrl").value(10500.00));
+                .andExpect(jsonPath("$.patrimonyHistory[1].patrimonyBrl").value(10500.00))
+                .andExpect(jsonPath("$.investmentHistory.length()").value(3));
     }
 
     @Test

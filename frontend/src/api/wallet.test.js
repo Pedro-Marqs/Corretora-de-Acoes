@@ -30,6 +30,21 @@ describe('wallet API', () => {
     expect(fetch).toHaveBeenCalledWith('/api/wallet/positions', { credentials: 'include' })
   })
 
+  it('agrupa posições do mesmo ativo em sequência, independentemente da corretora', async () => {
+    const positions = [
+      { assetId: 'mxrf', brokerageId: 'xp', brokerageName: 'XP', ticker: 'MXRF11', market: 'BR', quantity: 1, averagePriceBrl: '9.16' },
+      { assetId: 'kncr', brokerageId: 'santander', brokerageName: 'Santander', ticker: 'KNCR11', market: 'BR', quantity: 5, averagePriceBrl: '50.00' },
+      { assetId: 'kncr', brokerageId: 'xp', brokerageName: 'XP', ticker: 'KNCR11', market: 'BR', quantity: 2, averagePriceBrl: '106.79' },
+    ]
+    fetch.mockResolvedValueOnce(response({ availableBalance: '1000.00', positions }))
+
+    const result = await getWalletPositions()
+
+    expect(result.positions.map((position) => `${position.ticker}:${position.brokerageId}`)).toEqual([
+      'KNCR11:santander', 'KNCR11:xp', 'MXRF11:xp',
+    ])
+  })
+
   it('rejeita snapshot sem identificadores ou valores obrigatórios', async () => {
     fetch.mockResolvedValueOnce(response({ availableBalance: '100.00', positions: [{ ticker: 'PETR4' }] }))
     await expect(getWalletPositions()).rejects.toMatchObject({ message: 'A resposta da carteira não pôde ser processada.' })

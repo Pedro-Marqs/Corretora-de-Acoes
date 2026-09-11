@@ -1,6 +1,8 @@
 package com.projeto.gestao.repository;
 
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import com.projeto.gestao.domain.model.Movement;
@@ -13,6 +15,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface MovementRepository extends JpaRepository<Movement, UUID>, JpaSpecificationExecutor<Movement> {
+    List<Movement> findByAccountIdAndOccurredAtLessThanEqualOrderByOccurredAtAscIdAsc(
+            UUID accountId, OffsetDateTime occurredAt);
+
     Page<Movement> findByAccountId(UUID accountId, Pageable pageable);
 
     @Query("select coalesce(sum(movement.realizedResult), 0) from Movement movement "

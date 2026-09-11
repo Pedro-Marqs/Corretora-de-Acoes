@@ -4,9 +4,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App.jsx'
 import { getCurrentAccount } from './api/accounts.js'
 import { MarketApiError, searchAsset } from './api/market.js'
+import { getWalletPositions } from './api/wallet.js'
 
 vi.mock('./api/accounts.js', async (load) => ({ ...await load(), getCurrentAccount: vi.fn() }))
 vi.mock('./api/market.js', async (load) => ({ ...await load(), searchAsset: vi.fn() }))
+vi.mock('./api/wallet.js', async (load) => ({ ...await load(), getWalletPositions: vi.fn() }))
 
 const account = { name: 'Ana', cpf: '529.***.***-25', email: 'a***@example.com' }
 const brAsset = {
@@ -33,6 +35,7 @@ describe('assets private route', () => {
     vi.clearAllMocks()
     window.history.replaceState({}, '', '/app/ativos')
     getCurrentAccount.mockResolvedValue(account)
+    getWalletPositions.mockResolvedValue({ availableBalance: 1000, positions: [] })
   })
   afterEach(cleanup)
 
@@ -72,6 +75,15 @@ describe('assets private route', () => {
     expect(screen.getByText(/R\$\s*38,50/)).toBeInTheDocument()
     expect(screen.getByText(/03\/09\/2026.*09:00/)).toBeInTheDocument()
     expect(searchAsset).toHaveBeenCalledWith('PETR4', 'BR')
+  })
+
+  it('mostra a posição encontrada na carteira e a ação de negociar', async () => {
+    searchAsset.mockResolvedValue(brAsset)
+    getWalletPositions.mockResolvedValue({ availableBalance: 1000, positions: [{ assetId: brAsset.assetId, ticker: 'PETR4', name: brAsset.name, market: 'BR', currency: 'BRL', brokerageId: 'broker-1', brokerageName: 'Corretora Um', quantity: 10, averagePriceBrl: 30, marketValueBrl: 385 }] })
+    render(<App />); await screen.findByRole('heading', { name: 'Pesquisa de ativos' }); submit('PETR4')
+    expect(await screen.findByText('Na sua carteira')).toBeInTheDocument()
+    expect(screen.getByText('10 ações · Corretora Um')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Negociar' })).toBeInTheDocument()
   })
 
   it('mostra resultado US, conversão e ambos os instantes recebidos', async () => {

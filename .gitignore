@@ -38,6 +38,7 @@ Thumbs.db
 ### Agente: caches temporários do Maven fora do controle ###
 /.m2-validation/
 /.codex-tmp-*/
+/.m2-repository
 /.m2-repo/
 /.m2-repo.bak/
 /.mvn/validation-cache-*/

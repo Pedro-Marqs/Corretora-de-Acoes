@@ -5,6 +5,7 @@ import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -158,12 +159,16 @@ public class DashboardService {
         DashboardDistributionsView distributions = new DashboardDistributionsView(
                 slices(byAsset), slices(byBroker), slices(byMarket));
         List<DashboardPatrimonialPointView> history = history(account, period);
+        String selectedBrokerName = selectedBroker == null
+                ? null : selectedBroker.getBroker().getTradeName();
+        List<DashboardInvestmentPointView> investmentHistory = investmentHistory(
+                account, period, selectedBrokerName);
         return new DashboardSnapshot(results.balance().value(), true, brokerAssociationId,
                 List.copyOf(positionViews),
                 results.marketValue().value(), results.patrimony().value(),
                 results.realizedResult().value(), results.unrealizedResult().value(),
                 results.totalResult().value(), distributions, rateView, List.copyOf(warnings),
-                period == null ? null : period.value(), history);
+                period == null ? null : period.value(), history, investmentHistory);
     }
 
     private List<DashboardPatrimonialPointView> history(Account account, DashboardPeriod period) {
@@ -178,6 +183,98 @@ public class DashboardService {
                         brasilia(point.getRecordedAt()),
                         new FinancialAmount(point.getPatrimonyBrl()).value()))
                 .toList();
+    }
+
+    private List<DashboardInvestmentPointView> investmentHistory(
+            Account account, DashboardPeriod period, String selectedBrokerName) {
+        if (period == null) {
+            return List.of();
+        }
+        OffsetDateTime now = OffsetDateTime.now(clock);
+        Map<String, Long> quantities = new HashMap<>();
+        Map<String, BigDecimal> pricesBrl = new HashMap<>();
+        Map<String, BigDecimal> knownPricesBrl = new HashMap<>();
+        List<DashboardInvestmentPointView> points = new ArrayList<>();
+        OffsetDateTime start = period.start(now, account.getCreatedAt());
+        boolean hasInvestmentMovement = false;
+        for (var movement : movements
+                .findByAccountIdAndOccurredAtLessThanEqualOrderByOccurredAtAscIdAsc(
+                        account.getId(), now)) {
+            if (movement.getTicker() != null && movement.getQuantity() != null
+                    && (movement.getMovementType() == MovementType.PURCHASE
+                    || movement.getMovementType() == MovementType.SALE)) {
+                String key = movement.getMarket().name() + ":" + movement.getTicker();
+                BigDecimal movementPrice = movementPriceBrl(movement);
+                knownPricesBrl.put(key, movementPrice);
+                if (selectedBrokerName == null
+                        || selectedBrokerName.equals(movement.getBrokerName())) {
+                    hasInvestmentMovement = true;
+                    long current = quantities.getOrDefault(key, 0L);
+                    long change = movement.getMovementType() == MovementType.PURCHASE
+                            ? movement.getQuantity() : -movement.getQuantity();
+                    long next = Math.max(0L, current + change);
+                    if (next == 0L) {
+                        quantities.remove(key);
+                        pricesBrl.remove(key);
+                    } else {
+                        quantities.put(key, next);
+                        pricesBrl.put(key, movementPrice);
+                    }
+                }
+            } else if (movement.getMovementType() == MovementType.TRANSFER
+                    && movement.getTicker() != null && movement.getQuantity() != null
+                    && selectedBrokerName != null) {
+                String key = movement.getMarket().name() + ":" + movement.getTicker();
+                long change = 0L;
+                if (selectedBrokerName.equals(movement.getOriginBrokerName())) {
+                    change -= movement.getQuantity();
+                }
+                if (selectedBrokerName.equals(movement.getDestinationBrokerName())) {
+                    change += movement.getQuantity();
+                }
+                if (change != 0L) {
+                    hasInvestmentMovement = true;
+                    long next = Math.max(0L, quantities.getOrDefault(key, 0L) + change);
+                    if (next == 0L) {
+                        quantities.remove(key);
+                        pricesBrl.remove(key);
+                    } else {
+                        quantities.put(key, next);
+                        BigDecimal knownPrice = knownPricesBrl.get(key);
+                        if (knownPrice != null) {
+                            pricesBrl.put(key, knownPrice);
+                        }
+                    }
+                }
+            }
+            BigDecimal value = quantities.entrySet().stream()
+                    .map(entry -> pricesBrl.getOrDefault(entry.getKey(), BigDecimal.ZERO)
+                            .multiply(BigDecimal.valueOf(entry.getValue())))
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            points.add(new DashboardInvestmentPointView(
+                    brasilia(movement.getOccurredAt()),
+                    new FinancialAmount(value).value()));
+        }
+        if (!hasInvestmentMovement) {
+            return points;
+        }
+        List<DashboardInvestmentPointView> visible = new ArrayList<>();
+        OffsetDateTime visibleStart = brasilia(start);
+        for (DashboardInvestmentPointView point : points) {
+            if (!point.recordedAt().isBefore(visibleStart)) {
+                visible.add(point);
+            }
+        }
+        return visible;
+    }
+
+    private static BigDecimal movementPriceBrl(
+            com.projeto.gestao.domain.model.Movement movement) {
+        if (movement.getCurrency() == Currency.USD) {
+            return movement.getQuotePrice().multiply(movement.getUsdBrlRate())
+                    .setScale(2, java.math.RoundingMode.HALF_UP);
+        }
+        return movement.getQuotePrice().setScale(2, java.math.RoundingMode.HALF_UP);
     }
 
     private static void accumulate(Map<String, DistributionAccumulator> distribution,

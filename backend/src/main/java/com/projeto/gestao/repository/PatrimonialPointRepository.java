@@ -10,4 +10,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface PatrimonialPointRepository extends JpaRepository<PatrimonialPoint, UUID> {
     List<PatrimonialPoint> findByAccountIdAndRecordedAtBetweenOrderByRecordedAtAscIdAsc(
             UUID accountId, OffsetDateTime start, OffsetDateTime end);
+
+    List<PatrimonialPoint> findByAccountIdAndRecordedAtLessThanEqualOrderByRecordedAtAscIdAsc(
+            UUID accountId, OffsetDateTime end);
 }

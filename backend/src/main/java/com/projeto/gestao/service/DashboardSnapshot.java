@@ -18,4 +18,5 @@ public record DashboardSnapshot(
         DashboardExchangeRateView exchangeRate,
         List<DashboardWarningView> warnings,
         String period,
-        List<DashboardPatrimonialPointView> patrimonyHistory) { }
+        List<DashboardPatrimonialPointView> patrimonyHistory,
+        List<DashboardInvestmentPointView> investmentHistory) { }
