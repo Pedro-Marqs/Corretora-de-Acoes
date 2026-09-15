@@ -1,0 +1,166 @@
+import '@testing-library/jest-dom/vitest'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import App from './App.jsx'
+import { getCurrentAccount } from './api/accounts.js'
+import { MarketApiError, searchAsset } from './api/market.js'
+import { getWalletPositions } from './api/wallet.js'
+
+vi.mock('./api/accounts.js', async (load) => ({ ...await load(), getCurrentAccount: vi.fn() }))
+vi.mock('./api/market.js', async (load) => ({ ...await load(), searchAsset: vi.fn() }))
+vi.mock('./api/wallet.js', async (load) => ({ ...await load(), getWalletPositions: vi.fn() }))
+
+const account = { name: 'Ana', cpf: '529.***.***-25', email: 'a***@example.com' }
+const brAsset = {
+  assetId: '11111111-1111-4111-8111-111111111111',
+  ticker: 'PETR4', name: 'Petrobras PN', market: 'BR', currency: 'BRL', originalPrice: '38.50',
+  priceBrl: '38.50', quoteSource: 'Brapi', quoteQuotedAt: '2026-09-03T12:00:00Z', quoteStale: false,
+  usdBrlRate: null, exchangeRateSource: null, exchangeRateQuotedAt: null, exchangeRateStale: null,
+}
+const usAsset = {
+  assetId: '22222222-2222-4222-8222-222222222222',
+  ticker: 'AAPL', name: 'Apple Inc.', market: 'US', currency: 'USD', originalPrice: '225.10',
+  priceBrl: '1238.05', quoteSource: 'Twelve Data', quoteQuotedAt: '2026-09-02T20:00:00Z', quoteStale: false,
+  usdBrlRate: '5.50', exchangeRateSource: 'AwesomeAPI', exchangeRateQuotedAt: '2026-09-03T10:00:00Z', exchangeRateStale: false,
+}
+
+function submit(ticker, market = 'BR') {
+  fireEvent.change(screen.getByLabelText(/Ticker/), { target: { value: ticker } })
+  fireEvent.change(screen.getByLabelText(/Mercado/), { target: { value: market } })
+  fireEvent.click(screen.getByRole('button', { name: 'Pesquisar ativo' }))
+}
+
+describe('assets private route', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    window.history.replaceState({}, '', '/app/ativos')
+    getCurrentAccount.mockResolvedValue(account)
+    getWalletPositions.mockResolvedValue({ availableBalance: 1000, positions: [] })
+  })
+  afterEach(cleanup)
+
+  it('integra rota e navegação privadas e inicia vazio, sem atualização manual', async () => {
+    render(<App />)
+    expect(await screen.findByRole('heading', { name: 'Pesquisa de ativos' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Ativos' })).toHaveClass('active')
+    expect(screen.getByText('Nenhuma pesquisa realizada')).toBeInTheDocument()
+    expect(screen.getByLabelText(/Ticker/)).toBeRequired()
+    expect(screen.getByLabelText(/Mercado/)).toBeRequired()
+    expect(screen.queryByRole('button', { name: /atualizar/i })).not.toBeInTheDocument()
+  })
+
+  it('não renderiza nem consulta ativos sem sessão', async () => {
+    getCurrentAccount.mockRejectedValue({ status: 401 })
+    render(<App />)
+    expect(await screen.findByRole('heading', { name: 'Bem-vindo de volta.' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Pesquisa de ativos' })).not.toBeInTheDocument()
+    expect(searchAsset).not.toHaveBeenCalled()
+  })
+
+  it('exige ticker e mercado antes de pesquisar', async () => {
+    render(<App />); await screen.findByRole('heading', { name: 'Pesquisa de ativos' })
+    fireEvent.click(screen.getByRole('button', { name: 'Pesquisar ativo' }))
+    expect(screen.getByText('Informe um ticker com 1 a 12 letras ou números.')).toBeInTheDocument()
+    expect(screen.getByText('Selecione o mercado do ativo.')).toBeInTheDocument()
+    expect(searchAsset).not.toHaveBeenCalled()
+  })
+
+  it('mostra resultado brasileiro e valores oficiais com duas casas', async () => {
+    searchAsset.mockResolvedValue(brAsset)
+    render(<App />); await screen.findByRole('heading', { name: 'Pesquisa de ativos' }); submit('petr4')
+    expect(await screen.findByRole('heading', { name: 'PETR4' })).toBeInTheDocument()
+    expect(screen.getByText('Petrobras PN')).toBeInTheDocument()
+    expect(screen.getByText('Brasil')).toBeInTheDocument()
+    expect(screen.getByText('BRL')).toBeInTheDocument()
+    expect(screen.getByText(/R\$\s*38,50/)).toBeInTheDocument()
+    expect(screen.getByText(/03\/09\/2026.*09:00/)).toBeInTheDocument()
+    expect(searchAsset).toHaveBeenCalledWith('PETR4', 'BR')
+  })
+
+  it('mostra a posição encontrada na carteira e a ação de negociar', async () => {
+    searchAsset.mockResolvedValue(brAsset)
+    getWalletPositions.mockResolvedValue({ availableBalance: 1000, positions: [{ assetId: brAsset.assetId, ticker: 'PETR4', name: brAsset.name, market: 'BR', currency: 'BRL', brokerageId: 'broker-1', brokerageName: 'Corretora Um', quantity: 10, averagePriceBrl: 30, marketValueBrl: 385 }] })
+    render(<App />); await screen.findByRole('heading', { name: 'Pesquisa de ativos' }); submit('PETR4')
+    expect(await screen.findByText('Na sua carteira')).toBeInTheDocument()
+    expect(screen.getByText('10 ações · Corretora Um')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Negociar' })).toBeInTheDocument()
+  })
+
+  it('mostra resultado US, conversão e ambos os instantes recebidos', async () => {
+    searchAsset.mockResolvedValue(usAsset)
+    render(<App />); await screen.findByRole('heading', { name: 'Pesquisa de ativos' }); submit('AAPL', 'US')
+    expect(await screen.findByRole('heading', { name: 'AAPL' })).toBeInTheDocument()
+    expect(screen.getByText(/US\$\s*225,10/)).toBeInTheDocument()
+    expect(screen.getByText(/R\$\s*1\.238,05/)).toBeInTheDocument()
+    expect(screen.getByText('5,50')).toBeInTheDocument()
+    expect(screen.getByText(/02\/09\/2026.*17:00/)).toBeInTheDocument()
+    expect(screen.getByText(/03\/09\/2026.*07:00/)).toBeInTheDocument()
+    expect(searchAsset).toHaveBeenCalledWith('AAPL', 'US')
+  })
+
+  it('bloqueia submissão duplicada durante o carregamento', async () => {
+    searchAsset.mockReturnValue(new Promise(() => {}))
+    render(<App />); await screen.findByRole('heading', { name: 'Pesquisa de ativos' }); submit('AAPL', 'US')
+    const button = screen.getByRole('button', { name: 'Pesquisando…' })
+    expect(button).toBeDisabled(); fireEvent.click(button)
+    expect(screen.getByRole('status')).toHaveTextContent('Pesquisando AAPL')
+    expect(searchAsset).toHaveBeenCalledTimes(1)
+  })
+
+  it('distingue resultado vazio de erro', async () => {
+    searchAsset.mockResolvedValue(null)
+    render(<App />); await screen.findByRole('heading', { name: 'Pesquisa de ativos' }); submit('VAZIO')
+    expect(await screen.findByText('Ativo não encontrado')).toBeInTheDocument()
+    expect(screen.getByText(/VAZIO/)).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it.each([
+    ['Ticker inválido.', 400], ['Mercado não suportado.', 422],
+    ['A resposta do ativo está incompleta. Tente novamente mais tarde.', undefined],
+    ['Não há cotação armazenada para este ativo.', 503],
+    ['Não foi possível conectar ao servidor. Tente novamente em instantes.', undefined],
+  ])('preserva ticker, mostra erro seguro e permite retry: %s', async (message, status) => {
+    searchAsset.mockRejectedValueOnce(new MarketApiError(message, {}, status)).mockResolvedValueOnce(brAsset)
+    render(<App />); await screen.findByRole('heading', { name: 'Pesquisa de ativos' }); submit('PETR4')
+    expect(await screen.findByRole('alert')).toHaveTextContent(message)
+    expect(screen.getByLabelText(/Ticker/)).toHaveValue('PETR4')
+    fireEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }))
+    expect(await screen.findByRole('heading', { name: 'PETR4' })).toBeInTheDocument()
+    expect(searchAsset).toHaveBeenCalledTimes(2)
+  })
+
+  it('remove dados e direciona ao login em resposta 401', async () => {
+    searchAsset.mockRejectedValue(new MarketApiError('detalhe interno', {}, 401))
+    render(<App />); await screen.findByRole('heading', { name: 'Pesquisa de ativos' }); submit('AAPL', 'US')
+    expect(await screen.findByRole('heading', { name: 'Bem-vindo de volta.' })).toBeInTheDocument()
+    expect(screen.queryByText('detalhe interno')).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Pesquisa de ativos' })).not.toBeInTheDocument()
+  })
+
+  it('renderiza avisos independentes pelas flags e preserva valores e horários', async () => {
+    searchAsset.mockResolvedValue({ ...usAsset, quoteStale: true, exchangeRateStale: true })
+    render(<App />); await screen.findByRole('heading', { name: 'Pesquisa de ativos' }); submit('AAPL', 'US')
+    expect(await screen.findByText('Preço de fechamento')).toBeInTheDocument()
+    expect(screen.getByText('USD/BRL desatualizado')).toBeInTheDocument()
+    expect(screen.getByText(/US\$\s*225,10/)).toBeInTheDocument()
+    expect(screen.getByText(/R\$\s*1\.238,05/)).toBeInTheDocument()
+    expect(screen.getAllByText(/02\/09\/2026.*17:00/)).toHaveLength(2)
+    expect(screen.getAllByText(/03\/09\/2026.*07:00/)).toHaveLength(2)
+  })
+
+  it('não exibe avisos quando o backend marca ambos os limites como atuais', async () => {
+    searchAsset.mockResolvedValue(usAsset)
+    render(<App />); await screen.findByRole('heading', { name: 'Pesquisa de ativos' }); submit('AAPL', 'US')
+    await screen.findByRole('heading', { name: 'AAPL' })
+    expect(screen.queryByText(/desatualizad[oa]/i)).not.toBeInTheDocument()
+  })
+
+  it('mantém controles utilizáveis em viewport de 320 px', async () => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 320 })
+    render(<App />); await screen.findByRole('heading', { name: 'Pesquisa de ativos' })
+    expect(screen.getByLabelText(/Ticker/)).toBeVisible()
+    expect(screen.getByLabelText(/Mercado/)).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Pesquisar ativo' })).toBeVisible()
+  })
+})

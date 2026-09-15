@@ -1,0 +1,14 @@
+Campo: TP_PARTIC
+Descrição : Tipo de participante
+Domínio   : Alfanumérico
+Tipo Dados: varchar
+
+Campo: CNPJ
+Descrição : Cadastro Nacional de Pessoas Jurídicas
+Domínio   : Alfanumérico
+Tipo Dados: varchar
+
+Campo: SIT
+Descrição : Situação
+Domínio   : Alfanumérico
+Tipo Dados: varchar

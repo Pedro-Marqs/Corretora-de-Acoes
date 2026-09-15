@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+    <changeSet id="v9-withdrawal-and-operation-inputs" author="project">
+        <sql splitStatements="true"><![CDATA[
+ALTER TABLE movement DROP CONSTRAINT ck_movement_type;
+ALTER TABLE movement DROP CONSTRAINT ck_movement_trade_financial_inputs;
+
+ALTER TABLE movement ADD CONSTRAINT ck_movement_type CHECK (
+    movement_type IN ('INITIAL_BALANCE', 'DEPOSIT', 'WITHDRAWAL', 'PURCHASE', 'SALE', 'TRANSFER'));
+
+ALTER TABLE movement ADD CONSTRAINT ck_movement_trade_financial_inputs_v9 CHECK (
+    (movement_type IN ('PURCHASE', 'SALE')
+        AND unit_price_brl IS NOT NULL AND unit_price_brl > 0
+        AND ((market = 'BR' AND usd_brl_rate IS NULL)
+          OR (market = 'US' AND usd_brl_rate IS NOT NULL AND usd_brl_rate > 0)))
+ OR (movement_type NOT IN ('PURCHASE', 'SALE')
+        AND unit_price_brl IS NULL AND usd_brl_rate IS NULL)
+);
+        ]]></sql>
+    </changeSet>
+</databaseChangeLog>

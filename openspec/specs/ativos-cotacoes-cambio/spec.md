@@ -1,0 +1,169 @@
+# Ativos, cotacoes e cambio Specification
+
+## Purpose
+
+Disponibilizar ativos, cotacoes e cambio para suportar consultas e operacoes de investimento.
+
+## Requirements
+
+### Requirement: Catalogo de ativos
+O sistema SHALL manter ativos brasileiros e norte-americanos com identificação, tipo, moeda e status, permitindo pesquisa de ativos suportados e persistindo somente dados completos e válidos. Consultas de ativos SHALL considerar somente ativos ativos. Ciclos automáticos de cotação SHALL atualizar somente ativos ativos que possuam posição em alguma carteira.
+
+#### Scenario: Consultar ativo ativo
+- **WHEN** o investidor consultar um ativo cadastrado e ativo
+- **THEN** o sistema SHALL retornar seus dados publicos
+
+#### Scenario: Pesquisar ativo brasileiro
+- **WHEN** o investidor pesquisar um ticker brasileiro válido e o provedor retornar dados completos
+- **THEN** o sistema SHALL retornar o ativo com ticker, nome, mercado, moeda, cotação e instante e SHALL preservar os dados válidos para consultas posteriores
+
+#### Scenario: Ativo ou mercado não suportado
+- **WHEN** a pesquisa retornar um ativo pertencente a mercado não suportado
+- **THEN** o sistema SHALL rejeitar o ativo e SHALL NOT persistir seus dados como ativo operacional
+
+#### Scenario: Resposta incompleta
+- **WHEN** uma fonte externa retornar dados sem identificação, nome, mercado, moeda, cotação ou instante obrigatório
+- **THEN** o sistema SHALL rejeitar a nova resposta e SHALL preservar qualquer dado válido anteriormente armazenado
+
+#### Scenario: Atualizar automaticamente somente ativos em posicao
+- **WHEN** o ciclo automatico de cotacoes brasileiras executar
+- **THEN** o sistema SHALL consultar somente ativos ativos que estejam presentes em alguma posicao
+
+### Requirement: Cotacoes e cambio
+ O sistema SHALL registrar cotações e câmbio válidos com fonte, instante, moeda e indicação de desatualização, utilizando o último valor válido armazenado quando uma atualização externa não puder fornecer um valor utilizável. O sistema SHALL atualizar cotações brasileiras a cada cinco minutos e cotações norte-americanas e USD/BRL uma vez por dia às 10h no horário de Brasília. Uma falha da fonte externa SHALL preservar o último valor válido armazenado e sinalizar sua desatualização. Operações de compra ou venda SHALL usar a cotação/câmbio atual ou o último valor armazenado utilizável, informando o instante original; sem valor utilizável, SHALL bloquear a operação.
+
+#### Scenario: Fallback usado na venda
+- **WHEN** a consulta externa falhar e existir cotação válida armazenada para o ativo e, se necessário, USD/BRL válido
+- **THEN** o sistema SHALL usar os últimos valores armazenados, informar seus instantes originais e permitir o cálculo da venda
+
+#### Scenario: Ausência de cotação utilizável na venda
+- **WHEN** uma venda depender de uma cotação e não existir valor atual nem valor válido armazenado
+- **THEN** o sistema SHALL bloquear a venda sem alterar saldo, posição, histórico ou patrimônio
+
+#### Scenario: Ausência de câmbio utilizável na venda
+- **WHEN** uma venda de ativo norte-americano exigir conversão para BRL e não existir USD/BRL utilizável
+- **THEN** o sistema SHALL bloquear a venda sem alterar saldo, posição, histórico ou patrimônio
+
+#### Scenario: Cotação antiga usada na venda
+- **WHEN** a cotação utilizada tiver mais de 24 horas ou o USD/BRL tiver mais de sete dias
+- **THEN** o sistema SHALL manter o valor armazenado disponível e SHALL indicar o dado como desatualizado
+
+#### Scenario: Fallback usado na compra
+- **WHEN** a consulta externa falhar e existir cotação válida armazenada para o ativo e, se necessário, USD/BRL válido
+- **THEN** o sistema SHALL usar os últimos valores armazenados, informar seus instantes originais e permitir o cálculo da compra
+
+#### Scenario: Fallback de cotacao
+- **WHEN** uma consulta externa falhar e existir uma cotação válida armazenada para o ativo
+- **THEN** o sistema SHALL utilizar a última cotação válida e SHALL informar seu instante original
+
+#### Scenario: Fallback de cambio
+- **WHEN** a consulta de USD/BRL falhar e existir uma cotação de câmbio válida armazenada
+- **THEN** o sistema SHALL utilizar o último USD/BRL válido e SHALL informar seu instante original
+
+#### Scenario: Cotacao indisponivel ou desatualizada
+- **WHEN** a fonte externa falhar ou a cotação exceder sua validade
+- **THEN** o sistema SHALL informar o estado desatualizado sem inventar um valor
+
+#### Scenario: Ausencia de cotacao utilizavel
+- **WHEN** uma compra depender de uma cotação e não existir valor atual nem valor válido armazenado
+- **THEN** o sistema SHALL bloquear a compra dependente sem alterar saldo, posição, histórico ou patrimônio
+
+#### Scenario: Ausencia de cambio utilizavel
+- **WHEN** uma compra de ativo norte-americano exigir conversão para BRL e não existir USD/BRL utilizável
+- **THEN** o sistema SHALL bloquear a compra dependente sem alterar saldo, posição, histórico ou patrimônio
+
+#### Scenario: Cotacao de ativo antiga
+- **WHEN** a cotação utilizada tiver mais de 24 horas
+- **THEN** o sistema SHALL indicá-la como desatualizada e SHALL manter disponível o valor armazenado
+
+#### Scenario: Cambio antigo
+- **WHEN** o USD/BRL utilizado tiver mais de sete dias
+- **THEN** o sistema SHALL indicá-lo como desatualizado e SHALL manter disponível o valor armazenado
+
+#### Scenario: Exibir ativo norte-americano
+- **WHEN** um ativo norte-americano possuir cotação armazenada em USD e existir USD/BRL utilizável
+- **THEN** o sistema SHALL retornar a cotação em USD e seu valor correspondente em BRL com os respectivos dados temporais necessários para identificar sua atualidade
+
+#### Scenario: Ciclo diario no horario definido
+- **WHEN** o relogio atingir 10h no horario de Brasilia em um novo dia
+- **THEN** o sistema SHALL executar no maximo uma atualizacao diaria para cotacoes norte-americanas e USD/BRL
+
+#### Scenario: Falha preserva cache
+- **WHEN** uma consulta automatica de cotacao ou cambio falhar e houver valor armazenado
+- **THEN** o sistema SHALL manter o valor anterior e marcar o dado como desatualizado
+
+#### Scenario: Ciclos nao se sobrepoem
+- **WHEN** um ciclo do mesmo tipo ja estiver em execucao
+- **THEN** o sistema SHALL rejeitar ou ignorar a nova execucao sem iniciar processamento concorrente
+
+### Requirement: Precisao financeira
+
+O sistema SHALL usar valores decimais e conversao USD/BRL com arredondamento HALF_UP em duas casas.
+
+#### Scenario: Conversao monetaria
+
+- **WHEN** um valor em USD for convertido para BRL
+- **THEN** o sistema SHALL aplicar a cotacao de cambio e arredondar o resultado em duas casas
+
+### Requirement: Apresentação de pesquisa de ativos
+
+A interface SHALL permitir que um investidor autenticado pesquise um ativo exclusivamente por ticker e SHALL apresentar, quando houver resultado válido, ticker, nome, mercado, moeda, cotação e horário da cotação fornecidos pelo backend. Para um ativo norte-americano, SHALL apresentar tanto o valor em USD quanto o valor correspondente em BRL e SHALL preservar a identificação temporal da cotação e do USD/BRL utilizados.
+
+#### Scenario: Resultado brasileiro
+- **WHEN** o investidor autenticado pesquisar um ticker brasileiro e a API retornar um resultado válido
+- **THEN** a interface SHALL exibir ticker, nome, mercado, moeda, cotação e horário da cotação sem alterar os valores recebidos
+
+#### Scenario: Resultado norte-americano convertido
+- **WHEN** o investidor autenticado pesquisar um ticker norte-americano com cotação e USD/BRL utilizáveis
+- **THEN** a interface SHALL exibir ticker, nome, mercado, moeda, valor em USD, valor correspondente em BRL e os horários dos dados utilizados
+
+#### Scenario: Dados antigos
+- **WHEN** a resposta indicar cotação com mais de 24 horas ou USD/BRL com mais de sete dias
+- **THEN** a interface SHALL manter os valores exibidos, identificar claramente o dado desatualizado e mostrar o horário original correspondente
+
+#### Scenario: Pesquisa sem valor utilizável
+- **WHEN** a API rejeitar o ticker, indicar mercado não suportado, informar resposta incompleta ou não possuir cache necessário
+- **THEN** a interface SHALL exibir uma mensagem funcional compreensível, SHALL NOT apresentar um valor inventado e SHALL preservar o contexto para nova tentativa quando aplicável
+
+#### Scenario: Cotação determinada pelo backend
+- **WHEN** o investidor consultar um ativo
+- **THEN** a interface SHALL somente apresentar os valores retornados pela API e SHALL NOT oferecer campo, controle ou ação para informar, editar ou atualizar manualmente a cotação ou o câmbio
+
+### Requirement: Identificar ativo retornado pela pesquisa
+A resposta válida de pesquisa de ativo SHALL incluir `assetId`, identificador opaco do ativo ativo do catálogo que possui a cotação retornada. O identificador SHALL ser estável para o mesmo ativo catalogado entre a cotação recém-obtida e o fallback de cache e SHALL ser utilizável como referência nos contratos de compra e venda. Pesquisa sem cotação utilizável SHALL NOT publicar `assetId`.
+
+#### Scenario: Pesquisa com cotação válida
+- **WHEN** a pesquisa retornar uma cotação válida para ativo brasileiro ou norte-americano
+- **THEN** a resposta SHALL incluir o `assetId` persistido do ativo junto aos dados de mercado
+
+#### Scenario: Pesquisa usando fallback
+- **WHEN** a fonte externa falhar mas houver cotação utilizável armazenada
+- **THEN** a resposta SHALL incluir o mesmo `assetId` do ativo catalogado e SHALL preservar os indicadores de desatualização
+
+#### Scenario: Sem cotação utilizável
+- **WHEN** a pesquisa não possuir resposta válida nem cache utilizável
+- **THEN** o sistema SHALL manter o estado funcional/ vazio existente e SHALL NOT retornar identificador de ativo operacional
+
+### Requirement: Apresentar lista e detalhe do ativo
+
+Ao selecionar `Investir` na lista de uma categoria, a interface SHALL abrir uma tela ou estado de detalhe do ativo com ticker, nome, mercado, moeda, cotação oficial, instante, dados disponíveis de posição e resumo visual. O preço e os avisos SHALL vir da API, sem edição pelo investidor.
+
+#### Scenario: Abrir detalhe de ativo
+- **WHEN** o investidor selecionar `Investir` para um ativo listado
+- **THEN** a interface SHALL apresentar os dados oficiais do ativo e SHALL oferecer a ação `Negociar`
+
+#### Scenario: Cotação desatualizada
+- **WHEN** o ativo ou câmbio retornado estiver desatualizado
+- **THEN** a interface SHALL manter o valor oficial, indicar a desatualização e mostrar o instante original sem permitir atualização manual
+
+### Requirement: Pesquisa na seção Bolsa
+
+A seção Bolsa SHALL manter a pesquisa normal de ativos exclusivamente por ticker, com os resultados brasileiros e norte-americanos e os estados de vazio, erro, carregamento e desatualização já definidos para a pesquisa.
+
+#### Scenario: Pesquisar ativo na Bolsa
+- **WHEN** o investidor autenticado enviar um ticker válido na seção Bolsa
+- **THEN** a interface SHALL apresentar os campos oficiais do resultado e SHALL permitir iniciar o fluxo de detalhe/negociação sem solicitar preço ao usuário
+
+#### Scenario: Pesquisa sem resultado
+- **WHEN** a pesquisa válida não retornar ativo utilizável
+- **THEN** a interface SHALL apresentar estado vazio ou erro funcional apropriado e SHALL preservar o ticker para nova tentativa

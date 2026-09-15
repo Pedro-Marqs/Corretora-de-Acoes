@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+    <changeSet id="v5-market-catalog-cache" author="project">
+        <sql splitStatements="true"><![CDATA[
+ALTER TABLE asset ADD COLUMN asset_type VARCHAR(20) DEFAULT 'STOCK' NOT NULL;
+ALTER TABLE asset ADD COLUMN status VARCHAR(16) DEFAULT 'ACTIVE' NOT NULL;
+ALTER TABLE quote ADD COLUMN source VARCHAR(60) DEFAULT 'LEGACY' NOT NULL;
+ALTER TABLE exchange_rate ADD COLUMN source VARCHAR(60) DEFAULT 'LEGACY' NOT NULL;
+
+ALTER TABLE asset ADD CONSTRAINT ck_asset_type CHECK (asset_type IN ('STOCK'));
+ALTER TABLE asset ADD CONSTRAINT ck_asset_status CHECK (status IN ('ACTIVE', 'INACTIVE'));
+        ]]></sql>
+    </changeSet>
+</databaseChangeLog>

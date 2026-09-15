@@ -1,0 +1,245 @@
+import '@testing-library/jest-dom/vitest'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import App from './App.jsx'
+import { AccountApiError, checkReactivation, createAccount, deleteAccount, getCurrentAccount, reactivateAccount } from './api/accounts.js'
+import { AuthApiError, login, logout } from './api/auth.js'
+
+vi.mock('./api/accounts.js', async (importOriginal) => {
+  const original = await importOriginal()
+  return { ...original, checkReactivation: vi.fn(), createAccount: vi.fn(), deleteAccount: vi.fn(), getCurrentAccount: vi.fn(), reactivateAccount: vi.fn() }
+})
+vi.mock('./api/auth.js', async (importOriginal) => {
+  const original = await importOriginal()
+  return { ...original, login: vi.fn(), logout: vi.fn() }
+})
+vi.mock('./routing/PublicRoute.jsx', () => ({ default: ({ children }) => children }))
+
+afterEach(cleanup)
+
+function fillForm() {
+  fireEvent.change(screen.getByLabelText('Nome completo'), { target: { value: 'Ana Silva' } })
+  fireEvent.change(screen.getByLabelText('CPF'), { target: { value: '52998224725' } })
+  fireEvent.change(screen.getByLabelText('E-mail'), { target: { value: 'ana@example.com' } })
+  fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'Senha@123' } })
+}
+
+async function findLogoutButton() {
+  fireEvent.click(await screen.findByRole('button', { name: 'Ana Silva' }))
+  return screen.getByRole('menuitem', { name: 'Sair' })
+}
+
+describe('Cadastro', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    window.history.replaceState({}, '', '/cadastro')
+    getCurrentAccount.mockResolvedValue({ name: 'Ana Silva', cpf: '529.***.***-25', email: 'a***@example.com' })
+  })
+
+  it('exibe todos os campos e a informação do saldo inicial', () => {
+    render(<App />)
+    expect(screen.getByRole('heading', { name: 'Comece a organizar sua carteira.' })).toBeInTheDocument()
+    expect(screen.getByText('R$ 10.000,00')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Criar minha conta' })).toBeEnabled()
+  })
+
+  it('envia os dados e apresenta a tela inicial apenas com o retorno público', async () => {
+    createAccount.mockResolvedValue({ name: 'Ana Silva', balance: 10000, status: 'ACTIVE' })
+    render(<App />)
+    fillForm()
+    fireEvent.click(screen.getByRole('button', { name: 'Criar minha conta' }))
+
+    await screen.findByRole('heading', { name: 'Olá, Ana Silva.' })
+    expect(createAccount).toHaveBeenCalledWith({ name: 'Ana Silva', cpf: '529.982.247-25', email: 'ana@example.com', password: 'Senha@123' })
+    expect(screen.getByText('R$ 10.000,00')).toBeInTheDocument()
+    expect(screen.getByText('Ativa')).toBeInTheDocument()
+    expect(screen.getByText(/Esta tela usa somente os dados retornados/)).toBeInTheDocument()
+    expect(screen.queryByText('529.982.247-25')).not.toBeInTheDocument()
+    expect(screen.queryByText('ana@example.com')).not.toBeInTheDocument()
+    expect(screen.queryByText(/corretora/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/histórico/i)).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Ir para login' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /comprar|vender/i })).not.toBeInTheDocument()
+  })
+
+  it('usa mensagens seguras quando saldo e status retornados são desconhecidos', async () => {
+    createAccount.mockResolvedValue({ name: 'Ana Silva', balance: 'inválido', status: 'UNKNOWN' })
+    render(<App />)
+    fillForm()
+    fireEvent.click(screen.getByRole('button', { name: 'Criar minha conta' }))
+
+    expect(await screen.findByText('Saldo indisponível')).toBeInTheDocument()
+    expect(screen.getByText('Status indisponível')).toBeInTheDocument()
+  })
+
+  it('permite voltar ao formulário sem persistir o retorno da conta', async () => {
+    createAccount.mockResolvedValue({ name: 'Ana Silva', balance: 10000, status: 'ACTIVE' })
+    render(<App />)
+    fillForm()
+    fireEvent.click(screen.getByRole('button', { name: 'Criar minha conta' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Cadastrar outra conta' }))
+
+    expect(screen.getByRole('button', { name: 'Criar minha conta' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Nome completo')).toHaveValue('')
+  })
+
+  it('mostra múltiplos erros nos campos e permite corrigi-los', async () => {
+    createAccount.mockRejectedValue(new AccountApiError('Os dados informados são inválidos.', { cpf: ['CPF inválido.'], email: ['E-mail inválido.'] }))
+    render(<App />)
+    fillForm()
+    fireEvent.click(screen.getByRole('button', { name: 'Criar minha conta' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Os dados informados são inválidos.')
+    expect(screen.getByText('CPF inválido.')).toBeInTheDocument()
+    expect(screen.getByText('E-mail inválido.')).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('CPF'), { target: { value: '123' } })
+    await waitFor(() => expect(screen.queryByText('CPF inválido.')).not.toBeInTheDocument())
+  })
+
+  it('bloqueia reenvio enquanto aguarda a API', async () => {
+    createAccount.mockReturnValue(new Promise(() => {}))
+    render(<App />)
+    fillForm()
+    fireEvent.click(screen.getByRole('button', { name: 'Criar minha conta' }))
+    expect(screen.getByRole('button', { name: 'Criando conta…' })).toBeDisabled()
+  })
+
+  it('realiza login e logout sem exibir dados privados inventados', async () => {
+    login.mockResolvedValue(); logout.mockResolvedValue()
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Já tenho uma conta' }))
+    fireEvent.change(screen.getByLabelText('E-mail'), { target: { value: 'ana@example.com' } })
+    fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'Senha@123' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Entrar' }))
+
+    expect(await screen.findByRole('button', { name: 'Ana Silva' })).toBeInTheDocument()
+    expect(login).toHaveBeenCalledWith({ email: 'ana@example.com', password: 'Senha@123' })
+    expect(screen.queryByText(/saldo disponível/i)).not.toBeInTheDocument()
+    fireEvent.click(await findLogoutButton())
+    expect(await screen.findByRole('heading', { name: 'Bem-vindo de volta.' })).toBeInTheDocument()
+  })
+
+  it('mantém a sessão visual quando o logout falha', async () => {
+    login.mockResolvedValue(); logout.mockRejectedValue(new Error('Não foi possível encerrar a sessão.'))
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Já tenho uma conta' }))
+    fireEvent.change(screen.getByLabelText('E-mail'), { target: { value: 'ana@example.com' } })
+    fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'Senha@123' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Entrar' }))
+    fireEvent.click(await findLogoutButton())
+    expect(await screen.findByText('Não foi possível encerrar a sessão.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Ana Silva' })).toBeInTheDocument()
+  })
+
+  it('remove o estado visual autenticado quando logout retorna 401', async () => {
+    login.mockResolvedValue(); logout.mockRejectedValue(new AuthApiError('Sessão inválida.', {}, 401))
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Já tenho uma conta' }))
+    fireEvent.change(screen.getByLabelText('E-mail'), { target: { value: 'ana@example.com' } })
+    fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'Senha@123' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Entrar' }))
+    fireEvent.click(await findLogoutButton())
+
+    expect(await screen.findByRole('heading', { name: 'Bem-vindo de volta.' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Ana Silva' })).not.toBeInTheDocument()
+  })
+
+  it('limpa o formulário de cadastro ao alternar para login e voltar', () => {
+    render(<App />)
+    fireEvent.change(screen.getByLabelText('Nome completo'), { target: { value: 'Ana Silva' } })
+    fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'Senha@123' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Já tenho uma conta' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Ainda não tenho conta' }))
+
+    expect(screen.getByLabelText('Nome completo')).toHaveValue('')
+    expect(screen.getByLabelText('Senha')).toHaveValue('')
+  })
+
+  it('mostra erro neutro e erros estruturais no login', async () => {
+    login.mockRejectedValue(new AuthApiError('Credenciais inválidas.', { email: ['E-mail inválido.'] }))
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Já tenho uma conta' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Entrar' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Credenciais inválidas.')
+    expect(screen.getByText('E-mail inválido.')).toBeInTheDocument()
+    expect(screen.queryByText(/senha incorreta|e-mail inexistente/i)).not.toBeInTheDocument()
+  })
+
+  it('impede reenvio enquanto o login está em andamento', () => {
+    login.mockReturnValue(new Promise(() => {}))
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Já tenho uma conta' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Entrar' }))
+    expect(screen.getByRole('button', { name: 'Entrando…' })).toBeDisabled()
+  })
+
+  it('impede requisições duplicadas no logout', async () => {
+    login.mockResolvedValue(); getCurrentAccount.mockResolvedValue({ name: 'Ana Silva', cpf: '529.***.***-25', email: 'a***@example.com' })
+    logout.mockReturnValue(new Promise(() => {}))
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Já tenho uma conta' }))
+    fireEvent.change(screen.getByLabelText('E-mail'), { target: { value: 'ana@example.com' } })
+    fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'Senha@123' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Entrar' }))
+    const button = await findLogoutButton()
+    fireEvent.click(button); fireEvent.click(button)
+    expect(logout).toHaveBeenCalledTimes(1)
+    expect(screen.getByRole('menuitem', { name: 'Saindo…' })).toBeDisabled()
+  })
+
+  it('acessa a reativação pelo login e volta ao login após sucesso sem autenticar automaticamente', async () => {
+    checkReactivation.mockResolvedValue({ reactivationAvailable: true }); reactivateAccount.mockResolvedValue()
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Já tenho uma conta' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Reativar uma conta' }))
+    fireEvent.change(screen.getByLabelText(/CPF/), { target: { value: '52998224725' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Consultar possibilidade' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Reativar conta' }))
+
+    expect(await screen.findByRole('heading', { name: 'Bem-vindo de volta.' })).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('Conta reativada. Entre com seu e-mail e senha.')
+    expect(screen.queryByRole('button', { name: 'Ana Silva' })).not.toBeInTheDocument()
+  })
+
+  it('reutiliza o cadastro existente para criar uma conta independente após a consulta', async () => {
+    checkReactivation.mockResolvedValue({ reactivationAvailable: true })
+    createAccount.mockResolvedValue({ name: 'Nova Ana', balance: 10000, status: 'ACTIVE' })
+    window.history.replaceState({}, '', '/reativacao')
+    render(<App />)
+    fireEvent.change(screen.getByLabelText(/CPF/), { target: { value: '52998224725' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Consultar possibilidade' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Criar nova conta' }))
+
+    expect(await screen.findByRole('status')).toHaveTextContent('conta independente')
+    expect(screen.getByLabelText('CPF')).toHaveValue('529.982.247-25')
+    fireEvent.change(screen.getByLabelText('Nome completo'), { target: { value: 'Nova Ana' } })
+    fireEvent.change(screen.getByLabelText('E-mail'), { target: { value: 'nova@example.com' } })
+    fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'Nova@123' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Criar minha conta' }))
+
+    expect(await screen.findByRole('heading', { name: 'Olá, Nova Ana.' })).toBeInTheDocument()
+    expect(createAccount).toHaveBeenCalledWith({ name: 'Nova Ana', cpf: '529.982.247-25', email: 'nova@example.com', password: 'Nova@123' })
+  })
+
+  it('remove o acesso privado após excluir a conta', async () => {
+    getCurrentAccount.mockResolvedValue({ name: 'Ana Silva', cpf: '529.***.***-25', email: 'a***@example.com' })
+    deleteAccount.mockResolvedValue()
+    window.history.replaceState({}, '', '/app/conta')
+    render(<App />)
+    await screen.findByRole('heading', { name: 'Minha conta' })
+    fireEvent.click(screen.getByRole('button', { name: 'Excluir minha conta' }))
+    fireEvent.change(screen.getByLabelText(/E-mail atual/), { target: { value: 'ana@example.com' } })
+    fireEvent.change(screen.getByLabelText(/Senha atual/, { selector: '#deletePassword' }), { target: { value: 'Senha@123' } })
+    fireEvent.change(screen.getByLabelText(/Digite "Excluir"/), { target: { value: 'Excluir' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar exclusão' }))
+    expect(await screen.findByRole('heading', { name: 'Bem-vindo de volta.' })).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('Conta excluída. Seus dados permanecem preservados')
+
+    window.history.pushState({}, '', '/app')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+    await waitFor(() => expect(window.location.pathname).toBe('/login'))
+    expect(screen.getByRole('heading', { name: 'Bem-vindo de volta.' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Ana Silva' })).not.toBeInTheDocument()
+  })
+})

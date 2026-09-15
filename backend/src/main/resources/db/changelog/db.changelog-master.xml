@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+    <include file="db/changelog/changes/001-initial-schema.xml"/>
+    <include file="db/changelog/changes/002-active-uniqueness-postgresql.xml"/>
+    <include file="db/changelog/changes/002-active-uniqueness-h2.xml"/>
+    <include file="db/changelog/changes/003-patrimonial-point-inputs.xml"/>
+    <include file="db/changelog/changes/004-unique-account-broker-history.xml"/>
+    <include file="db/changelog/changes/005-market-catalog-cache.xml"/>
+    <include file="db/changelog/changes/006-market-cache-stale-state.xml"/>
+    <include file="db/changelog/changes/007-movement-purchase-financial-inputs.xml"/>
+    <include file="db/changelog/changes/008-movement-sale-financial-inputs.xml"/>
+    <include file="db/changelog/changes/009-withdrawal-and-operation-inputs.xml"/>
+    <include file="db/changelog/changes/010-withdrawal-movement-constraint.xml"/>
+</databaseChangeLog>

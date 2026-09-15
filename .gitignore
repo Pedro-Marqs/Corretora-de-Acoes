@@ -1,0 +1,45 @@
+HELP.md
+target/
+!.mvn/wrapper/maven-wrapper.jar
+.mvn/local-repository/
+
+### IntelliJ IDEA ###
+.idea/
+*.iws
+*.iml
+*.ipr
+
+### Eclipse ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### Visual Studio Code ###
+.vscode/
+
+### Frontend ###
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
+
+### Local configuration and secrets ###
+.env
+.env.*
+!.env.example
+
+### Operating systems ###
+.DS_Store
+Thumbs.db
+
+### Agente: caches temporários do Maven fora do controle ###
+/.m2-validation/
+/.codex-tmp-*/
+/.m2-repository
+/.m2-repo/
+/.m2-repo.bak/
+/.mvn/validation-cache-*/
+**/.codex-test-tmp/
