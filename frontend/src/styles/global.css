@@ -1662,3 +1662,153 @@ input[type="number"]::-webkit-outer-spin-button {
     width: 100%;
   }
 }
+
+/* As telas públicas seguem a mesma linguagem verde da área autenticada. */
+.page-shell {
+  background: #111211;
+}
+.brand-panel {
+  background: #111211;
+}
+.brand-panel::before {
+  border-color: rgb(53 215 177 / 24%);
+  box-shadow: 0 0 0 4rem rgb(0 169 145 / 12%), 0 0 0 8rem rgb(0 169 145 / 7%);
+}
+.page-shell .brand-mark,
+.page-shell .balance-icon {
+  color: #111211;
+  background: #35d7b1;
+}
+.page-shell .brand-copy .eyebrow {
+  color: #35d7b1;
+}
+.page-shell .brand-description {
+  color: #d9f8f1;
+}
+.page-shell .starting-balance div span,
+.page-shell .academic-note {
+  color: #9de5d5;
+}
+.form-panel {
+  background: #111211;
+}
+.form-card {
+  color: #f0f2f0;
+  border-color: #454745;
+  background: #252625;
+  box-shadow: 0 1.5rem 3rem rgb(0 0 0 / 24%);
+}
+.form-card .form-header h2,
+.form-card .eyebrow,
+.form-card .form-field label {
+  color: #f5f7f5;
+}
+.form-card .eyebrow {
+  color: #35d7b1;
+}
+.form-card .form-header > p:last-child,
+.form-card .field-hint,
+.form-card .privacy-note {
+  color: #aeb4b0;
+}
+.form-card input {
+  color: #f5f7f5;
+  background: #1e201f;
+  border-color: #555955;
+}
+.form-card input::placeholder {
+  color: #929a95;
+}
+.form-card input:hover,
+.form-card input:focus {
+  border-color: #35d7b1;
+}
+.form-card input:focus {
+  box-shadow: 0 0 0 3px rgb(53 215 177 / 24%);
+}
+.form-card .primary-button {
+  background: #00a991;
+}
+.form-card .primary-button:hover:not(:disabled) {
+  background: #20c4ad;
+}
+.form-card .message {
+  color: #d9f8f1;
+  background: #183b35;
+}
+.form-card .error-banner {
+  border-color: #a8565d;
+  color: #ffd7da;
+  background: #3a2527;
+}
+.form-panel .top-login,
+.form-panel .text-button {
+  color: #9de5d5;
+}
+.auth-page {
+  background: #111211;
+}
+.auth-page .brand-mark {
+  color: #111211;
+  background: #35d7b1;
+}
+.login-card {
+  color: #f0f2f0;
+  border-color: #454745;
+  background: #252625;
+  box-shadow: 0 1.5rem 3rem rgb(0 0 0 / 24%);
+}
+.login-card .brand-dark,
+.login-card .eyebrow,
+.login-card .form-header h1,
+.login-card .form-header > p:last-child,
+.login-card .form-field label {
+  color: #f5f7f5;
+}
+.login-card .form-header > p:last-child,
+.login-card .login-links .text-button {
+  color: #aeb4b0;
+}
+.login-card .eyebrow {
+  color: #35d7b1;
+}
+.login-card input {
+  color: #f5f7f5;
+  background: #1e201f;
+  border-color: #555955;
+}
+.login-card input::placeholder {
+  color: #929a95;
+}
+.login-card input:hover,
+.login-card input:focus {
+  border-color: #35d7b1;
+}
+.login-card input:focus {
+  box-shadow: 0 0 0 3px rgb(53 215 177 / 24%);
+}
+.login-card .primary-button {
+  background: #00a991;
+}
+.login-card .primary-button:hover:not(:disabled) {
+  background: #20c4ad;
+}
+.login-card .message {
+  color: #d9f8f1;
+  background: #183b35;
+}
+.login-card .error-banner {
+  border-color: #a8565d;
+  color: #ffd7da;
+  background: #3a2527;
+}
+.login-card .login-links .text-button:hover,
+.login-card .login-links .text-button:focus-visible {
+  color: #35d7b1;
+}
+
+@media (min-width: 901px) {
+  .private-layout .asset-search-form > .primary-button {
+    align-self: center;
+  }
+}

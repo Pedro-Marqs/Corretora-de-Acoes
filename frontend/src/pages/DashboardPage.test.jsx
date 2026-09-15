@@ -58,6 +58,7 @@ describe('DashboardPage', () => {
     expect(within(history).getAllByRole('listitem')).toHaveLength(3)
     expect(within(history).getAllByRole('listitem')[0]).toHaveTextContent('R$ 0,00')
     expect(within(history).getByText('Valorização')).toBeInTheDocument()
+    expect(within(history).getByText('R$ 50,50')).toBeInTheDocument()
     expect(within(history).queryByText(/Variação no período/)).not.toBeInTheDocument()
   })
 

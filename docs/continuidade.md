@@ -257,3 +257,5 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 - Antes de validar o backend localmente, verificar a conexão com o PostgreSQL e preservar bancos existentes. Não usar Docker ou Testcontainers nas próximas validações; quando testes precisarem alterar dados persistentes, usar o banco separado `gestao_acoes_test` com credenciais fornecidas por variáveis de ambiente.
 
 O trabalho deve ser coordenado pelo agente Orquestrador. Perfis especializados devem ter escopo específico, não devem editar simultaneamente os mesmos arquivos e o Orquestrador deve consolidar e validar toda entrega.
+
+- Ajuste corretivo pós-refinamento: a valorização exibida no resumo patrimonial agora usa o resultado não realizado oficial (valor atual das posições menos o total investido); cadastro e login adotam a paleta verde da aplicação; e o botão de pesquisa de ativos fica centralizado verticalmente com os campos em desktop.

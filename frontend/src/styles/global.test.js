@@ -25,4 +25,11 @@ describe('tema global', () => {
     expect(globalStyles).toContain('@media (max-width: 420px)')
     expect(globalStyles).not.toMatch(/#(?:123f32|c9ea98|163c30|1b604b|e2f1ce|f4f6f1)\b/i)
   })
+
+  it('aplica o tema verde às telas públicas e centraliza a busca de ativos', () => {
+    expect(globalStyles).toMatch(/\.page-shell[^}]*background: #111211/)
+    expect(globalStyles).toMatch(/\.auth-page[^}]*background: #111211/)
+    expect(globalStyles).toMatch(/\.form-card \.primary-button[^}]*background: #00a991/)
+    expect(globalStyles).toMatch(/\.private-layout \.asset-search-form > \.primary-button[^}]*align-self: center/)
+  })
 })
