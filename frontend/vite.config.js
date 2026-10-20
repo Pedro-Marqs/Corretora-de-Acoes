@@ -16,5 +16,17 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    coverage: {
+      provider: 'v8',
+      include: ['src/**'],
+      reporter: ['text', 'html', 'lcov'],
+      reportsDirectory: 'coverage',
+      thresholds: {
+        lines: 80,
+        branches: 80,
+        functions: 80,
+        statements: 80,
+      },
+    },
   },
 })

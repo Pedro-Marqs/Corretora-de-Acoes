@@ -82,6 +82,27 @@ class TwelveDataMarketDataAdapterTests {
     }
 
     @Test
+    void rejectsInvalidTickerIdentityAndExchangeFields() {
+        assertReason(() -> adapter(200, quote("AAPL", "Apple", "NASDAQ", "XNGS", "USD",
+                "314.58", 1787837400L), new AtomicInteger()).findQuote(null),
+                ExternalDataFailure.Reason.INVALID_INPUT);
+        assertReason(() -> adapter(200, quote("AAPL", "Apple", "NASDAQ", "XNGS", "USD",
+                "314.58", 1787837400L), new AtomicInteger()).findQuote("AAPL-4"),
+                ExternalDataFailure.Reason.INVALID_INPUT);
+        assertReason(() -> adapter(200, "{\"symbol\":null,\"name\":\"Apple\",\"exchange\":\"NASDAQ\",\"mic_code\":\"XNGS\",\"currency\":\"USD\",\"close\":\"1\",\"timestamp\":1}",
+                new AtomicInteger()).findQuote("AAPL"), ExternalDataFailure.Reason.INCOMPLETE_RESPONSE);
+        assertReason(() -> adapter(200, quote("MSFT", "Microsoft", "NASDAQ", "XNGS", "USD",
+                "314.58", 1787837400L), new AtomicInteger()).findQuote("AAPL"),
+                ExternalDataFailure.Reason.INCOMPLETE_RESPONSE);
+        assertReason(() -> adapter(200, "{\"symbol\":\"AAPL\",\"name\":\"Apple\",\"exchange\":null,\"mic_code\":\"XNGS\",\"currency\":\"USD\",\"close\":\"1\",\"timestamp\":1}",
+                new AtomicInteger()).findQuote("AAPL"), ExternalDataFailure.Reason.INCOMPLETE_RESPONSE);
+        assertReason(() -> adapter(200, "{\"symbol\":\"AAPL\",\"name\":\"Apple\",\"exchange\":\"NASDAQ\",\"mic_code\":null,\"currency\":\"USD\",\"close\":\"1\",\"timestamp\":1}",
+                new AtomicInteger()).findQuote("AAPL"), ExternalDataFailure.Reason.INCOMPLETE_RESPONSE);
+        assertReason(() -> adapter(200, "{\"status\":\"error\"}", new AtomicInteger()).findQuote("AAPL"),
+                ExternalDataFailure.Reason.INVALID_RESPONSE);
+    }
+
+    @Test
     void interpretsStructuredAuthenticationNotFoundRateLimitAndServerErrors() {
         assertStructured(401, ExternalDataFailure.Reason.AUTHENTICATION);
         assertStructured(404, ExternalDataFailure.Reason.NOT_FOUND);

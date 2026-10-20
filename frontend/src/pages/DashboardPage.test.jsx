@@ -52,6 +52,7 @@ describe('DashboardPage', () => {
   it('oferece todos os períodos e apresenta o crescimento patrimonial na ordem cronológica', async () => {
     setup(); await screen.findAllByText('PETR4')
     for (const label of ['4 semanas', '3 meses', '6 meses', '1 ano', '5 anos', 'Máximo']) expect(screen.getByRole('radio', { name: new RegExp(label) })).toBeInTheDocument()
+    getDashboard.mockResolvedValueOnce({ ...complete, period: '3M' })
     fireEvent.click(screen.getByRole('radio', { name: /3 meses/ }))
     await waitFor(() => expect(getDashboard).toHaveBeenLastCalledWith({ brokerAssociationId: '', period: '3M' }))
     const history = screen.getByRole('heading', { name: 'Crescimento patrimonial' }).closest('section')

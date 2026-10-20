@@ -72,6 +72,26 @@ class BrapiMarketDataAdapterTests {
     }
 
     @Test
+    void rejectsInvalidTickerAndInconsistentBrapiIdentityFields() {
+        assertReason(() -> adapter(200, valid("38.50", "Petrobras", "PETROBRAS PN", "BRL",
+                "2026-08-27T14:52:30Z"), new AtomicInteger()).findQuote(null),
+                ExternalDataFailure.Reason.INVALID_INPUT);
+        assertReason(() -> adapter(200, valid("38.50", "Petrobras", "PETROBRAS PN", "BRL",
+                "2026-08-27T14:52:30Z"), new AtomicInteger()).findQuote("PETR-4"),
+                ExternalDataFailure.Reason.INVALID_INPUT);
+        assertReason(() -> adapter(200, "{\"results\":[{\"requestedSymbol\":null,\"symbol\":\"PETR4\",\"data\":{}}]}",
+                new AtomicInteger()).findQuote("PETR4"), ExternalDataFailure.Reason.INCOMPLETE_RESPONSE);
+        assertReason(() -> adapter(200, "{\"results\":[{\"requestedSymbol\":\"PETR4\",\"symbol\":null,\"data\":{}}]}",
+                new AtomicInteger()).findQuote("PETR4"), ExternalDataFailure.Reason.INCOMPLETE_RESPONSE);
+        assertReason(() -> adapter(200, "{\"results\":[{\"requestedSymbol\":\"VALE3\",\"symbol\":\"VALE3\",\"data\":{}}]}",
+                new AtomicInteger()).findQuote("PETR4"), ExternalDataFailure.Reason.INCOMPLETE_RESPONSE);
+        assertReason(() -> adapter(200, "{\"results\":[{\"requestedSymbol\":\"PETR4\",\"symbol\":\"VALE3\",\"data\":{}}]}",
+                new AtomicInteger()).findQuote("PETR4"), ExternalDataFailure.Reason.INCOMPLETE_RESPONSE);
+        assertReason(() -> adapter(200, "{\"results\":[{\"requestedSymbol\":\"PETR4\",\"symbol\":\"PETR4\",\"data\":null}]}",
+                new AtomicInteger()).findQuote("PETR4"), ExternalDataFailure.Reason.INCOMPLETE_RESPONSE);
+    }
+
+    @Test
     void mapsHttpAndInvalidJsonFailuresWithoutRetry() {
         AtomicInteger calls = new AtomicInteger();
         assertReason(() -> adapter(429, "{}", calls).findQuote("PETR4"),
