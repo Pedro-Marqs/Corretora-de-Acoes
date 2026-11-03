@@ -9,19 +9,24 @@ import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import com.projeto.gestao.domain.model.Account;
 import com.projeto.gestao.domain.model.AccountBroker;
 import com.projeto.gestao.domain.model.Asset;
 import com.projeto.gestao.domain.model.Broker;
+import com.projeto.gestao.domain.model.CompanyRegistration;
 import com.projeto.gestao.domain.model.Currency;
 import com.projeto.gestao.domain.model.Market;
 import com.projeto.gestao.domain.model.MarketQuote;
 import com.projeto.gestao.domain.model.Movement;
 import com.projeto.gestao.domain.model.PatrimonialPoint;
 import com.projeto.gestao.domain.model.Position;
+import com.projeto.gestao.domain.model.RegulatoryRegistration;
 import com.projeto.gestao.domain.port.BrazilMarketDataPort;
+import com.projeto.gestao.domain.port.CompanyRegistryPort;
+import com.projeto.gestao.domain.port.RegulatoryRegistryPort;
 import com.projeto.gestao.repository.AccountBrokerRepository;
 import com.projeto.gestao.repository.AccountRepository;
 import com.projeto.gestao.repository.AssetRepository;
@@ -53,6 +58,8 @@ class TransferRollbackTests {
     @MockitoSpyBean private MovementRepository movements;
     @MockitoSpyBean private PatrimonialPointRepository points;
     @MockitoBean private BrazilMarketDataPort brazil;
+    @MockitoBean private CompanyRegistryPort companies;
+    @MockitoBean private RegulatoryRegistryPort regulatoryRegistry;
 
     private UUID accountId;
     private UUID assetId;
@@ -74,6 +81,12 @@ class TransferRollbackTests {
                 Market.BR, Currency.BRL, new BigDecimal("10.00"),
                 Instant.parse("2026-09-03T13:00:00Z"),
                 Instant.parse("2026-09-03T13:00:01Z"), "provider"));
+        when(companies.findByCnpj(org.mockito.ArgumentMatchers.anyString()))
+                .thenAnswer(invocation -> new CompanyRegistration(invocation.getArgument(0),
+                        "Corretora", "Corretora", "ATIVA", "01001000"));
+        when(regulatoryRegistry.findByCnpj(org.mockito.ArgumentMatchers.anyString()))
+                .thenAnswer(invocation -> new RegulatoryRegistration(invocation.getArgument(0),
+                        true, true, List.of()));
         purchases.purchase(accountId, assetId, originId, 4);
     }
 

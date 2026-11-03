@@ -259,3 +259,4 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 O trabalho deve ser coordenado pelo agente Orquestrador. Perfis especializados devem ter escopo específico, não devem editar simultaneamente os mesmos arquivos e o Orquestrador deve consolidar e validar toda entrega.
 
 - Ajuste corretivo pós-refinamento: a valorização exibida no resumo patrimonial agora usa o resultado não realizado oficial (valor atual das posições menos o total investido); cadastro e login adotam a paleta verde da aplicação; e o botão de pesquisa de ativos fica centralizado verticalmente com os campos em desktop.
+- A cobertura automatizada foi consolidada no change `aperfeicoar-experiencia-financeira`: frontend com Vitest/V8 e limiar de 80% para linhas, branches, funções e statements; backend com JaCoCo e limiar de 80% para linhas e branches. A validação final passou com 274 testes frontend e 336 testes backend.

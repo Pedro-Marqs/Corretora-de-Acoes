@@ -117,6 +117,30 @@ class CvmRegulatoryRegistryAdapterTests {
     }
 
     @Test
+    void rejectsMalformedRowsAndSupportsQuotedCsvFields() throws IOException {
+        CvmDatasetParser parser = new CvmDatasetParser();
+        String header = "TP_PARTIC;CNPJ;DENOM_SOCIAL;DENOM_COMERC;SIT;CD_CVM;CEP\n";
+        String quotedRow = "CORRETORAS;02332886000104;\"XP; INVESTIMENTOS \"\"SA\"\"\";XP;ATIVO;3247;01001000\n";
+
+        var participants = parser.parse(zip(header + quotedRow + "\n"));
+        assertThat(participants.get(XP_CNPJ)).singleElement()
+                .satisfies(row -> assertThat(row.legalName())
+                        .isEqualTo("XP; INVESTIMENTOS \"SA\""));
+
+        assertThatThrownBy(() -> parser.parse(zip(header
+                + "CORRETORAS;02332886000104;XP;XP;ATIVO;3247\n")))
+                .isInstanceOf(ExternalDataFailure.class);
+        assertThatThrownBy(() -> parser.parse(zip(header
+                + "CORRETORAS;02332886000104;;XP;ATIVO;3247;01001000\n")))
+                .isInstanceOf(ExternalDataFailure.class);
+        assertThatThrownBy(() -> parser.parse(zip(header)))
+                .isInstanceOf(ExternalDataFailure.class);
+        assertThatThrownBy(() -> parser.parse(zip(header
+                + "CORRETORAS;02332886000104;\"XP;XP;ATIVO;3247;01001000\n")))
+                .isInstanceOf(ExternalDataFailure.class);
+    }
+
+    @Test
     void acceptsRowsWithoutCvmCodeWhenDatasetContainsOtherValidParticipants() throws IOException {
         String csv = "TP_PARTIC;CNPJ;DENOM_SOCIAL;DENOM_COMERC;SIT;CD_CVM;CEP\n"
                 + "CONSULTORES;47960950000121;PARTICIPANTE SEM CODIGO;;ATIVO;;01001000\n"

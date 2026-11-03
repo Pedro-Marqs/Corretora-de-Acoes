@@ -1,6 +1,7 @@
 package com.projeto.gestao.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.OffsetDateTime;
 
@@ -20,6 +21,12 @@ class DashboardPeriodTests {
 
         assertThat(period.start(NOW, CREATED_AT)).isEqualTo(expectedStart);
         assertThat(period.value()).isEqualTo(value);
+    }
+
+    @org.junit.jupiter.api.Test
+    void rejectsUnsupportedPeriod() {
+        assertThatThrownBy(() -> DashboardPeriod.from("2W"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     private static java.util.stream.Stream<Arguments> periods() {
