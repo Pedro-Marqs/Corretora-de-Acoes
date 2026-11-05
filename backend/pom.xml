@@ -13,7 +13,7 @@
 
     <groupId>com.projeto</groupId>
     <artifactId>gestao-acoes-corretoras</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0.0</version>
     <name>Gestão de Ações e Corretoras</name>
     <description>Simulador acadêmico de investimentos em ações</description>
 

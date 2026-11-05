@@ -209,7 +209,7 @@ npm run lint
 npm run build
 ```
 
-Na última verificação deste projeto, o backend passou com **311 testes, 0 falhas, 0 erros e 10 testes ignorados**; o frontend passou em testes, lint e build.
+Os resultados podem variar conforme o ambiente e a infraestrutura disponível. A CI executa os testes do backend e do frontend, a verificação de cobertura e valida explicitamente a execução dos testes de migração PostgreSQL.
 
 ### Compose
 
