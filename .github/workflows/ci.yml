@@ -65,3 +65,20 @@ jobs:
 
       - name: Executar testes e verificar cobertura
         run: mvn --batch-mode clean verify
+
+      - name: Verificar testes PostgreSQL
+        shell: bash
+        run: |
+          report="target/surefire-reports/TEST-com.projeto.gestao.repository.PostgreSqlMigrationTests.xml"
+          if [[ ! -f "$report" ]]; then
+            echo "::error::PostgreSqlMigrationTests não gerou relatório; os testes PostgreSQL não foram executados."
+            exit 1
+          fi
+          if ! grep -Eq '<testsuite[^>]*tests="[1-9][0-9]*"' "$report" \
+              || ! grep -Eq '<testsuite[^>]*errors="0"' "$report" \
+              || ! grep -Eq '<testsuite[^>]*failures="0"' "$report" \
+              || ! grep -Eq '<testsuite[^>]*skipped="0"' "$report"; then
+            echo "::error::PostgreSqlMigrationTests não executou integralmente."
+            cat "$report"
+            exit 1
+          fi
