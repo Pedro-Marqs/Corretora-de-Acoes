@@ -52,6 +52,7 @@ import com.projeto.gestao.support.ExternalRegistryTestStubs;
 class PurchaseServiceIntegrationTests {
     private static final Instant NOW = Instant.parse("2026-09-03T13:00:00Z");
     @Autowired private PurchaseService service;
+    @Autowired private AssetCatalogService market;
     @Autowired private AccountRepository accounts;
     @Autowired private BrokerRepository brokers;
     @Autowired private AccountBrokerRepository associations;
@@ -221,6 +222,7 @@ class PurchaseServiceIntegrationTests {
         var asset = assets.save(new com.projeto.gestao.domain.model.Asset(
                 "BBDC4", "Bradesco", Market.BR, Currency.BRL));
         when(brazil.findQuote("BBDC4")).thenReturn(quote("BBDC4", Market.BR, Currency.BRL, "600.00"));
+        market.find("BBDC4", Market.BR);
         CountDownLatch start = new CountDownLatch(1);
         CompletableFuture<Boolean> first = buyAfter(start, asset.getId());
         CompletableFuture<Boolean> second = buyAfter(start, asset.getId());
