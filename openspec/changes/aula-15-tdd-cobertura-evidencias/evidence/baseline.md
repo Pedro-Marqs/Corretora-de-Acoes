@@ -10,6 +10,101 @@ Data da execução: 2026-11-05 (America/Sao_Paulo)
 - Nenhum arquivo de produção, teste existente, CI, branch ou commit foi alterado.
 - `backend/target`, `frontend/dist` e `frontend/coverage` foram somente artefatos gerados pelos comandos e permanecem ignorados pelo Git.
 
+## Evidencias da correcao dos bloqueantes da Aula 13
+
+Execucao complementar em 2026-11-05, na branch `feature/aulas-13-15`, com HEAD `8961b8066fcec81b1aeb64862a342cbc4bddb499`. As alteracoes locais existentes foram preservadas.
+
+Comandos executados:
+
+```text
+graphify update .
+openspec validate --strict aula-13-migrar-autenticacao-jwt
+openspec validate --strict aula-15-tdd-cobertura-evidencias
+mvn.cmd --batch-mode -q -Dtest=JwtAuthenticationTests,JwtSessionCompatibilityTests,JwtDefaultSessionCompatibilityTests,JwtBearerFinancialAuthorizationTests,JwtSecurityConfigurationTests test
+mvn.cmd --batch-mode clean verify
+git diff --check
+```
+
+Resultados reais:
+
+- `graphify update .`: concluido com sucesso; grafo atualizado incrementalmente.
+- As duas validacoes OpenSpec: validas em modo estrito.
+- Suite focada JWT: 16 testes aprovados.
+- `clean verify`: `BUILD SUCCESS`, 352 testes, 0 falhas, 0 erros e 7 ignorados.
+- Os 7 testes ignorados sao os testes PostgreSQL locais opt-in, que exigem `RUN_LOCAL_POSTGRES_TESTS=true`; os testes Testcontainers executaram no ambiente disponivel.
+- `git diff --check`: aprovado; os avisos apresentados referem-se somente a conversao de fim de linha do ambiente.
+
+Cobertura JaCoCo apos a correcao:
+
+| Metrica | Cobertura |
+|---|---:|
+| Instrucoes | 95,13% |
+| Ramos | 80,39% |
+| Linhas | 94,95% |
+| Metodos | 95,28% |
+| Classes | 98,94% |
+
+O gate existente de 80% para linhas e ramos permaneceu inalterado e foi aprovado. Os testes adicionados cobrem compatibilidade de sessao explicita e padrao desabilitado, ausencia de fallback para sessao quando o Bearer e invalido, claims obrigatorios e consistencia temporal, conta inativa, autorizacao horizontal em compra, CORS e CSRF. Nao foram registrados novos resultados Red artificiais: a correcao de producao foi aplicada antes da extensao destes testes; a evidencia Red/Green/Refactor previamente documentada permanece separada.
+
+## Evidencias da correcao atual de isolamento JWT e sessao JDBC
+
+Execucao separada em 2026-11-05, na branch `feature/aulas-13-15`, com HEAD `8961b8066fcec81b1aeb64862a342cbc4bddb499`. Esta secao nao substitui nem mistura o baseline historico, a primeira implementacao JWT ou a correcao anterior.
+
+### Red reproduzido antes da correcao de `SecurityConfig`
+
+Com `APP_JWT_SESSION_COMPATIBILITY=false`, o teste de regressao criou uma sessao persistida pelo `SessionRepository`, salvou um `SecurityContext` autenticado no atributo real do Spring Security, serializou o cookie `SESSION` com o `CookieSerializer` real e executou MockMvc atravessando os filtros da aplicacao. O resultado foi `401` esperado, mas `200` recebido; a consulta JDBC da sessao ocorreu e o endpoint privado respondeu com sucesso. Isso reproduziu o bloqueante de carregamento de sessao no modo JWT-only.
+
+Comando:
+
+```text
+mvn.cmd --batch-mode -Dtest=JwtDefaultSessionCompatibilityTests test
+```
+
+Resultado Red real: 2 testes, 1 falha, 0 erros; `preexistingJdbcSessionIsRejectedWhenJwtOnlyModeIsActive` recebeu `200` em vez de `401`.
+
+### Green apos a correcao
+
+`SecurityConfig` passou a selecionar `NullSecurityContextRepository` quando JWT esta habilitado e a compatibilidade de sessao esta desabilitada. `HttpSessionSecurityContextRepository` permanece reservado ao modo legado ou a compatibilidade explicitamente habilitada.
+
+O mesmo comando foi repetido e passou: 2 testes, 0 falhas, 0 erros. Tambem foram validados os cenarios de compatibilidade explicita, Bearer valido sobre cookie antigo, Bearer invalido sem fallback, ausencia de credenciais, autorizacao financeira e configuracao:
+
+```text
+mvn.cmd --batch-mode -Dtest=JwtAuthenticationTests,JwtSessionCompatibilityTests,JwtDefaultSessionCompatibilityTests,JwtBearerFinancialAuthorizationTests,JwtSecurityConfigurationTests,SecurityConfigTests test
+```
+
+Resultado: 29 testes, 0 falhas, 0 erros, BUILD SUCCESS.
+
+### Refactor e delimitacao da evidencia TDD
+
+A alteracao de producao foi mantida minima e condicional, sem nova cadeia de filtros ou mudanca financeira. O teste de adulteracao JWT tambem foi tornado deterministico, alterando o primeiro caractere da assinatura Base64URL; isso corrigiu uma flakiness de teste, pois alterar o ultimo caractere pode atingir apenas bits de preenchimento.
+
+Esta execucao documenta Red e Green reais da correcao de isolamento, mas nao reivindica um novo ciclo completo Red -> Green -> Refactor para a Aula 15: nao houve uma etapa Refactor independente demonstrada como ciclo separado. O ciclo completo anteriormente documentado permanece historicamente separado.
+
+### Validacao final desta execucao
+
+```text
+mvn.cmd --batch-mode clean verify
+graphify update .
+openspec validate --strict aula-13-migrar-autenticacao-jwt
+openspec validate --strict aula-14-rbac-administrativo-investidores
+openspec validate --strict aula-15-tdd-cobertura-evidencias
+git diff --check
+```
+
+Resultados reais: `clean verify` com `BUILD SUCCESS`, 354 testes, 0 falhas, 0 erros e 7 ignorados; o gate JaCoCo foi aprovado. `graphify update .` concluiu com 2.821 nós e 11.174 arestas. As três mudanças OpenSpec foram válidas em modo estrito. O `git diff --check` não encontrou erros de whitespace; os avisos de fim de linha são do ambiente.
+
+Cobertura JaCoCo desta execucao:
+
+| Metrica | Cobertos | Perdidos | Percentual |
+|---|---:|---:|---:|
+| Instrucoes | 13.398 | 685 | 95,14% |
+| Ramos | 877 | 213 | 80,46% |
+| Linhas | 2.558 | 136 | 94,95% |
+| Metodos | 687 | 34 | 95,28% |
+| Classes | 186 | 2 | 98,94% |
+
+Os 7 testes ignorados continuam sendo os testes PostgreSQL locais opt-in, condicionados a `RUN_LOCAL_POSTGRES_TESTS=true`; nao foram tratados como falhas ocultas. O resultado 354/7 desta execucao e distinto dos resultados historicos 343 e 352 registrados nas secoes anteriores.
+
 ## Comandos executados
 
 Graphify, antes da leitura focalizada dos arquivos:
@@ -24,10 +119,10 @@ Backend:
 mvn.cmd --batch-mode clean verify
 ```
 
-O Maven inicialmente não conseguiu usar o repositório local padrão (`C:\\m2\\repository`) nas tentativas com `mvnw.cmd` e com `-Dmaven.repo.local`. A execução efetiva usou o cache já existente no workspace:
+O Maven inicialmente não conseguiu usar o repositório local padrão nas tentativas com `mvnw.cmd` e com `-Dmaven.repo.local`. A execução efetiva usou o cache já existente no workspace, referenciado de forma relativa como `./.m2-repository`:
 
 ```text
-$env:MAVEN_ARGS='-Dmaven.repo.local=C:\\Users\\Arklok\\Desktop\\Faculdade\\Projetos\\corretora\\.m2-repository'
+$env:MAVEN_ARGS='-Dmaven.repo.local=./.m2-repository'
 mvn.cmd --batch-mode clean verify
 ```
 
@@ -132,4 +227,66 @@ Os percentuais abaixo vêm do contador `BRANCH` por classe no relatório JaCoCo,
 
 Outras classes com branches parcialmente cobertos e potencial de investigação: `TransferService` `19/24` (`79,17%`), `PurchaseTransactionService` `42/52` (`80,77%`), `DashboardService` `83/102` (`81,37%`) e `SaleTransactionService` `32/48` (`66,67%`). A seleção final dos testes deve ser confirmada após os designs das Aulas 13 e 14.
 
-Este arquivo registra somente o baseline. Os ciclos Red → Green → Refactor, mutação, novos mocks e implementação de JWT/RBAC ainda não foram iniciados.
+Este arquivo registra o baseline e as evidências do primeiro ciclo realizado durante a primeira etapa da Aula 13. Os ciclos de RBAC administrativo, fronteira financeira e mutação ainda não foram iniciados.
+
+## Evidências TDD da primeira etapa da Aula 13
+
+O ciclo abaixo cobre a validação de Bearer para investidor: token ausente, inválido, adulterado, expirado, com audience/principal incorretos, válido e associado a conta inativada.
+
+### Red
+
+Com a classe `JwtAuthenticationTests` criada, antes da implementação de produção, foi executado:
+
+```text
+mvn.cmd --batch-mode -Dtest=JwtAuthenticationTests test
+```
+
+Resultado real: falha de compilação, com 15 erros relacionados à ausência de `JwtTokenService` e das classes OAuth2 JWT. Nenhum teste passou nessa etapa.
+
+### Green
+
+Após a implementação mínima de emissão/validação e configuração externa, foi executado:
+
+```text
+mvn.cmd --batch-mode clean -Dtest=JwtAuthenticationTests test
+```
+
+Resultado real: 5 testes, 0 falhas, 0 erros e 0 ignorados. A chave usada nos testes é gerada em tempo de execução; nenhum segredo ou token foi gravado no repositório.
+
+### Refactor
+
+Foram registrados os seguintes ajustes guiados pelos testes:
+
+- conversor JWT concreto, evitando que um `Converter` genérico fosse interpretado como conversor MVC;
+- registro explícito das propriedades JWT e validação de segredo Base64 com pelo menos 256 bits;
+- rejeição de TTL nulo/negativo e cobertura dos caminhos de configuração segura;
+- testes de defaults e rejeição de segredo ausente, inválido ou curto;
+- limpeza do `SecurityContextHolder` entre testes para manter a independência na suíte completa;
+- preservação do modo de sessão existente quando JWT está desabilitado ou em compatibilidade.
+
+Validação dos testes focados após o refactor:
+
+```text
+mvn.cmd --batch-mode -Dtest=JwtAuthenticationTests,JwtSecurityConfigurationTests test
+```
+
+Resultado real: 7 testes, 0 falhas, 0 erros e 0 ignorados.
+
+## Cobertura após a primeira etapa da Aula 13
+
+Comando executado:
+
+```text
+mvn.cmd --batch-mode clean verify
+```
+
+Resultado real: `BUILD SUCCESS`; 343 testes, 0 falhas, 0 erros e 10 ignorados. Sete ignorados dependem de `RUN_LOCAL_POSTGRES_TESTS=true` e três dependem de Docker/Testcontainers para a validação PostgreSQL. Os limites JaCoCo existentes foram preservados e aprovados.
+
+| Métrica | Baseline | Após a etapa JWT |
+|---|---:|---:|
+| Instruções | 94,97% | 94,98% |
+| Ramos | 80,04% | 80,08% |
+| Linhas | 94,80% | 94,80% |
+| Métodos | 95,11% | 95,26% |
+
+O primeiro `verify` após a implementação ficou em 79,53% de ramos e falhou no gate; foram adicionados testes de configuração, sem alterar o limite, e o `verify` final passou.

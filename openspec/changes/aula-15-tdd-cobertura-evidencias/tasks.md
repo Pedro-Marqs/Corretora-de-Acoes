@@ -6,7 +6,7 @@
 
 ## 2. Ciclos TDD
 
-- [ ] 2.1 Executar ciclo Red → Green → Refactor para token ausente, inválido, adulterado ou expirado; registrar falha inicial, implementação mínima, refatoração e comandos.
+- [x] 2.1 Executar ciclo Red → Green → Refactor para token ausente, inválido, adulterado ou expirado; registrar falha inicial, implementação mínima, refatoração e comandos.
 - [ ] 2.2 Executar ciclo Red → Green → Refactor para separação de audience entre `Account`/`USER` e `AdminUser`/`ADMIN`, com bloqueio de acesso cruzado; registrar evidências de `401`/`403`.
 - [ ] 2.3 Executar ciclo Red → Green → Refactor para fronteira financeira ou monetária, como propriedade da conta, moeda/câmbio, saldo ou arredondamento; comprovar ausência de mutação indevida.
 
@@ -17,6 +17,6 @@
 
 ## 4. Relatórios finais
 
-- [ ] 4.1 Executar novamente os comandos de cobertura e comparar baseline/final por linhas, branches e limiares; verificar que nenhum gate foi reduzido ou artificialmente excluído.
+- [x] 4.1 Executar novamente os comandos de cobertura e comparar baseline/final por linhas, branches e limiares; verificar que nenhum gate foi reduzido ou artificialmente excluído.
 - [ ] 4.2 Consolidar evidências dos três ciclos, mutação, mocks, testes de fronteira, ignorados e riscos em Markdown seguro; verificar ausência de senhas, tokens, hashes e dados pessoais.
 - [ ] 4.3 Executar Graphify após os changes de código, revisar diff e submeter a trilha completa ao reviewer, tester e `openspec validate --strict`; verificar todos os gates antes de marcar tarefas.

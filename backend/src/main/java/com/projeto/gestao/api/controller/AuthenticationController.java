@@ -34,7 +34,9 @@ public class AuthenticationController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void login(@Valid @RequestBody LoginRequest request,
             HttpServletRequest servletRequest, HttpServletResponse servletResponse) {
-        authenticationService.login(request, servletRequest, servletResponse);
+        authenticationService.login(request, servletRequest, servletResponse)
+                .ifPresent(issued -> servletResponse.setHeader(
+                        HttpHeaders.AUTHORIZATION, "Bearer " + issued.tokenValue()));
     }
 
     @PostMapping("/logout")
