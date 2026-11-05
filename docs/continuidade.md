@@ -262,3 +262,10 @@ O trabalho deve ser coordenado pelo agente Orquestrador. Perfis especializados d
 - A cobertura automatizada foi consolidada no change `aperfeicoar-experiencia-financeira`: frontend com Vitest/V8 e limiar de 80% para linhas, branches, funções e statements; backend com JaCoCo e limiar de 80% para linhas e branches. A validação final passou com 274 testes frontend e 336 testes backend.
 - A falha intermitente de `PurchaseServiceIntegrationTests.serializesConcurrentPurchasesSharingTheAccountBalance` foi reproduzida no H2 e atribuída à cotação BBDC4 ainda não confirmada antes das threads: o `@Transactional` do cache confirma depois da liberação do lock JVM. O teste agora aquece a cotação via `AssetCatalogService` antes da barreira, preservando a lógica financeira e asserções de saldo, posição, movimentação e patrimônio.
 - A CI passou a fixar Testcontainers em `1.21.4`, compatível com mudanças recentes da API Docker, e verifica o relatório de `PostgreSqlMigrationTests`; ausência do relatório, falhas ou qualquer teste ignorado agora fazem o job falhar.
+
+## Planejamento das aulas 13, 14 e 15
+
+- Em 2026-11-05 foram criados, ainda sem implementação ou aprovação para execução, os changes `aula-13-migrar-autenticacao-jwt`, `aula-14-rbac-administrativo-investidores` e `aula-15-tdd-cobertura-evidencias`.
+- A ordem planejada é: JWT de investidores; identidade administrativa independente com RBAC e dashboard agregado; e, transversalmente, evidências TDD/cobertura antes, durante e depois dos dois changes de segurança.
+- O planejamento preserva a autorização horizontal por propriedade das contas, as regras financeiras, os limites JaCoCo atuais, o GitHub Actions e as branches existentes. Nenhuma implementação foi iniciada.
+- O escopo da Aula 14 foi refinado: nesta versão existirão somente o investidor `USER` em `Account` e o administrador `ADMIN` em `AdminUser`; operador administrativo somente leitura fica documentado como evolução futura, sem tasks.
