@@ -9,6 +9,11 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import javax.sql.DataSource;
+
+import org.h2.jdbcx.JdbcDataSource;
+import org.junit.jupiter.api.AfterEach;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -16,6 +21,14 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
+
+import liquibase.Contexts;
+import liquibase.LabelExpression;
+import liquibase.Liquibase;
+import liquibase.database.Database;
+import liquibase.database.DatabaseFactory;
+import liquibase.database.jvm.JdbcConnection;
+import liquibase.resource.ClassLoaderResourceAccessor;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -26,6 +39,15 @@ class SchemaMigrationTests {
 
     @Autowired
     private JdbcTemplate jdbc;
+
+    private DataSource rollbackDataSource;
+
+    @AfterEach
+    void closeRollbackDataSource() throws Exception {
+        if (rollbackDataSource instanceof JdbcDataSource h2) {
+            h2.getConnection().close();
+        }
+    }
 
     @Test
     void marketCacheMigrationBackfillsAndConstrainsCatalogMetadata() {
@@ -62,7 +84,37 @@ class SchemaMigrationTests {
         assertThat(tables).contains(
                 "account", "broker", "account_broker", "asset", "quote",
                 "exchange_rate", "position", "movement", "patrimonial_point",
-                "spring_session", "spring_session_attributes", "databasechangelog", "databasechangeloglock");
+                "refresh_token", "spring_session", "spring_session_attributes",
+                "databasechangelog", "databasechangeloglock");
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM databasechangelog WHERE id = 'v11-refresh-token'", Integer.class))
+                .isEqualTo(1);
+    }
+
+    @Test
+    void refreshTokenMigrationRollsBackOnFreshH2Database() throws Exception {
+        JdbcDataSource dataSource = new JdbcDataSource();
+        dataSource.setURL("jdbc:h2:mem:liquibase-rollback-" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1");
+        rollbackDataSource = dataSource;
+
+        try (var connection = dataSource.getConnection()) {
+            Database database = DatabaseFactory.getInstance()
+                    .findCorrectDatabaseImplementation(new JdbcConnection(connection));
+            Liquibase liquibase = new Liquibase(
+                    "db/changelog/db.changelog-master.xml",
+                    new ClassLoaderResourceAccessor(), database);
+            liquibase.update(new Contexts(), new LabelExpression());
+            assertThat(tableExists(connection, "REFRESH_TOKEN")).isTrue();
+
+            liquibase.rollback(1, new Contexts(), new LabelExpression());
+            assertThat(tableExists(connection, "REFRESH_TOKEN")).isFalse();
+        }
+    }
+
+    private boolean tableExists(java.sql.Connection connection, String tableName) throws Exception {
+        try (var result = connection.getMetaData().getTables(null, "PUBLIC", tableName, null)) {
+            return result.next();
+        }
     }
 
     @Test

@@ -233,7 +233,8 @@ class JwtAuthenticationTests {
                                 "email", EMAIL, "password", PASSWORD))))
                 .andExpect(status().isNoContent())
                 .andExpect(header().string("Authorization", org.hamcrest.Matchers.startsWith("Bearer ")))
-                .andExpect(header().doesNotExist("Set-Cookie"));
+                .andExpect(header().string("Set-Cookie",
+                        org.hamcrest.Matchers.containsString("REFRESH_TOKEN=")));
     }
 
     private String token(Instant issuedAt, Instant expiresAt, String audience,

@@ -14,4 +14,5 @@
     <include file="db/changelog/changes/008-movement-sale-financial-inputs.xml"/>
     <include file="db/changelog/changes/009-withdrawal-and-operation-inputs.xml"/>
     <include file="db/changelog/changes/010-withdrawal-movement-constraint.xml"/>
+    <include file="db/changelog/changes/011-refresh-token.xml"/>
 </databaseChangeLog>

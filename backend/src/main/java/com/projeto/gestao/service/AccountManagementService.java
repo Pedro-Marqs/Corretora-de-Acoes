@@ -20,6 +20,7 @@ import com.projeto.gestao.repository.AccountRepository;
 import com.projeto.gestao.repository.SessionRevocationRepository;
 
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,16 +30,19 @@ public class AccountManagementService {
     private final AccountRepository accountRepository;
     private final PasswordEncoder passwordEncoder;
     private final SessionRevocationRepository sessionRevocationRepository;
+    private final ObjectProvider<RefreshTokenService> refreshTokenServiceProvider;
     private final Clock clock;
 
     public AccountManagementService(
             AccountRepository accountRepository,
             PasswordEncoder passwordEncoder,
             SessionRevocationRepository sessionRevocationRepository,
+            ObjectProvider<RefreshTokenService> refreshTokenServiceProvider,
             Clock clock) {
         this.accountRepository = accountRepository;
         this.passwordEncoder = passwordEncoder;
         this.sessionRevocationRepository = sessionRevocationRepository;
+        this.refreshTokenServiceProvider = refreshTokenServiceProvider;
         this.clock = clock;
     }
 
@@ -136,6 +140,10 @@ public class AccountManagementService {
 
     private void revokeAllSessions(UUID accountId) {
         sessionRevocationRepository.revokeAll(accountId);
+        RefreshTokenService refreshTokenService = refreshTokenServiceProvider.getIfAvailable();
+        if (refreshTokenService != null) {
+            refreshTokenService.revokeAllForAccount(accountId);
+        }
     }
 
     private String maskCpf(String cpf) {
