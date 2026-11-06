@@ -1,4 +1,12 @@
-import { API_BASE_URL, ApiError, getCsrfToken, groupFieldErrors, parseJson } from './http.js'
+import { API_BASE_URL, ApiError, getCsrfToken, groupFieldErrors, parseJson, readBearerToken } from './http.js'
+import {
+  beginSession,
+  clearAccessToken,
+  endSession,
+  getAccessToken,
+  getSessionGeneration,
+  setAccessTokenForGeneration,
+} from './auth-token.js'
 
 export class AuthApiError extends ApiError {
   constructor(message, fieldErrors = {}, status) {
@@ -18,18 +26,73 @@ async function authenticatedPost(path, body) {
   if (!response.ok) {
     throw new AuthApiError(responseBody?.message ?? 'Não foi possível concluir a solicitação. Tente novamente.', groupFieldErrors(responseBody?.fieldErrors), response.status)
   }
+  return response
 }
 
 export async function login(credentials) {
+  const expectedGeneration = beginSession()
   try {
-    await authenticatedPost('/api/auth/login', credentials)
+    const response = await authenticatedPost('/api/auth/login', credentials)
+    const token = readBearerToken(response, AuthApiError)
+    if (!setAccessTokenForGeneration(token, expectedGeneration)) throw staleSessionError()
+    return token
   } catch (error) {
     if (error instanceof AuthApiError) throw error
     throw new AuthApiError('Não foi possível conectar ao servidor. Verifique se a aplicação está em execução.')
   }
 }
 
+let refreshInFlight = null
+
+function staleSessionError() {
+  return new AuthApiError('A sessão de autenticação foi alterada.', {}, 401)
+}
+
+function isDefinitiveRefreshFailure(error) {
+  return error?.status === 401 || error?.status === 403 || error?.code === 'AUTH_CONTRACT_ERROR'
+}
+
+async function refreshAccessTokenOnce(previousToken, expectedGeneration) {
+  try {
+    const response = await authenticatedPost('/api/auth/refresh')
+    const token = readBearerToken(response, AuthApiError)
+    if (getSessionGeneration() !== expectedGeneration
+      || !setAccessTokenForGeneration(token, expectedGeneration)) throw staleSessionError()
+    return token
+  } catch (error) {
+    if (isDefinitiveRefreshFailure(error)) clearAccessToken(previousToken, expectedGeneration)
+    throw error
+  }
+}
+
+function startRefresh(expectedGeneration, previousToken) {
+  if (refreshInFlight?.generation === expectedGeneration) return refreshInFlight.promise
+
+  const promise = refreshAccessTokenOnce(previousToken, expectedGeneration)
+  const trackedPromise = promise.finally(() => {
+    if (refreshInFlight?.promise === trackedPromise) refreshInFlight = null
+  })
+  refreshInFlight = { generation: expectedGeneration, promise: trackedPromise }
+  return trackedPromise
+}
+
+export function refreshAccessToken(failedToken) {
+  const currentToken = getAccessToken()
+  if (failedToken !== undefined) {
+    if (!currentToken) return Promise.reject(staleSessionError())
+    if (failedToken !== currentToken) return Promise.resolve(currentToken)
+  }
+  if (!currentToken) return Promise.reject(staleSessionError())
+
+  return startRefresh(getSessionGeneration(), currentToken)
+}
+
+export function restoreSession() {
+  return startRefresh(getSessionGeneration(), getAccessToken())
+}
+
 export async function logout() {
+  endSession()
   try {
     await authenticatedPost('/api/auth/logout')
   } catch (error) {
