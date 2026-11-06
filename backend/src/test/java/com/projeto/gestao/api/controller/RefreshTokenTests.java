@@ -19,12 +19,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.projeto.gestao.domain.model.Account;
 import com.projeto.gestao.repository.AccountRepository;
+import com.projeto.gestao.repository.RefreshTokenRepository;
 import com.projeto.gestao.security.AccountPrincipal;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +40,7 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -45,13 +48,11 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Import(RefreshTokenTests.EndpointConfiguration.class)
-@Transactional
 class RefreshTokenTests {
     private static final String ISSUER = "https://corretora.test/refresh";
     private static final String AUDIENCE = "corretora-investors";
@@ -65,6 +66,7 @@ class RefreshTokenTests {
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private JdbcTemplate jdbcTemplate;
     @PersistenceContext private EntityManager entityManager;
+    @MockitoSpyBean private RefreshTokenRepository refreshTokenRepository;
 
     private UUID accountId;
 
@@ -85,6 +87,16 @@ class RefreshTokenTests {
         accountRepository.saveAndFlush(Account.create(accountId, "Investidor Refresh", "52998224725",
                 EMAIL, passwordEncoder.encode(PASSWORD), new BigDecimal("10000.00"),
                 OffsetDateTime.parse("2026-01-01T10:00:00-03:00")));
+    }
+
+    @AfterEach
+    void removeAccount() {
+        jdbcTemplate.update("DELETE FROM SPRING_SESSION_ATTRIBUTES WHERE SESSION_PRIMARY_ID IN "
+                + "(SELECT PRIMARY_ID FROM SPRING_SESSION WHERE PRINCIPAL_NAME = ?)", accountId.toString());
+        jdbcTemplate.update("DELETE FROM SPRING_SESSION WHERE PRINCIPAL_NAME = ?", accountId.toString());
+        if (accountRepository.existsById(accountId)) {
+            accountRepository.deleteById(accountId);
+        }
     }
 
     @Test
@@ -140,6 +152,40 @@ class RefreshTokenTests {
         entityManager.clear();
 
         refresh(login.refreshCookie()).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void rotationFailureRollsBackConsumedTokenAndSuccessor() throws Exception {
+        LoginCredentials login = login();
+        String originalHash = jdbcTemplate.queryForObject(
+                "SELECT token_hash FROM refresh_token WHERE account_id = ? AND revoked_at IS NULL "
+                        + "AND replaced_by_id IS NULL",
+                String.class, accountId);
+        String originalFamilyId = jdbcTemplate.queryForObject(
+                "SELECT CAST(family_id AS VARCHAR) FROM refresh_token WHERE account_id = ? AND token_hash = ?",
+                String.class, accountId, originalHash);
+        org.mockito.Mockito.doThrow(new IllegalStateException("falha simulada no flush da rotação"))
+                .when(refreshTokenRepository).flush();
+
+        refresh(login.refreshCookie()).andExpect(status().isInternalServerError());
+        entityManager.clear();
+
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM refresh_token WHERE account_id = ?",
+                Integer.class, accountId)).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM refresh_token WHERE account_id = ? AND token_hash = ? "
+                        + "AND revoked_at IS NULL AND replaced_by_id IS NULL",
+                Integer.class, accountId, originalHash)).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT token_hash FROM refresh_token WHERE account_id = ? AND token_hash = ?",
+                String.class, accountId, originalHash)).isEqualTo(originalHash);
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT CAST(family_id AS VARCHAR) FROM refresh_token WHERE account_id = ? AND token_hash = ?",
+                String.class, accountId, originalHash)).isEqualTo(originalFamilyId);
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM refresh_token WHERE account_id = ? AND replaced_by_id IS NOT NULL",
+                Integer.class, accountId)).isZero();
     }
 
     @Test
