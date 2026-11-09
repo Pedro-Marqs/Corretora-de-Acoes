@@ -6,6 +6,7 @@ O projeto possui somente a identidade financeira `Account`, adequada para invest
 
 - Criar a identidade administrativa independente `AdminUser`, sem saldo, carteira, posição ou relação financeira com `Account`.
 - Criar login administrativo JWT com audience, tipo de principal e chave/configuração separados dos tokens de investidores.
+- Formalizar claims `iss`, `aud`, `sub`, `iat`, `exp`, `jti`, `principal_type=ADMIN` e `role=ADMIN`, além das variáveis e TTLs administrativos.
 - Definir somente duas identidades funcionais: investidor `USER` em `Account` e administrador `ADMIN` em `AdminUser`.
 - Impedir cadastro público e definir bootstrap seguro do primeiro administrador.
 - Proteger endpoints administrativos com autorização em nível de método para `ADMIN`.
@@ -33,3 +34,15 @@ Um operador administrativo somente leitura poderá ser introduzido em change pos
 ## Impact
 
 Afeta persistência e migrações administrativas, configuração JWT, cadeia de segurança, method security, endpoints e serviços administrativos, consultas agregadas de movimentos e contas, frontend separado do painel e testes de isolamento. Depende do contrato JWT definido em `aula-13-migrar-autenticacao-jwt` e não altera endpoints financeiros existentes.
+
+## Contratos propostos para validação antes da Etapa 1
+
+- Claims administrativas: `iss`, `aud`, `sub`, `iat`, `exp`, `jti`, `principal_type=ADMIN` e `role=ADMIN`, sem claims adicionais.
+- Configuração: `APP_ADMIN_JWT_ENABLED=false` por padrão, `APP_ADMIN_JWT_ISSUER=corretora-admin`, `APP_ADMIN_JWT_AUDIENCE=corretora-admin-api`, `APP_ADMIN_JWT_SECRET` externo obrigatório quando habilitado, `APP_ADMIN_JWT_ACCESS_TOKEN_TTL=PT10M` e `APP_ADMIN_JWT_REFRESH_TOKEN_TTL=PT8H`; configuração ausente ou insegura deve falhar explicitamente.
+- Login administrativo por e-mail normalizado de forma determinística (trim e minúsculas com locale neutro), com unicidade case-insensitive aplicada ao valor normalizado.
+- Endpoints separados: `POST /api/admin/auth/login`, `/refresh` e `/logout`.
+- Cookie `ADMIN_REFRESH_TOKEN` com `HttpOnly`, `SameSite=Lax`, `Path=/api/admin/auth`, `Secure` conforme o ambiente e proteção CSRF pelo `XSRF-TOKEN` existente.
+- Bootstrap somente por comando CLI explícito e idempotente, com leitura segura da senha; `APP_ADMIN_BOOTSTRAP_PASSWORD` fica reservado à automação de provisionamento e nunca deve ser exposto ou persistido.
+- Desativação do último administrador ativo rejeitada transacionalmente com `409`; a Aula 14 não cria cadastro público de administradores.
+
+O contrato detalhado de HTTP, persistência, auditoria e dashboard está em `design.md` e nas duas specs deste change. As decisões acima fecham os contratos para a implementação; as tasks permanecem pendentes até haver código e evidências.

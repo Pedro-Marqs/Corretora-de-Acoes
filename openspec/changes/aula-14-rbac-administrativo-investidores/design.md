@@ -25,7 +25,7 @@
 - **Duas identidades funcionais:** `Account` representa o investidor `USER` e `AdminUser` representa o administrador `ADMIN`. Não haverá operador administrativo somente leitura nesta versão; essa evolução será planejada separadamente. O papel nunca substitui audience nem tipo de principal.
 - **Audience e chaves separadas:** tokens de investidor usam audience de investidor e tokens administrativos usam audience administrativa; configurações e secrets podem ser distintos. Um token válido em uma área não é válido na outra.
 - **Autorização em duas camadas:** filtro JWT valida identidade/audience; `@PreAuthorize` ou equivalente valida papel no método; serviços mantêm regras de domínio e não confiam em campos do request.
-- **Bootstrap único controlado:** um comando/profile de inicialização aceita credenciais por variáveis externas, cria somente se não houver `AdminUser` e não fica exposto por HTTP. Depois do primeiro bootstrap, a capacidade é desabilitada.
+- **Bootstrap único controlado:** um comando CLI explícito e idempotente lê o e-mail normalizado e a senha por entrada segura, cria somente se não houver `AdminUser` e não fica exposto por HTTP. `APP_ADMIN_BOOTSTRAP_PASSWORD` fica restrito à automação de provisionamento, sem exposição ou persistência indevida.
 - **Dashboard por projeções agregadas:** consultas SQL/JPA retornarão contagens, somas por moeda, séries e ranking, sem carregar entidades de carteira individual. Períodos usarão o relógio de Brasília e limites explícitos.
 - **Auditoria transacional:** ativação/desativação e seu evento de auditoria serão confirmados no mesmo fluxo transacional; falha em qualquer parte não deixa estado administrativo divergente.
 
@@ -45,3 +45,53 @@
 4. Criar serviços e endpoints de gestão e dashboard com projeções agregadas.
 5. Criar shell/rotas administrativas no frontend sem compartilhar estado financeiro de investidor.
 6. Executar regressões, revisar Graphify e validar reviewer/tester antes de liberar a área administrativa.
+
+## Contratos técnicos fechados para implementação
+
+### Claims, propriedades e status HTTP
+
+O token administrativo conterá somente `iss`, `aud`, `sub`, `iat`, `exp`, `jti`, `principal_type=ADMIN` e `role=ADMIN`. O `sub` será o UUID de `AdminUser`; `aud` deverá conter exatamente `corretora-admin-api`; `iss` deverá ser `corretora-admin`; `iat` não poderá estar no futuro; `exp` deverá ser posterior a `iat`; e `jti` deverá ser UUID. Claims adicionais serão rejeitadas.
+
+As propriedades administrativas serão `APP_ADMIN_JWT_ENABLED=false` por padrão, `APP_ADMIN_JWT_ISSUER=corretora-admin`, `APP_ADMIN_JWT_AUDIENCE=corretora-admin-api`, `APP_ADMIN_JWT_SECRET`, `APP_ADMIN_JWT_ACCESS_TOKEN_TTL=PT10M` e `APP_ADMIN_JWT_REFRESH_TOKEN_TTL=PT8H`. Quando habilitado, o secret externo será obrigatório, Base64 com pelo menos 32 bytes decodificados; configuração ausente, vazia ou insegura deverá falhar explicitamente. As propriedades da Aula 13 permanecem inalteradas.
+
+`POST /api/admin/auth/login` recebe JSON com `email` e `password`; o e-mail é normalizado por trim e minúsculas com locale neutro antes da busca e da unicidade. Com credenciais válidas retorna `204`, `Authorization: Bearer` e `Set-Cookie: ADMIN_REFRESH_TOKEN`. JSON inválido retorna `400`; credenciais, estado ou contrato de autenticação inválidos retornam `401`; CSRF ausente ou inválido retorna `403`.
+
+`POST /api/admin/auth/refresh` não recebe body, exige cookie de refresh e CSRF, retorna `204` com novo Bearer e novo cookie. Cookie ausente, inválido, expirado, revogado ou reutilizado retorna `401`; CSRF inválido retorna `403`. `POST /api/admin/auth/logout` exige CSRF, revoga o refresh apresentado quando houver, expira o cookie e retorna `204`; ausência de refresh não revela estado e continua idempotente.
+
+Falhas de validação de query, paginação, período ou JSON retornam `400`. Ausência de autenticação retorna `401`; identidade autenticada sem a autoridade do método retorna `403`; conflito de ciclo de vida, como desativação do último administrador, retorna `409`.
+
+### Cookies e compatibilidade
+
+`ADMIN_REFRESH_TOKEN` será `HttpOnly`, `SameSite=Lax`, `Path=/api/admin/auth`, `Secure` conforme `app.security.session-cookie-secure` e max-age igual ao TTL administrativo. `XSRF-TOKEN` continuará legível pelo frontend, `Path=/`, `SameSite=Lax`, `Secure` conforme o ambiente, usando `X-XSRF-TOKEN`.
+
+O access token administrativo permanecerá somente em memória. Consultas Bearer-only não enviarão cookies. Login, refresh e logout enviarão cookies e exigirão CSRF. A sessão JDBC legada, quando `APP_JWT_SESSION_COMPATIBILITY=true`, permanece restrita à área financeira; nenhum `SESSION` será aceito para autenticar `/api/admin/**`.
+
+### Persistência e integridade
+
+As tabelas administrativas serão criadas em migration própria, sem `ALTER` ou foreign key para tabelas financeiras além de uma referência opcional de auditoria ao identificador da conta-alvo. `admin_user` terá UUID primário, e-mail normalizado único, hash BCrypt, estado, papel fixo `ADMIN`, timestamps de criação/inativação e índice por estado. `admin_refresh_token` terá hash único, administrador, família, criação, expiração, revogação, substituição e índices por administrador/família. `admin_audit_event` terá ator nullable, papel, ação, alvo nullable, instante, resultado e correlation id.
+
+Constraints impedirão papel diferente de `ADMIN`, estados desconhecidos, hash vazio e token bruto persistido. A operação que inativaria o último `AdminUser` ativo será executada com bloqueio transacional e rejeitada com `409`.
+
+### Bootstrap
+
+O bootstrap será executado somente por comando CLI explícito e idempotente, lendo o e-mail normalizado e a senha por entrada segura, sem endpoint público. Com nenhum administrador, cria um único usuário ativo; se já houver qualquer administrador, não cria outro e termina sem alterar credenciais. `APP_ADMIN_BOOTSTRAP_PASSWORD` poderá ser usado somente como alternativa de provisionamento automatizado; não poderá ser exposto, persistido ou incluído em mensagens, exceções ou auditoria. A ausência de credencial obrigatória deverá falhar sem criar usuário.
+
+### Separação de segurança
+
+O resolver de autenticação selecionará explicitamente a cadeia administrativa para `/api/admin/**` e a cadeia de investidor para endpoints financeiros. Cada cadeia terá decoder, converter, principal, issuer, audience e secret próprios. O principal administrativo nunca será convertido em `AccountPrincipal`; o principal de investidor nunca será aceito como `AdminPrincipal`. Incompatibilidade de principal será rejeitada pela segurança e não poderá resultar em `500` por erro de conversão.
+
+Um token ausente, adulterado, expirado, com assinatura inválida ou incompatível com a cadeia selecionada resulta em `401`. Um token reconhecido na cadeia correta, mas sem a autoridade exigida pelo método, resulta em `403`. O acesso cruzado entre `ADMIN` e `USER` será rejeitado antes de consultar controllers ou serviços da outra área.
+
+### Contrato administrativo de investidores
+
+`GET /api/admin/investors` aceita `status=ACTIVE|INACTIVE|ALL`, busca limitada, datas de criação/inativação, `page` zero-based, `size` de 1 a 100 e ordenação apenas por campos permitidos. O DTO contém `id`, `name`, `emailMasked`, `cpfMasked`, `status`, `createdAt` e `inactivatedAt`. Não contém senha, hash, saldo, posição, patrimônio, corretora ou histórico.
+
+`PATCH /api/admin/investors/{accountId}/status` aceita somente `{ "status": "ACTIVE"|"INACTIVE" }`. Retorna `204` em sucesso, `400` para JSON/parâmetros inválidos, `401` sem autenticação, `403` sem `ADMIN`, `404` para conta inexistente e `409` para conflito de ciclo de vida. Desativação revoga os refresh tokens da conta e impede novos usos do access token pelo validador de conta ativa, sem apagar dados históricos.
+
+### Dashboard administrativo
+
+`GET /api/admin/dashboard?period=4W|3M|6M|1Y|5Y|MAX&limit=1..50` exige `ADMIN`. `period` é obrigatório, `limit` tem default 10 e o período é calculado em `America/Sao_Paulo`. Para `MAX`, a consulta cobre do primeiro dado relevante disponível até o fim do período atual, usando agregação diária e consultas limitadas para não carregar movimentos individuais desnecessariamente. O retorno contém exatamente estas oito métricas escalares: `totalAccounts`, `activeAccounts`, `inactiveAccounts`, `newAccounts`, `purchaseCount`, `saleCount`, `purchasedShares` e `soldShares`.
+
+O mesmo retorno contém volumes de compra/venda separados por `BRL` e `USD`, sem soma direta entre moedas; equivalente em BRL somente aparece com taxa `USD/BRL` válida e inclui valor da taxa e instante da cotação. Sem taxa válida, o equivalente é nulo e o estado é `UNAVAILABLE`, enquanto os valores nativos permanecem disponíveis.
+
+As séries são diárias e contêm apenas data, novas contas, compras e vendas. O ranking retorna no máximo `limit` ativos, ordenado por quantidade negociada decrescente, com desempate por ticker e mercado. Nenhuma projeção retorna identificador de investidor, saldo, patrimônio, posição, CPF completo ou e-mail completo.
