@@ -75,12 +75,13 @@ describe('deleteAccount', () => {
     await expect(deleteAccount(payload)).resolves.toBeUndefined()
 
     expect(fetch).toHaveBeenNthCalledWith(1, '/api/csrf', { credentials: 'include' })
-    expect(fetch).toHaveBeenNthCalledWith(2, '/api/accounts/me', {
+    expect(fetch).toHaveBeenNthCalledWith(2, '/api/accounts/me', expect.objectContaining({
       method: 'DELETE',
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': 'csrf-delete' },
+      headers: expect.any(Headers),
       body: JSON.stringify(payload),
-    })
+    }))
+    expect(fetch.mock.calls[1][1].headers.get('X-XSRF-TOKEN')).toBe('csrf-delete')
   })
 
   it('converte erro funcional com todos os erros de campo e status', async () => {

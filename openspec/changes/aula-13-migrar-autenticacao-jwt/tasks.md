@@ -14,10 +14,10 @@
 ## 3. Frontend e proteção de transporte
 
 - [x] 3.1 Migrar o cliente HTTP para access token em memória, refresh cookie HttpOnly e restauração após recarregamento; verificar ausência de localStorage/sessionStorage e uma única tentativa de refresh.
-- [ ] 3.2 Ajustar CSRF, CORS, cookies e tratamento de `401`/`403` sem expor tokens ou detalhes técnicos; verificar preflight, mutação sem CSRF, logout e origem não permitida.
+- [x] 3.2 Ajustar CSRF, CORS, cookies e tratamento de `401`/`403` sem expor tokens ou detalhes técnicos; verificar preflight, mutação sem CSRF, logout e origem não permitida.
 
 ## 4. Regressão e entrega
 
 - [ ] 4.1 Atualizar testes de controllers, serviços e frontend que dependem de `SESSION`, mantendo testes de propriedade, compras, vendas, transferências, dashboard e histórico; verificar suíte focada sem alterar regras financeiras.
 - [x] 4.2 Executar revisão Graphify dos consumidores de autenticação e `graphify update .` após as alterações de código; verificar que o grafo e o diff refletem somente o change.
-- [ ] 4.3 Executar validação focalizada e registrar comandos, resultados, riscos restantes e decisão de corte; deixar a validação final para reviewer, tester e OpenSpec.
+- [x] 4.3 Executar validação focalizada e registrar comandos, resultados, riscos restantes e decisão de corte; deixar a validação final para reviewer, tester e OpenSpec.

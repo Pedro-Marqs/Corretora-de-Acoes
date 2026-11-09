@@ -9,7 +9,7 @@ export class AccountApiError extends ApiError {
 
 export async function getCurrentAccount() {
   try {
-    const response = await authenticatedFetch(`${API_BASE_URL}/api/accounts/me`)
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/accounts/me`, { credentials: 'include' })
     const body = await parseJson(response)
     if (!response.ok) {
       const error = new AccountApiError(body?.message ?? 'Não foi possível consultar a conta.')
@@ -49,7 +49,7 @@ export async function createAccount(account) {
 async function changeCredential(path, payload) {
   try {
     const token = await getCsrfToken(AccountApiError, 'Não foi possível iniciar a alteração. Tente novamente.')
-    const response = await fetch(`${API_BASE_URL}${path}`, { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': token }, body: JSON.stringify(payload) })
+    const response = await authenticatedFetch(`${API_BASE_URL}${path}`, { method: 'PATCH', credentials: 'include', retryOnUnauthorized: false, headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': token }, body: JSON.stringify(payload) })
     const body = await parseJson(response)
     if (!response.ok) throw new AccountApiError(body?.message ?? 'Não foi possível alterar os dados.', groupFieldErrors(body?.fieldErrors), response.status)
   } catch (error) {
@@ -63,9 +63,10 @@ export function changePassword(payload) { return changeCredential('/api/accounts
 export async function deleteAccount(payload) {
   try {
     const token = await getCsrfToken(AccountApiError, 'Não foi possível iniciar a exclusão. Tente novamente.')
-    const response = await fetch(`${API_BASE_URL}/api/accounts/me`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/accounts/me`, {
       method: 'DELETE',
       credentials: 'include',
+      retryOnUnauthorized: false,
       headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': token },
       body: JSON.stringify(payload),
     })

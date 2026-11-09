@@ -1,4 +1,5 @@
 import { API_BASE_URL, ApiError, getCsrfToken, groupFieldErrors, parseJson, readBearerToken } from './http.js'
+import { registerRefreshAccessToken } from './auth-refresh.js'
 import {
   beginSession,
   clearAccessToken,
@@ -91,6 +92,8 @@ export function refreshAccessToken(failedToken) {
 
   return startRefresh(getSessionGeneration(), currentToken)
 }
+
+registerRefreshAccessToken(refreshAccessToken)
 
 export function restoreSession() {
   return startRefresh(getSessionGeneration(), getAccessToken())
