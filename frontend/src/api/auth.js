@@ -16,6 +16,7 @@ export class AuthApiError extends ApiError {
 }
 
 async function authenticatedPost(path, body) {
+  try {
   const token = await getCsrfToken(AuthApiError, 'Não foi possível iniciar a solicitação. Tente novamente.')
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: 'POST', credentials: 'include',
@@ -26,7 +27,11 @@ async function authenticatedPost(path, body) {
   if (!response.ok) {
     throw new AuthApiError(responseBody?.message ?? 'Não foi possível concluir a solicitação. Tente novamente.', groupFieldErrors(responseBody?.fieldErrors), response.status)
   }
-  return response
+    return response
+  } catch (error) {
+    if (error instanceof AuthApiError) throw error
+    throw new AuthApiError('N\u00e3o foi poss\u00edvel conectar ao servidor. Verifique se a aplica\u00e7\u00e3o est\u00e1 em execu\u00e7\u00e3o.')
+  }
 }
 
 export async function login(credentials) {

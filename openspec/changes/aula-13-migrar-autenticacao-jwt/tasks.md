@@ -13,7 +13,7 @@
 
 ## 3. Frontend e proteção de transporte
 
-- [ ] 3.1 Migrar o cliente HTTP para access token em memória, refresh cookie HttpOnly e restauração após recarregamento; verificar ausência de localStorage/sessionStorage e uma única tentativa de refresh.
+- [x] 3.1 Migrar o cliente HTTP para access token em memória, refresh cookie HttpOnly e restauração após recarregamento; verificar ausência de localStorage/sessionStorage e uma única tentativa de refresh.
 - [ ] 3.2 Ajustar CSRF, CORS, cookies e tratamento de `401`/`403` sem expor tokens ou detalhes técnicos; verificar preflight, mutação sem CSRF, logout e origem não permitida.
 
 ## 4. Regressão e entrega

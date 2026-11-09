@@ -8,6 +8,7 @@ import { searchAsset } from './api/market.js'
 import { getWalletPositions } from './api/wallet.js'
 
 vi.mock('./api/accounts.js', async (load) => ({ ...await load(), getCurrentAccount: vi.fn() }))
+vi.mock('./api/auth.js', async (load) => ({ ...await load(), restoreSession: vi.fn().mockResolvedValue('access-1') }))
 vi.mock('./api/brokers.js', async (load) => ({ ...await load(), getActiveBrokers: vi.fn() }))
 vi.mock('./api/market.js', async (load) => ({ ...await load(), searchAsset: vi.fn() }))
 vi.mock('./api/wallet.js', async (load) => ({ ...await load(), getWalletPositions: vi.fn() }))

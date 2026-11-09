@@ -1,4 +1,4 @@
-import { API_BASE_URL, ApiError, getCsrfToken, groupFieldErrors, parseJson } from './http.js'
+import { API_BASE_URL, ApiError, authenticatedFetch, getCsrfToken, groupFieldErrors, parseJson } from './http.js'
 
 export class AccountApiError extends ApiError {
   constructor(message, fieldErrors = {}, status) {
@@ -9,7 +9,7 @@ export class AccountApiError extends ApiError {
 
 export async function getCurrentAccount() {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/accounts/me`, { credentials: 'include' })
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/accounts/me`)
     const body = await parseJson(response)
     if (!response.ok) {
       const error = new AccountApiError(body?.message ?? 'Não foi possível consultar a conta.')

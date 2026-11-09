@@ -1,9 +1,23 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { AccountApiError, changeEmail, changePassword, checkReactivation, createAccount, deleteAccount, reactivateAccount } from './accounts.js'
+import { AccountApiError, changeEmail, changePassword, checkReactivation, createAccount, deleteAccount, getCurrentAccount, reactivateAccount } from './accounts.js'
+import { clearAccessToken, startSession } from './auth-token.js'
 
 function response(body, status = 200) {
   return { ok: status >= 200 && status < 300, status, headers: new Headers({ 'content-type': 'application/json' }), json: vi.fn().mockResolvedValue(body) }
 }
+
+describe('account authentication', () => {
+  beforeEach(() => { vi.restoreAllMocks(); vi.stubGlobal('fetch', vi.fn()); clearAccessToken() })
+
+  it('consulta a conta com o Bearer mantido somente em memÃ³ria', async () => {
+    startSession('access-1')
+    fetch.mockResolvedValueOnce(response({ name: 'Ana Silva' }))
+
+    await expect(getCurrentAccount()).resolves.toEqual({ name: 'Ana Silva' })
+    expect(fetch).toHaveBeenCalledWith('/api/accounts/me', expect.objectContaining({ credentials: 'include' }))
+    expect(fetch.mock.calls[0][1].headers.get('Authorization')).toBe('Bearer access-1')
+  })
+})
 
 describe('createAccount', () => {
   beforeEach(() => { vi.restoreAllMocks(); vi.stubGlobal('fetch', vi.fn()) })

@@ -187,7 +187,7 @@ describe('auth API', () => {
     await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(2))
     startSession('new-session-token')
     rejectRefresh(new TypeError('network details'))
-    await expect(refresh).rejects.toThrow('network details')
+    await expect(refresh).rejects.toMatchObject({ message: 'Não foi possível conectar ao servidor. Verifique se a aplicação está em execução.' })
     expect(getAccessToken()).toBe('new-session-token')
   })
 })

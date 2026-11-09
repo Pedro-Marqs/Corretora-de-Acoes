@@ -265,7 +265,10 @@ O trabalho deve ser coordenado pelo agente Orquestrador. Perfis especializados d
 
 ## Planejamento das aulas 13, 14 e 15
 
-- Em 2026-11-05 foram criados, ainda sem implementação ou aprovação para execução, os changes `aula-13-migrar-autenticacao-jwt`, `aula-14-rbac-administrativo-investidores` e `aula-15-tdd-cobertura-evidencias`.
+- Em 2026-11-05 foram criados os changes `aula-13-migrar-autenticacao-jwt`, `aula-14-rbac-administrativo-investidores` e `aula-15-tdd-cobertura-evidencias`; a implementação da Aula 13 começou somente na branch `feature/aulas-13-15`.
 - A ordem planejada é: JWT de investidores; identidade administrativa independente com RBAC e dashboard agregado; e, transversalmente, evidências TDD/cobertura antes, durante e depois dos dois changes de segurança.
-- O planejamento preserva a autorização horizontal por propriedade das contas, as regras financeiras, os limites JaCoCo atuais, o GitHub Actions e as branches existentes. Nenhuma implementação foi iniciada.
+- O planejamento preserva a autorização horizontal por propriedade das contas, as regras financeiras, os limites JaCoCo atuais, o GitHub Actions e as branches existentes.
+- A Etapa 1 do frontend JWT foi commitada em `b2f44f`. Nesta rodada, a Etapa 2 integrou o `AuthProvider` ao refresh JWT em memória: após reload, o frontend tenta `POST /api/auth/refresh`, consulta `GET /api/accounts/me` com Bearer, mantém loading até concluir e invalida respostas de gerações anteriores após logout ou troca de sessão. O fallback de leitura por cookie preserva a sessão legada somente quando o backend de compatibilidade ainda a aceita; o modo stateless continua conduzindo 401/403 ao login.
+- A migração das APIs financeiras para o cliente Bearer comum e a renovação automática controlada após `401` permanecem reservadas à Etapa 3; esta etapa não altera carteira, corretoras, dashboard, histórico, ativos ou operações.
+- A validação frontend da Etapa 2 passou com 302 testes, ESLint, build Vite, `graphify update .`, `git diff --check` e `openspec validate aula-13-migrar-autenticacao-jwt --strict`. A validação final das tasks backend, reviewer, tester e archive permanece pendente.
 - O escopo da Aula 14 foi refinado: nesta versão existirão somente o investidor `USER` em `Account` e o administrador `ADMIN` em `AdminUser`; operador administrativo somente leitura fica documentado como evolução futura, sem tasks.
