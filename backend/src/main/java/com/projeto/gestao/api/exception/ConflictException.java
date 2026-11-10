@@ -22,6 +22,10 @@ public final class ConflictException extends ApiException {
         return new ConflictException("A conta não pode ser reativada com os dados informados.");
     }
 
+    public static ConflictException invalidAccountStatusTransition() {
+        return new ConflictException("A transição de estado da conta não é válida.");
+    }
+
     @Override
     public String publicMessage() {
         return message;

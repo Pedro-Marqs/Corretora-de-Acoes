@@ -3,6 +3,10 @@ package com.projeto.gestao.api.controller;
 import java.util.Arrays;
 
 import com.projeto.gestao.config.AdminJwtSecurityProperties;
+import com.projeto.gestao.domain.model.AdminAuditAction;
+import com.projeto.gestao.domain.model.AdminAuditOutcome;
+import com.projeto.gestao.domain.model.AuditActorRole;
+import com.projeto.gestao.service.AdminAuditService;
 import com.projeto.gestao.service.AdminAuthenticationService;
 import com.projeto.gestao.service.AdminRefreshTokenService;
 
@@ -31,24 +35,31 @@ public class AdminAuthenticationController {
 
     private final AdminAuthenticationService authenticationService;
     private final AdminRefreshTokenService refreshTokenService;
+    private final AdminAuditService auditService;
     private final AdminJwtSecurityProperties properties;
     private final boolean secureCookie;
 
     public AdminAuthenticationController(
             AdminAuthenticationService authenticationService,
             AdminRefreshTokenService refreshTokenService,
+            AdminAuditService auditService,
             AdminJwtSecurityProperties properties,
             @Value("${app.security.session-cookie-secure:true}") boolean secureCookie) {
         this.authenticationService = authenticationService;
         this.refreshTokenService = refreshTokenService;
+        this.auditService = auditService;
         this.properties = properties;
         this.secureCookie = secureCookie;
     }
 
     @PostMapping("/login")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    void login(@Valid @RequestBody LoginRequest request, HttpServletResponse response) {
-        AdminAuthenticationService.IssuedCredentials issued = authenticationService.login(request);
+    void login(@Valid @RequestBody LoginRequest request,
+            @org.springframework.web.bind.annotation.RequestHeader(
+                    value = "X-Correlation-ID", required = false) String correlationHeader,
+            HttpServletResponse response) {
+        AdminAuthenticationService.IssuedCredentials issued = authenticationService.login(
+                request, AdminAuditService.correlationId(correlationHeader));
         response.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + issued.accessTokenValue());
         response.addHeader(HttpHeaders.SET_COOKIE,
                 refreshCookie(issued.refreshToken().tokenValue()).toString());
@@ -66,11 +77,16 @@ public class AdminAuthenticationController {
     @PostMapping("/logout")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void logout(HttpServletRequest request, HttpServletResponse response) {
-        refreshTokenService.revokePresented(Arrays.stream(
+        String correlationHeader = request.getHeader("X-Correlation-ID");
+        java.util.UUID actorAdminId = refreshTokenService.revokePresented(Arrays.stream(
                         request.getCookies() == null ? new Cookie[0] : request.getCookies())
                 .filter(cookie -> REFRESH_COOKIE.equals(cookie.getName()))
                 .map(Cookie::getValue)
                 .findFirst().orElse(null));
+        auditService.record(actorAdminId,
+                actorAdminId == null ? AuditActorRole.ANONYMOUS : AuditActorRole.ADMIN,
+                AdminAuditAction.LOGOUT, null, actorAdminId, AdminAuditOutcome.SUCCESS,
+                AdminAuditService.correlationId(correlationHeader));
         response.addHeader(HttpHeaders.SET_COOKIE, expiredRefreshCookie().toString());
     }
 

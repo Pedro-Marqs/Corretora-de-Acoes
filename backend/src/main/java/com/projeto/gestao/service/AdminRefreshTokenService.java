@@ -95,12 +95,15 @@ public class AdminRefreshTokenService {
     }
 
     @Transactional
-    public void revokePresented(String rawToken) {
+    public UUID revokePresented(String rawToken) {
         if (rawToken == null || rawToken.isBlank()) {
-            return;
+            return null;
         }
-        refreshTokenRepository.findForUpdateByTokenHash(hash(rawToken)).ifPresent(token ->
-                refreshTokenRepository.revokeFamily(token.getFamilyId(), now()));
+        return refreshTokenRepository.findForUpdateByTokenHash(hash(rawToken))
+                .map(token -> {
+                    refreshTokenRepository.revokeFamily(token.getFamilyId(), now());
+                    return token.getAdminUserId();
+                }).orElse(null);
     }
 
     @Transactional

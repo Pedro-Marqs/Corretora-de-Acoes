@@ -46,6 +46,7 @@ public class SecurityConfig {
     SecurityFilterChain adminSecurityFilterChain(
             HttpSecurity http, SecurityErrorResponseWriter errorWriter,
             CsrfTokenRepository csrfTokenRepository, AdminJwtSecurityProperties adminProperties,
+            com.projeto.gestao.service.AdminAuditService adminAuditService,
             @Qualifier("adminJwtDecoder") org.springframework.beans.factory.ObjectProvider<JwtDecoder>
                     adminJwtDecoderProvider,
             org.springframework.beans.factory.ObjectProvider<
@@ -84,14 +85,26 @@ public class SecurityConfig {
             }
             http.oauth2ResourceServer(oauth2 -> oauth2
                     .authenticationEntryPoint((request, response, exception) ->
-                            errorWriter.write(response, ApiErrorCode.AUTHENTICATION_ERROR))
+                            { adminAuditService.recordAccessDenied(
+                                    org.springframework.security.core.context.SecurityContextHolder
+                                            .getContext().getAuthentication(),
+                                    request.getHeader("X-Correlation-ID"));
+                              errorWriter.write(response, ApiErrorCode.AUTHENTICATION_ERROR); })
                     .jwt(jwt -> jwt.decoder(decoder).jwtAuthenticationConverter(converter)));
         }
         http.exceptionHandling(errors -> errors
                 .authenticationEntryPoint((request, response, exception) ->
-                        errorWriter.write(response, ApiErrorCode.AUTHENTICATION_ERROR))
+                        { adminAuditService.recordAccessDenied(
+                                org.springframework.security.core.context.SecurityContextHolder
+                                        .getContext().getAuthentication(),
+                                request.getHeader("X-Correlation-ID"));
+                          errorWriter.write(response, ApiErrorCode.AUTHENTICATION_ERROR); })
                 .accessDeniedHandler((request, response, exception) ->
-                        errorWriter.write(response, ApiErrorCode.AUTHORIZATION_ERROR)));
+                        { adminAuditService.recordAccessDenied(
+                                org.springframework.security.core.context.SecurityContextHolder
+                                        .getContext().getAuthentication(),
+                                request.getHeader("X-Correlation-ID"));
+                          errorWriter.write(response, ApiErrorCode.AUTHORIZATION_ERROR); }));
         return http.build();
     }
 

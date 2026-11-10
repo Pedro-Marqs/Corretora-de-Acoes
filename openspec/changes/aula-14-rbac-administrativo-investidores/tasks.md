@@ -12,9 +12,9 @@
 
 ## 3. Gestão de investidores
 
-- [ ] 3.1 Implementar `GET /api/admin/investors` com status, busca, período, paginação limitada e ordenação whitelist; verificar DTO com somente id, nome, e-mail/CPF mascarados, estado e timestamps.
-- [ ] 3.2 Implementar `PATCH /api/admin/investors/{accountId}/status` para ativação/desativação somente por `ADMIN`, revogando refreshes da conta inativada e preservando histórico; verificar `400`, `401`, `403`, `404`, `409`, rollback e investidor sem acesso administrativo.
-- [ ] 3.3 Registrar auditoria de bootstrap, login, logout, listagem, ativação, desativação e negativas com ator nullable, papel, ação, alvo, instante, resultado e correlação; verificar ausência de token/senha/hash/cookie/payload.
+- [x] 3.1 Implementar `GET /api/admin/investors` com status, busca, período, paginação limitada e ordenação whitelist; verificar DTO com somente id, nome, e-mail/CPF mascarados, estado e timestamps.
+- [x] 3.2 Implementar `PATCH /api/admin/investors/{accountId}/status` para ativação/desativação somente por `ADMIN`, revogando refreshes da conta inativada e preservando histórico; verificar `400`, `401`, `403`, `404`, `409`, rollback e investidor sem acesso administrativo.
+- [x] 3.3 Registrar auditoria de bootstrap, login, logout, listagem, ativação, desativação e negativas com ator nullable, papel, ação, alvo, instante, resultado e correlação; verificar ausência de token/senha/hash/cookie/payload.
 
 ## 4. Dashboard administrativo
 

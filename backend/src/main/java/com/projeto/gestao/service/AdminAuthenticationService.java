@@ -4,8 +4,11 @@ import java.util.Locale;
 
 import com.projeto.gestao.api.controller.LoginRequest;
 import com.projeto.gestao.api.exception.AuthenticationException;
+import com.projeto.gestao.domain.model.AdminAuditAction;
+import com.projeto.gestao.domain.model.AdminAuditOutcome;
 import com.projeto.gestao.domain.model.AdminStatus;
 import com.projeto.gestao.domain.model.AdminUser;
+import com.projeto.gestao.domain.model.AuditActorRole;
 import com.projeto.gestao.repository.AdminUserRepository;
 import com.projeto.gestao.security.AdminJwtTokenService;
 import com.projeto.gestao.security.AdminPrincipal;
@@ -22,28 +25,45 @@ public class AdminAuthenticationService {
     private final PasswordEncoder passwordEncoder;
     private final AdminJwtTokenService jwtTokenService;
     private final AdminRefreshTokenService refreshTokenService;
+    private final AdminAuditService auditService;
     private final String dummyPasswordHash;
 
     public AdminAuthenticationService(
             AdminUserRepository adminUserRepository, PasswordEncoder passwordEncoder,
-            AdminJwtTokenService jwtTokenService, AdminRefreshTokenService refreshTokenService) {
+            AdminJwtTokenService jwtTokenService, AdminRefreshTokenService refreshTokenService,
+            AdminAuditService auditService) {
         this.adminUserRepository = adminUserRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenService = jwtTokenService;
         this.refreshTokenService = refreshTokenService;
+        this.auditService = auditService;
         this.dummyPasswordHash = passwordEncoder.encode("DummyAdminTimingPassword1!");
     }
 
     @Transactional
     public IssuedCredentials login(LoginRequest request) {
+        return login(request, null);
+    }
+
+    @Transactional
+    public IssuedCredentials login(LoginRequest request, java.util.UUID correlationId) {
         String email = request.email().trim().toLowerCase(Locale.ROOT);
         AdminUser admin = adminUserRepository.findByEmailIgnoreCase(email).orElse(null);
         String storedHash = admin == null ? dummyPasswordHash : admin.passwordHash();
         boolean passwordMatches = passwordEncoder.matches(request.password(), storedHash);
         if (admin == null || admin.getStatus() != AdminStatus.ACTIVE || !passwordMatches) {
+            if (auditService != null) {
+                auditService.recordInNewTransaction(null, AuditActorRole.ANONYMOUS,
+                        AdminAuditAction.ACCESS_DENIED, null, null,
+                        AdminAuditOutcome.DENIED, correlationId);
+            }
             throw new AuthenticationException();
         }
         AdminPrincipal principal = new AdminPrincipal(admin.getId());
+        if (auditService != null) {
+            auditService.record(admin.getId(), AuditActorRole.ADMIN, AdminAuditAction.LOGIN,
+                    null, admin.getId(), AdminAuditOutcome.SUCCESS, correlationId);
+        }
         return new IssuedCredentials(
                 jwtTokenService.issue(principal), refreshTokenService.issue(principal));
     }
