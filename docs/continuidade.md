@@ -244,6 +244,16 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 
 - A seção principal de Operações foi substituída por Carteira: a rota `/app/operacoes` lista os ativos oficiais da carteira, sem o formulário de busca, e oferece exportação `.xlsx`. A negociação permanece disponível na rota dedicada `/app/negociar`, usada pelos fluxos de pesquisa e detalhe de ativo.
 
+Em 2026-11-10, a Etapa 5 implementou somente o dashboard administrativo backend das tasks 4.1-4.3 em `/api/admin/dashboard`, protegido por JWT ADMIN e sem reutilizar o dashboard individual. O contrato retorna oito métricas escalares, séries diárias em Brasília, ranking limitado por quantidade com desempate determinístico e volumes nativos BRL/USD; o equivalente BRL só aparece com taxa válida e recente, caso contrário o status é `UNAVAILABLE`.
+
+Os testes focados H2 do dashboard passaram com 12/12 e o teste PostgreSQL/Testcontainers pertinente passou com 1/1. A suíte backend completa, executada com Java 17 e cache Maven isolado, terminou em `BUILD SUCCESS`: 508 testes descobertos, 501 executados aprovados, 0 falhas, 0 erros e 7 ignorados. Os ignorados são exclusivamente `LocalPostgreSqlAccountRegistrationTests` (2), `LocalPostgreSqlAuthenticationTests` (3), `LocalPostgreSqlSessionTests` (1) e `LocalPostgreSqlPurchaseTests` (1), condicionados à ausência de `RUN_LOCAL_POSTGRES_TESTS`; os testes Testcontainers foram executados.
+
+O JaCoCo final reportou 80,00% de branches (1096/1370) e 94,9844% de linhas (3352/3529), atendendo aos mínimos. `graphify update .`, `openspec validate aula-14-rbac-administrativo-investidores --strict` e `git diff --check` foram executados nesta rodada. As tasks 4.1, 4.2 e 4.3 estão comprovadas; 2.3 e 4.4 permanecem pendentes. Não houve commit, push ou avanço para a Etapa 6.
+
+Em 2026-11-10, a correção da task 4.1 passou a calcular `totalAccounts`, `activeAccounts`, `inactiveAccounts` e `newAccounts` somente para contas criadas no intervalo `[start, now)`, classificadas pelo estado atual `ACTIVE|INACTIVE`; `DELETED` fica fora porque `Account` não mantém histórico de estados. Os testes cobrem exclusão de contas anteriores ao período, fronteira inclusiva/exclusiva, agrupamento diário em Brasília e `MAX` desde o primeiro dado relevante.
+
+Os testes focados H2 passaram com 15/15, PostgreSQL/Testcontainers com 1/1 e a regressão de autenticação/autorização com 16/16. A suíte backend completa com Java 17 e cache Maven isolado terminou em `BUILD SUCCESS`: 511 testes descobertos, 504 executados aprovados, 0 falhas, 0 erros e 7 ignorados. O JaCoCo reportou 80,00% de branches (1096/1370) e 95,2782% de linhas (3390/3558). Os 7 ignorados continuam restritos aos testes PostgreSQL locais condicionados a `RUN_LOCAL_POSTGRES_TESTS`; os testes Testcontainers foram executados. `graphify update .`, OpenSpec strict e `git diff --check` passaram. Não houve commit, push ou avanço para a Etapa 6.
+
 ### Forma de trabalho para as próximas tarefas
 
 - Trabalhar com base no change correspondente em `C:\Projetos\corretora\openspec\changes`, usando os artefatos do OpenSpec como fonte de verdade.

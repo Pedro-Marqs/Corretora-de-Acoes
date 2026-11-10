@@ -18,9 +18,9 @@
 
 ## 4. Dashboard administrativo
 
-- [ ] 4.1 Implementar `/api/admin/dashboard` com `totalAccounts`, `activeAccounts`, `inactiveAccounts`, `newAccounts`, `purchaseCount`, `saleCount`, `purchasedShares` e `soldShares`; verificar período em Brasília e métricas sem dados individuais.
-- [ ] 4.2 Implementar séries diárias e ranking limitado por quantidade negociada, com desempate por ticker/mercado, default 10 e máximo 50; definir `MAX` do primeiro dado relevante disponível ao fim do período atual com agregação de custo controlado; verificar empates, limite, dados vazios e ausência de efeitos colaterais.
-- [ ] 4.3 Implementar volumes nativos BRL/USD e equivalente em BRL somente com taxa válida, informando taxa/instante ou `UNAVAILABLE`; verificar arredondamento financeiro e ausência de soma incompatível.
+- [x] 4.1 Implementar `/api/admin/dashboard` com `totalAccounts`, `activeAccounts`, `inactiveAccounts`, `newAccounts`, `purchaseCount`, `saleCount`, `purchasedShares` e `soldShares`; verificar período em Brasília e métricas sem dados individuais.
+- [x] 4.2 Implementar séries diárias e ranking limitado por quantidade negociada, com desempate por ticker/mercado, default 10 e máximo 50; definir `MAX` do primeiro dado relevante disponível ao fim do período atual com agregação de custo controlado; verificar empates, limite, dados vazios e ausência de efeitos colaterais.
+- [x] 4.3 Implementar volumes nativos BRL/USD e equivalente em BRL somente com taxa válida, informando taxa/instante ou `UNAVAILABLE`; verificar arredondamento financeiro e ausência de soma incompatível.
 - [ ] 4.4 Criar `AdminAuthContext`, cliente API, rotas e telas administrativas isoladas do `AuthContext`, carteira e histórico do investidor; verificar login, reload, logout, loading, erros e acesso cruzado.
 
 ## 5. Validação transversal

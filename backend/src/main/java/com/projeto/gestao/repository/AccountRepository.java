@@ -7,6 +7,7 @@ import java.util.UUID;
 import com.projeto.gestao.domain.model.Account;
 import com.projeto.gestao.domain.model.AccountStatus;
 import com.projeto.gestao.domain.dto.AdminInvestorProjection;
+import com.projeto.gestao.domain.dto.AdminDashboardAccountCreatedProjection;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -57,6 +58,19 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
             @Param("inactivatedFrom") java.time.OffsetDateTime inactivatedFrom,
             @Param("inactivatedTo") java.time.OffsetDateTime inactivatedTo,
             Pageable pageable);
+    long countByCreatedAtGreaterThanEqualAndCreatedAtLessThanAndStatus(
+            java.time.OffsetDateTime createdFrom, java.time.OffsetDateTime createdTo,
+            AccountStatus status);
+    long countByCreatedAtGreaterThanEqualAndCreatedAtLessThanAndStatusIn(
+            java.time.OffsetDateTime createdFrom, java.time.OffsetDateTime createdTo,
+            java.util.Collection<AccountStatus> statuses);
+    @Query("select min(account.createdAt) from Account account")
+    java.time.OffsetDateTime findFirstCreatedAt();
+    @Query("select account.createdAt as createdAt from Account account "
+            + "where account.createdAt >= :createdFrom and account.createdAt < :createdTo")
+    java.util.List<AdminDashboardAccountCreatedProjection> findCreatedAtBetween(
+            @Param("createdFrom") java.time.OffsetDateTime createdFrom,
+            @Param("createdTo") java.time.OffsetDateTime createdTo);
     boolean existsByEmailIgnoreCaseAndStatus(String email, AccountStatus status);
     boolean existsByEmailIgnoreCaseAndStatusAndIdNot(String email, AccountStatus status, UUID id);
     boolean existsByCpfAndStatus(String cpf, AccountStatus status);
