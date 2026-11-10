@@ -5,6 +5,7 @@ import com.projeto.gestao.service.DashboardPeriod;
 import com.projeto.gestao.service.DashboardService;
 import jakarta.validation.constraints.Pattern;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/dashboard")
 @Validated
+@PreAuthorize("hasRole('USER') and principal instanceof T(com.projeto.gestao.security.AccountPrincipal)")
 public class DashboardController {
     private final DashboardService service;
 

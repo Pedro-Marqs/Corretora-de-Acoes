@@ -26,6 +26,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -123,6 +124,7 @@ class BrokerControllerTests {
 
     private static org.springframework.test.web.servlet.request.RequestPostProcessor authenticated() {
         return authentication(new UsernamePasswordAuthenticationToken(
-                new AccountPrincipal(ACCOUNT_ID), null, List.of()));
+                new AccountPrincipal(ACCOUNT_ID), null,
+                List.of(new SimpleGrantedAuthority("ROLE_USER"))));
     }
 }

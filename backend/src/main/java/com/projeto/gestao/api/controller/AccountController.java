@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -46,11 +47,13 @@ public class AccountController {
     }
 
     @GetMapping("/me")
+    @PreAuthorize("hasRole('USER') and principal instanceof T(com.projeto.gestao.security.AccountPrincipal)")
     AccountDetailsResponse me(@AuthenticationPrincipal AccountPrincipal principal) {
         return managementService.details(principal.accountId());
     }
 
     @PatchMapping("/me/email")
+    @PreAuthorize("hasRole('USER') and principal instanceof T(com.projeto.gestao.security.AccountPrincipal)")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void changeEmail(@AuthenticationPrincipal AccountPrincipal principal,
             @Valid @RequestBody ChangeEmailRequest request,
@@ -60,6 +63,7 @@ public class AccountController {
     }
 
     @PatchMapping("/me/password")
+    @PreAuthorize("hasRole('USER') and principal instanceof T(com.projeto.gestao.security.AccountPrincipal)")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void changePassword(@AuthenticationPrincipal AccountPrincipal principal,
             @Valid @RequestBody ChangePasswordRequest request,
@@ -69,6 +73,7 @@ public class AccountController {
     }
 
     @DeleteMapping("/me")
+    @PreAuthorize("hasRole('USER') and principal instanceof T(com.projeto.gestao.security.AccountPrincipal)")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void delete(@AuthenticationPrincipal AccountPrincipal principal,
             @Valid @RequestBody DeleteAccountRequest request,

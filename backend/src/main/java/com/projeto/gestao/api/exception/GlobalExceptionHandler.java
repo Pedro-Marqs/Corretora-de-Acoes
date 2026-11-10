@@ -16,6 +16,7 @@ import org.springframework.context.MessageSourceResolvable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -92,6 +93,11 @@ public class GlobalExceptionHandler {
                 errorId, ApiErrorCode.VALIDATION_ERROR, exception.getClass().getSimpleName());
         return response(ApiErrorCode.VALIDATION_ERROR,
                 ApiErrorCode.VALIDATION_ERROR.defaultMessage(), List.of(), errorId);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    ResponseEntity<ApiErrorResponse> handleAccessDenied(AccessDeniedException exception) {
+        return handleApiException(new AuthorizationException());
     }
 
     @ExceptionHandler(Exception.class)

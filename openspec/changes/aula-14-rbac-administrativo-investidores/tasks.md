@@ -25,6 +25,6 @@
 
 ## 5. Validação transversal
 
-- [ ] 5.1 Testar isolamento completo: `ADMIN` não movimenta recursos nem consulta saldo, posição, movimentação, patrimônio ou carteira individual; verificar dados financeiros inalterados e tokens/sessões cruzados rejeitados.
-- [ ] 5.2 Consultar Graphify para revisar dependências de segurança, contas, movimentos e frontend e executar `graphify update .` após o código; verificar grafo atualizado e somente relações do change.
-- [ ] 5.3 Executar testes backend/frontend focados, regressão financeira, lint/build aplicáveis e registrar riscos; deixar reviewer, tester e validação OpenSpec como gates finais.
+- [x] 5.1 Testar isolamento completo: `ADMIN` não movimenta recursos nem consulta saldo, posição, movimentação, patrimônio ou carteira individual; verificar dados financeiros inalterados e tokens/sessões cruzados rejeitados.
+- [x] 5.2 Consultar Graphify para revisar dependências de segurança, contas, movimentos e frontend e executar `graphify update .` após o código; verificar grafo atualizado e somente relações do change.
+- [x] 5.3 Executar testes backend/frontend focados, regressão financeira, lint/build aplicáveis e registrar riscos; deixar reviewer, tester e validação OpenSpec como gates finais.

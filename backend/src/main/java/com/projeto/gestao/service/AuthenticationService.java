@@ -21,6 +21,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.security.web.context.SecurityContextRepository;
@@ -71,7 +72,8 @@ public class AuthenticationService {
         }
 
         Authentication authentication = new UsernamePasswordAuthenticationToken(
-                new AccountPrincipal(account.getId()), null, List.of());
+                new AccountPrincipal(account.getId()), null,
+                List.of(new SimpleGrantedAuthority("ROLE_USER")));
         if (!jwtProperties.enabled() || jwtProperties.sessionCompatibility()) {
             servletRequest.getSession(true);
             sessionAuthenticationStrategy.onAuthentication(authentication, servletRequest, servletResponse);
