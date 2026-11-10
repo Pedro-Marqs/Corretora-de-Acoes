@@ -15,10 +15,13 @@ import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.AfterEach;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,6 +42,12 @@ class SchemaMigrationTests {
 
     @Autowired
     private JdbcTemplate jdbc;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private DataSource dataSource;
 
     private DataSource rollbackDataSource;
 
@@ -84,11 +93,87 @@ class SchemaMigrationTests {
         assertThat(tables).contains(
                 "account", "broker", "account_broker", "asset", "quote",
                 "exchange_rate", "position", "movement", "patrimonial_point",
-                "refresh_token", "spring_session", "spring_session_attributes",
+                "refresh_token", "admin_user", "admin_refresh_token", "admin_audit_event",
+                "spring_session", "spring_session_attributes",
                 "databasechangelog", "databasechangeloglock");
         assertThat(jdbc.queryForObject(
                 "SELECT COUNT(*) FROM databasechangelog WHERE id = 'v11-refresh-token'", Integer.class))
                 .isEqualTo(1);
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM databasechangelog WHERE id = 'v12-admin-foundation'", Integer.class))
+                .isEqualTo(1);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {" Admin@example.com ", "admin@example.com ", "ADMIN@example.com"})
+    void h2RejectsAdministrativeEmailThatIsNotCanonical(String email) {
+        assertThatThrownBy(() -> insertAdminUser(email, passwordEncoder.encode("SenhaAdmin1!"),
+                "ACTIVE", "ADMIN", "a".repeat(43), OffsetDateTime.now(),
+                OffsetDateTime.now().plusHours(1)))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    void h2RejectsInvalidAdministrativeSensitiveFields() {
+        assertThatThrownBy(() -> insertAdminUser(
+                "admin@example.com", "not-a-bcrypt-hash", "ACTIVE", "ADMIN",
+                "a".repeat(43), OffsetDateTime.now(), OffsetDateTime.now().plusHours(1)))
+                .isInstanceOf(DataIntegrityViolationException.class);
+
+        assertThatThrownBy(() -> insertAdminUser(
+                "admin@example.com", passwordEncoder.encode("SenhaAdmin1!"), "ACTIVE", "ADMIN",
+                "raw-token", OffsetDateTime.now(), OffsetDateTime.now().plusHours(1)))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "$2a$03$aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "$2a$32$aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "$2a$99$aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "$2x$10$aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "$2a$10$aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!",
+        "$2a$10$aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "$2a$10aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    })
+    void h2RejectsStructurallyInvalidBcryptPasswordHashes(String passwordHash) {
+        assertThatThrownBy(() -> insertAdminUser(
+                "admin@example.com", passwordHash, "ACTIVE", "ADMIN",
+                "a".repeat(43), OffsetDateTime.now(), OffsetDateTime.now().plusHours(1)))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    void h2ExposesAdministrativeIndexesAndPreservesFinancialDataWhenLiquibaseIsReapplied()
+            throws Exception {
+        UUID accountId = UUID.randomUUID();
+        insertAccount(accountId, "45454545454", "migration-existing@example.com",
+                new BigDecimal("10000.00"), "ACTIVE");
+
+        List<String> indexes = jdbc.queryForList("""
+                SELECT LOWER(index_name) FROM information_schema.indexes
+                 WHERE table_name IN ('ADMIN_USER', 'ADMIN_REFRESH_TOKEN', 'ADMIN_AUDIT_EVENT')
+                """, String.class);
+        assertThat(indexes).contains(
+                "ix_admin_user_status", "ix_admin_refresh_token_admin",
+                "ix_admin_refresh_token_family", "ix_admin_audit_actor",
+                "ix_admin_audit_occurred", "ix_admin_audit_correlation");
+
+        try (var connection = dataSource.getConnection()) {
+            Database database = DatabaseFactory.getInstance()
+                    .findCorrectDatabaseImplementation(new JdbcConnection(connection));
+            Liquibase liquibase = new Liquibase(
+                    "db/changelog/db.changelog-master.xml",
+                    new ClassLoaderResourceAccessor(), database);
+            liquibase.update(new Contexts(), new LabelExpression());
+        }
+
+        assertThat(jdbc.queryForObject(
+                "SELECT balance FROM account WHERE id = ?", BigDecimal.class, accountId))
+                .isEqualByComparingTo("10000.00");
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM databasechangelog WHERE id = 'v12-admin-foundation'",
+                Integer.class)).isEqualTo(1);
     }
 
     @Test
@@ -105,9 +190,44 @@ class SchemaMigrationTests {
                     new ClassLoaderResourceAccessor(), database);
             liquibase.update(new Contexts(), new LabelExpression());
             assertThat(tableExists(connection, "REFRESH_TOKEN")).isTrue();
+            assertThat(tableExists(connection, "ADMIN_USER")).isTrue();
+            insertFinancialAccount(connection, UUID.randomUUID());
 
-            liquibase.rollback(1, new Contexts(), new LabelExpression());
+            liquibase.rollback(4, new Contexts(), new LabelExpression());
             assertThat(tableExists(connection, "REFRESH_TOKEN")).isFalse();
+            assertThat(tableExists(connection, "ADMIN_USER")).isFalse();
+            assertThat(tableExists(connection, "ADMIN_AUDIT_EVENT")).isFalse();
+            assertThat(tableExists(connection, "ACCOUNT")).isTrue();
+        }
+    }
+
+    private void insertAdminUser(String email, String passwordHash, String status, String role,
+            String tokenHash, OffsetDateTime createdAt, OffsetDateTime expiresAt) {
+        UUID adminId = UUID.randomUUID();
+        jdbc.update("""
+                INSERT INTO admin_user
+                    (id, email, password_hash, status, role, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """, adminId, email, passwordHash, status, role,
+                Timestamp.from(createdAt.toInstant()));
+        jdbc.update("""
+                INSERT INTO admin_refresh_token
+                    (id, token_hash, admin_user_id, family_id, created_at, expires_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """, UUID.randomUUID(), tokenHash, adminId, UUID.randomUUID(),
+                Timestamp.from(createdAt.toInstant()), Timestamp.from(expiresAt.toInstant()));
+    }
+
+    private void insertFinancialAccount(java.sql.Connection connection, UUID accountId)
+            throws Exception {
+        try (var statement = connection.prepareStatement("""
+                INSERT INTO account
+                    (id, name, cpf, email, password_hash, balance, status, created_at)
+                VALUES (?, 'Existing investor', '78787878787', 'rollback-existing@example.com',
+                        'hash-for-schema-test', 10000.00, 'ACTIVE', CURRENT_TIMESTAMP)
+                """)) {
+            statement.setObject(1, accountId);
+            statement.executeUpdate();
         }
     }
 

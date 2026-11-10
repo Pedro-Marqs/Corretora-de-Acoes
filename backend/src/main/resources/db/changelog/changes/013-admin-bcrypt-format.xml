@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+    <changeSet id="v13-admin-bcrypt-format-postgresql" author="project" dbms="postgresql">
+        <sql splitStatements="true"><![CDATA[
+ALTER TABLE admin_user DROP CONSTRAINT ck_admin_user_password_hash_bcrypt;
+ALTER TABLE admin_user
+    ADD CONSTRAINT ck_admin_user_password_hash_bcrypt CHECK (
+        CHAR_LENGTH(password_hash) = 60
+        AND password_hash ~ '^[$]2[aby][$](0[4-9]|[12][0-9]|3[01])[$][./A-Za-z0-9]{53}$'
+    );
+        ]]></sql>
+        <rollback>
+            <sql splitStatements="true"><![CDATA[
+ALTER TABLE admin_user DROP CONSTRAINT ck_admin_user_password_hash_bcrypt;
+ALTER TABLE admin_user
+    ADD CONSTRAINT ck_admin_user_password_hash_bcrypt CHECK (
+        CHAR_LENGTH(password_hash) = 60 AND password_hash LIKE '$2%'
+    );
+            ]]></sql>
+        </rollback>
+    </changeSet>
+    <changeSet id="v13-admin-bcrypt-format-h2" author="project" dbms="h2">
+        <sql splitStatements="true"><![CDATA[
+ALTER TABLE admin_user DROP CONSTRAINT ck_admin_user_password_hash_bcrypt;
+ALTER TABLE admin_user
+    ADD CONSTRAINT ck_admin_user_password_hash_bcrypt CHECK (
+        CHAR_LENGTH(password_hash) = 60
+        AND password_hash REGEXP '^[$]2[aby][$](0[4-9]|[12][0-9]|3[01])[$][./A-Za-z0-9]{53}$'
+    );
+        ]]></sql>
+        <rollback>
+            <sql splitStatements="true"><![CDATA[
+ALTER TABLE admin_user DROP CONSTRAINT ck_admin_user_password_hash_bcrypt;
+ALTER TABLE admin_user
+    ADD CONSTRAINT ck_admin_user_password_hash_bcrypt CHECK (
+        CHAR_LENGTH(password_hash) = 60 AND password_hash LIKE '$2%'
+    );
+            ]]></sql>
+        </rollback>
+    </changeSet>
+</databaseChangeLog>

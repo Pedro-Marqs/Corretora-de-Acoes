@@ -15,4 +15,6 @@
     <include file="db/changelog/changes/009-withdrawal-and-operation-inputs.xml"/>
     <include file="db/changelog/changes/010-withdrawal-movement-constraint.xml"/>
     <include file="db/changelog/changes/011-refresh-token.xml"/>
+    <include file="db/changelog/changes/012-admin-foundation.xml"/>
+    <include file="db/changelog/changes/013-admin-bcrypt-format.xml"/>
 </databaseChangeLog>

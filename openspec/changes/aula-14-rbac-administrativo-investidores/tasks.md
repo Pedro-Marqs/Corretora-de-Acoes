@@ -1,8 +1,8 @@
 ## 1. Identidade e persistência administrativa
 
-- [ ] 1.1 Definir `AdminUser` independente de `Account`, com UUID, e-mail normalizado único, hash BCrypt, estado `ACTIVE|INACTIVE`, papel fixo `ADMIN`, timestamps e DTOs mínimos; verificar ausência de senha/hash e de campos financeiros.
-- [ ] 1.2 Criar migrations para `admin_user`, `admin_refresh_token` e `admin_audit_event`, com chaves, índices, constraints de estado/papel e sem alterar tabelas financeiras; verificar banco vazio, banco existente e rollback controlado.
-- [ ] 1.3 Implementar comando CLI de bootstrap idempotente, com leitura segura de senha, BCrypt, sem endpoint HTTP, sem duplicação e sem segredos em logs; permitir `APP_ADMIN_BOOTSTRAP_PASSWORD` somente para provisionamento automatizado sem persistência indevida; verificar credencial ausente, primeira execução e execução repetida.
+- [x] 1.1 Definir `AdminUser` independente de `Account`, com UUID, e-mail normalizado único, hash BCrypt, estado `ACTIVE|INACTIVE`, papel fixo `ADMIN`, timestamps e DTOs mínimos; verificar ausência de senha/hash e de campos financeiros.
+- [x] 1.2 Criar migrations para `admin_user`, `admin_refresh_token` e `admin_audit_event`, com chaves, índices, constraints de estado/papel e sem alterar tabelas financeiras; verificar banco vazio, banco existente e rollback controlado.
+- [x] 1.3 Implementar comando CLI de bootstrap idempotente, com leitura segura de senha, BCrypt, sem endpoint HTTP, sem duplicação e sem segredos em logs; permitir `APP_ADMIN_BOOTSTRAP_PASSWORD` somente para provisionamento automatizado sem persistência indevida; verificar credencial ausente, primeira execução e execução repetida.
 
 ## 2. JWT e autorização da área administrativa
 
