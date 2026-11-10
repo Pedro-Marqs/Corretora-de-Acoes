@@ -17,8 +17,10 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.web.authentication.session.ChangeSessionIdAuthenticationStrategy;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
@@ -27,6 +29,8 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.web.context.NullSecurityContextRepository;
 import org.springframework.session.web.http.DefaultCookieSerializer;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -34,13 +38,71 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
 @Configuration
-@EnableConfigurationProperties(JwtSecurityProperties.class)
+@EnableConfigurationProperties({JwtSecurityProperties.class, AdminJwtSecurityProperties.class})
+@EnableMethodSecurity
 public class SecurityConfig {
     @Bean
+    @Order(1)
+    SecurityFilterChain adminSecurityFilterChain(
+            HttpSecurity http, SecurityErrorResponseWriter errorWriter,
+            CsrfTokenRepository csrfTokenRepository, AdminJwtSecurityProperties adminProperties,
+            @Qualifier("adminJwtDecoder") org.springframework.beans.factory.ObjectProvider<JwtDecoder>
+                    adminJwtDecoderProvider,
+            org.springframework.beans.factory.ObjectProvider<
+                    AdminJwtSecurityConfiguration.AdminJwtAuthenticationConverter>
+                    adminJwtAuthenticationConverterProvider) throws Exception {
+        http
+                .securityMatcher("/api/admin/**")
+                .cors(cors -> { })
+                .csrf(csrf -> csrf.csrfTokenRepository(csrfTokenRepository)
+                        .ignoringRequestMatchers(request -> hasBearerToken(request)))
+                .securityContext(context -> context
+                        .securityContextRepository(new NullSecurityContextRepository())
+                        .requireExplicitSave(false))
+                .sessionManagement(session -> session.sessionCreationPolicy(
+                        org.springframework.security.config.http.SessionCreationPolicy.STATELESS))
+                .requestCache(cache -> cache.disable())
+                .formLogin(login -> login.disable())
+                .httpBasic(basic -> basic.disable());
+
+        http.authorizeHttpRequests(authorize -> {
+            if (adminProperties.enabled()) {
+                authorize
+                        .requestMatchers(HttpMethod.POST, "/api/admin/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/admin/auth/refresh").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/admin/auth/logout").permitAll()
+                        .anyRequest().hasRole("ADMIN");
+            } else {
+                authorize.anyRequest().denyAll();
+            }
+        });
+        if (adminProperties.enabled()) {
+            JwtDecoder decoder = adminJwtDecoderProvider.getIfAvailable();
+            var converter = adminJwtAuthenticationConverterProvider.getIfAvailable();
+            if (decoder == null || converter == null) {
+                throw new IllegalStateException("Admin JWT authentication is not configured");
+            }
+            http.oauth2ResourceServer(oauth2 -> oauth2
+                    .authenticationEntryPoint((request, response, exception) ->
+                            errorWriter.write(response, ApiErrorCode.AUTHENTICATION_ERROR))
+                    .jwt(jwt -> jwt.decoder(decoder).jwtAuthenticationConverter(converter)));
+        }
+        http.exceptionHandling(errors -> errors
+                .authenticationEntryPoint((request, response, exception) ->
+                        errorWriter.write(response, ApiErrorCode.AUTHENTICATION_ERROR))
+                .accessDeniedHandler((request, response, exception) ->
+                        errorWriter.write(response, ApiErrorCode.AUTHORIZATION_ERROR)));
+        return http.build();
+    }
+
+    @Bean
+    @Order(2)
     SecurityFilterChain securityFilterChain(
             HttpSecurity http, SecurityErrorResponseWriter errorWriter,
             CsrfTokenRepository csrfTokenRepository, JwtSecurityProperties jwtProperties,
             SecurityContextRepository securityContextRepository,
+            @Qualifier("jwtDecoder") org.springframework.beans.factory.ObjectProvider<JwtDecoder>
+                    jwtDecoderProvider,
             org.springframework.beans.factory.ObjectProvider<JwtSecurityConfiguration
                     .InvestorJwtAuthenticationConverter>
                     jwtAuthenticationConverterProvider) throws Exception {
@@ -73,15 +135,16 @@ public class SecurityConfig {
                         .accessDeniedHandler((request, response, exception) ->
                                 errorWriter.write(response, ApiErrorCode.AUTHORIZATION_ERROR)));
         if (jwtProperties.enabled()) {
+            JwtDecoder decoder = jwtDecoderProvider.getIfAvailable();
             Converter<Jwt, AbstractAuthenticationToken> converter = jwtAuthenticationConverterProvider
                     .getIfAvailable();
-            if (converter == null) {
+            if (decoder == null || converter == null) {
                 throw new IllegalStateException("JWT authentication converter is not configured");
             }
             http.oauth2ResourceServer(oauth2 -> oauth2
                     .authenticationEntryPoint((request, response, exception) ->
                             errorWriter.write(response, ApiErrorCode.AUTHENTICATION_ERROR))
-                    .jwt(jwt -> jwt.jwtAuthenticationConverter(converter)));
+                    .jwt(jwt -> jwt.decoder(decoder).jwtAuthenticationConverter(converter)));
         }
         return http.build();
     }

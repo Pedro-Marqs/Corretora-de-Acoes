@@ -6,8 +6,8 @@
 
 ## 2. JWT e autorização da área administrativa
 
-- [ ] 2.1 Integrar JWT administrativo com claims exatas, `issuer=corretora-admin`, `audience=corretora-admin-api`, `APP_ADMIN_JWT_ENABLED=false` por padrão, secret externo obrigatório quando habilitado, TTL de access token de 10 minutos, TTL de refresh de 8 horas e converter separado do investidor; verificar claims adicionais, audience, issuer, assinatura, expiração, principal e tokens cruzados rejeitados.
-- [ ] 2.2 Configurar resolver/decoders separados, autorização HTTP e method security com default deny; verificar `401` para token ausente/inválido, `403` para principal sem autoridade, `USER` bloqueado e `ADMIN` permitido somente na área administrativa.
+- [x] 2.1 Integrar JWT administrativo com claims exatas, `issuer=corretora-admin`, `audience=corretora-admin-api`, `APP_ADMIN_JWT_ENABLED=false` por padrão, secret externo obrigatório quando habilitado, TTL de access token de 10 minutos, TTL de refresh de 8 horas e converter separado do investidor; verificar claims adicionais, audience, issuer, assinatura, expiração, principal e tokens cruzados rejeitados.
+- [x] 2.2 Configurar resolver/decoders separados, autorização HTTP e method security com default deny; verificar `401` para token ausente/inválido, `403` para principal sem autoridade, `USER` bloqueado e `ADMIN` permitido somente na área administrativa.
 - [ ] 2.3 Implementar `POST /api/admin/auth/login|refresh|logout`, cookie próprio, CSRF, rotação, reutilização, logout, expiração e revogação por estado/credencial; verificar `204`, `400`, `401`, `403`, `409` e desativação segura do operador sem perder o último administrador ativo.
 
 ## 3. Gestão de investidores
