@@ -6,7 +6,7 @@ Disponibilizar visão operacional agregada da corretora para administradores aut
 
 ### Requirement: Métricas agregadas de contas e negociações
 
-O dashboard administrativo SHALL apresentar, para o período solicitado e somente ao `ADMIN`, total de contas, contas ativas e inativas, novas contas, quantidade de compras e vendas, quantidade de ações compradas e vendidas e volume financeiro separado por moeda.
+O dashboard administrativo SHALL apresentar, somente ao `ADMIN`, indicadores agregados de estado atual, novas contas no período solicitado, atividade de negociações no período solicitado e volume financeiro separado por moeda. `totalAccounts`, `activeAccounts` e `inactiveAccounts` SHALL ser fotografias atuais das contas `ACTIVE` e `INACTIVE`, independentes do período e excluindo `DELETED`. `newAccounts` SHALL contar contas `ACTIVE` ou `INACTIVE` criadas dentro do período solicitado. `purchaseCount`, `saleCount`, `purchasedShares` e `soldShares` SHALL permanecer limitadas ao período solicitado.
 
 #### Scenario: Consulta agregada válida
 
@@ -61,10 +61,13 @@ O sistema SHALL expor `GET /api/admin/dashboard?period=4W|3M|6M|1Y|5Y|MAX&limit=
 
 O retorno SHALL conter exatamente estas oito métricas escalares: `totalAccounts`, `activeAccounts`, `inactiveAccounts`, `newAccounts`, `purchaseCount`, `saleCount`, `purchasedShares` e `soldShares`. Também SHALL conter volumes nativos de compra e venda separados por `BRL` e `USD`, sem somá-los diretamente, séries temporais diárias e ranking limitado de ativos.
 
-#### Scenario: Oito métricas no período
+#### Scenario: Métricas de estado atual e atividade no período
 
 - **WHEN** um `ADMIN` consultar período válido
-- **THEN** o sistema SHALL calcular total de contas, contas ativas, contas inativas, novas contas, compras, vendas, ações compradas e ações vendidas somente dentro do período definido
+- **THEN** o sistema SHALL calcular `totalAccounts`, `activeAccounts` e `inactiveAccounts` como o estado atual de contas `ACTIVE` e `INACTIVE`, independentemente do período
+- **AND** o sistema SHALL calcular `newAccounts` somente para contas `ACTIVE` ou `INACTIVE` criadas dentro do período definido
+- **AND** o sistema SHALL calcular compras, vendas, ações compradas e ações vendidas somente dentro do período definido
+- **AND** o sistema SHALL preservar `totalAccounts = activeAccounts + inactiveAccounts`, sem exigir que `newAccounts` seja igual ao total atual
 
 #### Scenario: Volumes em moedas diferentes
 

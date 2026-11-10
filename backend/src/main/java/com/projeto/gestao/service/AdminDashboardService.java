@@ -58,13 +58,11 @@ public class AdminDashboardService {
         OffsetDateTime start = period.start(now, firstRelevantAt(now));
 
         Set<AccountStatus> includedStatuses = Set.of(AccountStatus.ACTIVE, AccountStatus.INACTIVE);
-        long totalAccounts = accounts.countByCreatedAtGreaterThanEqualAndCreatedAtLessThanAndStatusIn(
+        long totalAccounts = accounts.countByStatusIn(includedStatuses);
+        long activeAccounts = accounts.countByStatus(AccountStatus.ACTIVE);
+        long inactiveAccounts = accounts.countByStatus(AccountStatus.INACTIVE);
+        long newAccounts = accounts.countByCreatedAtGreaterThanEqualAndCreatedAtLessThanAndStatusIn(
                 start, now, includedStatuses);
-        long activeAccounts = accounts.countByCreatedAtGreaterThanEqualAndCreatedAtLessThanAndStatus(
-                start, now, AccountStatus.ACTIVE);
-        long inactiveAccounts = accounts.countByCreatedAtGreaterThanEqualAndCreatedAtLessThanAndStatus(
-                start, now, AccountStatus.INACTIVE);
-        long newAccounts = totalAccounts;
 
         Map<MovementType, MovementTotals> totals = summarize(start, now);
         List<AdminDashboardSeriesPoint> series = series(start, now);

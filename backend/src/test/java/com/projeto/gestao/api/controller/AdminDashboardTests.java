@@ -117,9 +117,9 @@ class AdminDashboardTests {
                         .param("limit", "10")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalAccounts").value(2))
+                .andExpect(jsonPath("$.totalAccounts").value(3))
                 .andExpect(jsonPath("$.activeAccounts").value(1))
-                .andExpect(jsonPath("$.inactiveAccounts").value(1))
+                .andExpect(jsonPath("$.inactiveAccounts").value(2))
                 .andExpect(jsonPath("$.newAccounts").value(2))
                 .andExpect(jsonPath("$.purchaseCount").value(2))
                 .andExpect(jsonPath("$.saleCount").value(1))
@@ -233,8 +233,8 @@ class AdminDashboardTests {
         mockMvc.perform(get("/api/admin/dashboard").param("period", "4W")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalAccounts").value(1))
-                .andExpect(jsonPath("$.activeAccounts").value(1))
+                .andExpect(jsonPath("$.totalAccounts").value(2))
+                .andExpect(jsonPath("$.activeAccounts").value(2))
                 .andExpect(jsonPath("$.inactiveAccounts").value(0))
                 .andExpect(jsonPath("$.newAccounts").value(1));
     }

@@ -30,25 +30,29 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
                    account.createdAt as createdAt, account.inactivatedAt as inactivatedAt
             from Account account
             where (:status is null or account.status = :status)
-              and (:search is null
+              and (:search = ''
                    or lower(account.name) like lower(concat('%', :search, '%'))
                    or lower(account.email) like lower(concat('%', :search, '%'))
                    or account.cpf like concat('%', :search, '%'))
-              and (:createdFrom is null or account.createdAt >= :createdFrom)
-              and (:createdTo is null or account.createdAt <= :createdTo)
-              and (:inactivatedFrom is null or account.inactivatedAt >= :inactivatedFrom)
-              and (:inactivatedTo is null or account.inactivatedAt <= :inactivatedTo)
+              and account.createdAt >= coalesce(:createdFrom, account.createdAt)
+              and account.createdAt <= coalesce(:createdTo, account.createdAt)
+              and (coalesce(:inactivatedFrom, account.inactivatedAt) is null
+                   or account.inactivatedAt >= coalesce(:inactivatedFrom, account.inactivatedAt))
+              and (coalesce(:inactivatedTo, account.inactivatedAt) is null
+                   or account.inactivatedAt <= coalesce(:inactivatedTo, account.inactivatedAt))
             """, countQuery = """
             select count(account.id) from Account account
             where (:status is null or account.status = :status)
-              and (:search is null
+              and (:search = ''
                    or lower(account.name) like lower(concat('%', :search, '%'))
                    or lower(account.email) like lower(concat('%', :search, '%'))
                    or account.cpf like concat('%', :search, '%'))
-              and (:createdFrom is null or account.createdAt >= :createdFrom)
-              and (:createdTo is null or account.createdAt <= :createdTo)
-              and (:inactivatedFrom is null or account.inactivatedAt >= :inactivatedFrom)
-              and (:inactivatedTo is null or account.inactivatedAt <= :inactivatedTo)
+              and account.createdAt >= coalesce(:createdFrom, account.createdAt)
+              and account.createdAt <= coalesce(:createdTo, account.createdAt)
+              and (coalesce(:inactivatedFrom, account.inactivatedAt) is null
+                   or account.inactivatedAt >= coalesce(:inactivatedFrom, account.inactivatedAt))
+              and (coalesce(:inactivatedTo, account.inactivatedAt) is null
+                   or account.inactivatedAt <= coalesce(:inactivatedTo, account.inactivatedAt))
             """)
     Page<AdminInvestorProjection> findForAdministrativeView(
             @Param("status") AccountStatus status,
@@ -64,6 +68,8 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
     long countByCreatedAtGreaterThanEqualAndCreatedAtLessThanAndStatusIn(
             java.time.OffsetDateTime createdFrom, java.time.OffsetDateTime createdTo,
             java.util.Collection<AccountStatus> statuses);
+    long countByStatus(AccountStatus status);
+    long countByStatusIn(java.util.Collection<AccountStatus> statuses);
     @Query("select min(account.createdAt) from Account account")
     java.time.OffsetDateTime findFirstCreatedAt();
     @Query("select account.createdAt as createdAt from Account account "

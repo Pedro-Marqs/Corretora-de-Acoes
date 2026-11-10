@@ -97,9 +97,9 @@ class AdminDashboardPostgreSqlTests {
     void aggregatesAdministrativeDashboardOnPostgreSqlWithoutLoadingFinancialEntities() {
         var response = dashboardService.query(DashboardPeriod.FOUR_WEEKS, 1);
 
-        assertThat(response.totalAccounts()).isEqualTo(1);
+        assertThat(response.totalAccounts()).isEqualTo(2);
         assertThat(response.activeAccounts()).isEqualTo(1);
-        assertThat(response.inactiveAccounts()).isZero();
+        assertThat(response.inactiveAccounts()).isEqualTo(1);
         assertThat(response.newAccounts()).isEqualTo(1);
         assertThat(response.purchaseCount()).isEqualTo(2);
         assertThat(response.purchasedShares()).isEqualTo(5);

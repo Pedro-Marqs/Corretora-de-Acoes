@@ -63,7 +63,7 @@ public class AdminInvestorService {
                     && inactivatedFrom.isAfter(inactivatedTo)) {
                 throw new ValidationException();
             }
-            String normalizedSearch = search == null || search.isBlank() ? null : search.trim();
+            String normalizedSearch = search == null || search.isBlank() ? "" : search.trim();
             Page<AdminInvestorProjection> page = accountRepository.findForAdministrativeView(
                     status, normalizedSearch, createdFrom, createdTo,
                     inactivatedFrom, inactivatedTo, pageable);

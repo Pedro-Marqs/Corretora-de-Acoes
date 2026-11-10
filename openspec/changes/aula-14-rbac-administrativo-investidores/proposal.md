@@ -44,5 +44,6 @@ Afeta persistência e migrações administrativas, configuração JWT, cadeia de
 - Cookie `ADMIN_REFRESH_TOKEN` com `HttpOnly`, `SameSite=Lax`, `Path=/api/admin/auth`, `Secure` conforme o ambiente e proteção CSRF pelo `XSRF-TOKEN` existente.
 - Bootstrap somente por comando CLI explícito e idempotente, com leitura segura da senha; `APP_ADMIN_BOOTSTRAP_PASSWORD` fica reservado à automação de provisionamento e nunca deve ser exposto ou persistido.
 - Desativação do último administrador ativo rejeitada transacionalmente com `409`; a Aula 14 não cria cadastro público de administradores.
+- Dashboard administrativo: `totalAccounts`, `activeAccounts` e `inactiveAccounts` representam o estado atual de contas `ACTIVE`/`INACTIVE`, independentemente do período; `newAccounts` representa contas criadas no período; compras, vendas e ações negociadas permanecem limitadas ao período. Contas `DELETED` não entram nas métricas de contas.
 
 O contrato detalhado de HTTP, persistência, auditoria e dashboard está em `design.md` e nas duas specs deste change. As decisões acima fecham os contratos para a implementação; as tasks permanecem pendentes até haver código e evidências.
