@@ -98,6 +98,37 @@ describe('DashboardPage', () => {
     expect(await screen.findByText('Login destino')).toBeInTheDocument(); expect(auth.clear).toHaveBeenCalled(); expect(screen.queryByText('PETR4')).not.toBeInTheDocument()
   })
 
+  it('cobre todos os períodos suportados e recupera falha ao carregar corretoras', async () => {
+    getActiveBrokers.mockRejectedValueOnce(new Error('Corretoras indisponíveis.')).mockResolvedValueOnce(brokers)
+    setup()
+    expect(await screen.findByText('Corretoras indisponíveis.')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Tentar carregar corretoras novamente' }))
+    expect(await screen.findByText('Corretora Um')).toBeInTheDocument()
+    await screen.findAllByText('PETR4')
+    getDashboard.mockImplementation(({ period }) => Promise.resolve({ ...complete, period }))
+    for (const period of ['6M', '1Y', '5Y', 'MAX']) {
+      fireEvent.click(screen.getByRole('radio', { name: new RegExp(period) }))
+      await waitFor(() => expect(getDashboard).toHaveBeenLastCalledWith({ brokerAssociationId: '', period }))
+    }
+  })
+
+  it('agrega posições de corretoras e permite filtrar uma categoria sem dados', async () => {
+    const manyPositions = [
+      positions[0],
+      { ...positions[0], brokerageName: 'Corretora Dois', totalCostBrl: 300, marketValueBrl: 350, unrealizedResultBrl: 100 },
+      ...Array.from({ length: 5 }, (_, index) => ({ ...positions[0], ticker: `PETR${index + 5}`, totalCostBrl: 200, marketValueBrl: 250, unrealizedResultBrl: 50 })),
+    ]
+    getDashboard.mockResolvedValue({ ...complete, positions: manyPositions, distributions: { ...complete.distributions, byMarket: [{ identifier: 'BR', label: 'Brasil', valueBrl: '1500' }] } })
+    setup()
+    await screen.findByText('Ver lista completa de ações')
+    expect(screen.getByText('Sem dados')).toBeInTheDocument()
+    const nationalCard = screen.getAllByRole('button').find((button) => button.textContent.includes('nacionais'))
+    fireEvent.click(nationalCard)
+    expect(screen.getByRole('button', { name: 'Ver toda a carteira' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Ver toda a carteira' }))
+    expect(screen.queryByRole('button', { name: 'Ver toda a carteira' })).not.toBeInTheDocument()
+  })
+
   it.each([320, 768, 1280])('mantém seções e filtros acessíveis no viewport de %d px', async (width) => {
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: width }); setup(); await screen.findAllByText('PETR4')
     expect(screen.getByRole('heading', { name: 'Indicadores' })).toBeInTheDocument(); expect(screen.getByLabelText('Visão')).toBeInTheDocument(); expect(screen.getByRole('group', { name: 'Período do patrimônio' })).toBeInTheDocument()

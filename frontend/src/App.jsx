@@ -3,9 +3,13 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from
 import { createAccount } from './api/accounts.js'
 import AccountHome from './components/AccountHome.jsx'
 import { AuthProvider } from './context/AuthContext.jsx'
+import { AdminAuthProvider } from './context/AdminAuthContext.jsx'
 import PrivateRoute from './routing/PrivateRoute.jsx'
 import PublicRoute from './routing/PublicRoute.jsx'
+import AdminPrivateRoute from './routing/AdminPrivateRoute.jsx'
+import AdminPublicRoute from './routing/AdminPublicRoute.jsx'
 import AppLayout from './layout/AppLayout.jsx'
+import AdminLayout from './layout/AdminLayout.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import NotFoundPage from './pages/NotFoundPage.jsx'
 import AccountPage from './pages/AccountPage.jsx'
@@ -21,6 +25,9 @@ import DashboardPage from './pages/DashboardPage.jsx'
 import BankPage from './pages/BankPage.jsx'
 import AssetDetailPage from './pages/AssetDetailPage.jsx'
 import HomePage from './pages/HomePage.jsx'
+import AdminLoginPage from './pages/AdminLoginPage.jsx'
+import AdminDashboardPage from './pages/AdminDashboardPage.jsx'
+import AdminInvestorsPage from './pages/AdminInvestorsPage.jsx'
 
 const initialForm = { name: '', cpf: '', email: '', password: '' }
 
@@ -125,15 +132,17 @@ function RegisterPage() {
 }
 
 export default function App() {
-  return <BrowserRouter><AuthProvider><Routes>
+  return <BrowserRouter><AuthProvider><AdminAuthProvider><Routes>
     <Route path="/" element={<Navigate to="/cadastro" replace />} />
     <Route path="/cadastro" element={<PublicRoute><RegisterPage /></PublicRoute>} />
     <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
     <Route path="/reativacao" element={<PublicRoute><ReactivationPage /></PublicRoute>} />
     <Route path="/app" element={<PrivateRoute><AppLayout /></PrivateRoute>}><Route index element={<DashboardPage />} /><Route path="inicio" element={<HomePage />} /><Route path="investimentos" element={<DashboardPage />} /><Route path="banco" element={<BankPage />} /><Route path="bolsa" element={<AssetsPage />} /><Route path="bolsa/:market/:ticker" element={<AssetDetailPage />} /><Route path="dashboard" element={<DashboardPage />} /><Route path="ativos" element={<AssetsPage />} /><Route path="operacoes" element={<PortfolioPage />} /><Route path="negociar" element={<OperationsPage />} /><Route path="transferencias" element={<TransfersPage />} /><Route path="carteira" element={<WalletPage />} /><Route path="historico" element={<HistoryPage />} /><Route path="corretoras" element={<BrokersPage />} /><Route path="conta" element={<AccountPage />} /></Route>
+    <Route path="/admin/login" element={<AdminPublicRoute><AdminLoginPage /></AdminPublicRoute>} />
+    <Route path="/admin" element={<AdminPrivateRoute><AdminLayout /></AdminPrivateRoute>}><Route index element={<AdminDashboardPage />} /><Route path="investors" element={<AdminInvestorsPage />} /></Route>
     <Route path="/404" element={<NotFoundPage />} />
     <Route path="*" element={<Navigate to="/404" replace />} />
-  </Routes></AuthProvider></BrowserRouter>
+  </Routes></AdminAuthProvider></AuthProvider></BrowserRouter>
 }
 
 function FormField({ label, name, error, hint, children }) {
