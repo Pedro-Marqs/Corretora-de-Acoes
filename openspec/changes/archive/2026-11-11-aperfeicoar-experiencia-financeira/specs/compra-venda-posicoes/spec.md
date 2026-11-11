@@ -63,6 +63,8 @@ Ao acionar `Negociar` no detalhe do ativo, a interface SHALL mostrar quantidade,
 - **WHEN** não houver cotação ou câmbio utilizável para preencher o preço
 - **THEN** a interface SHALL bloquear a tentativa ou apresentar o erro funcional retornado, sem inventar preço ou alterar saldo/posição localmente
 
+## ADDED Requirements
+
 ### Requirement: Informar data e hora da operação
 
 Compra e venda SHALL aceitar data/hora de operação editável em formato válido e SHALL preencher o campo inicialmente com o momento atual de Brasília. O backend SHALL rejeitar formato inválido ou instante futuro e SHALL registrar o instante aceito no histórico e no ponto patrimonial.

@@ -1,6 +1,11 @@
+## RENAMED Requirements
+
+- FROM: Aplicar direção visual azul global
+- TO: Aplicar identidade visual escura e esmeralda compartilhada
+
 ## MODIFIED Requirements
 
-### Requirement: Aplicar identidade visual escura e esmeralda compartilhada
+### Requirement: Aplicar direção visual azul global
 
 A interface SHALL usar a identidade escura e os destaques verde-esmeralda já adotados pela Corretora em páginas públicas e privadas, por meio dos tokens e componentes visuais compartilhados, sem impor uma paleta azul específica. O layout SHALL poder usar referências visuais de Status Invest e Investidor10 apenas como inspiração de hierarquia, densidade e organização, sem copiar identidade, textos, imagens ou elementos proprietários. A mudança SHALL preservar contraste legível, responsividade sem rolagem horizontal, estados de carregamento/vazio/erro/alerta/sucesso e as cores semânticas necessárias para ganho, perda e ações destrutivas.
 
@@ -8,7 +13,7 @@ A interface SHALL usar a identidade escura e os destaques verde-esmeralda já ad
 - **WHEN** o investidor navegar entre login, início, Investimentos, Banco e Bolsa
 - **THEN** a interface SHALL apresentar superfícies escuras, destaques verde-esmeralda e a hierarquia visual compartilhada sem permanecer com a aparência anterior
 
-#### Scenario: Rotas públicas e privadas com identidade compartilhada
+#### Scenario: Rotas públicas e privadas com tema azul
 - **WHEN** o investidor navegar entre cadastro, login, conta, carteira, ativos e operações
 - **THEN** os elementos recorrentes SHALL usar os tokens e componentes da identidade escura e esmeralda atual, sem exigir uma paleta incompatível entre áreas
 
@@ -19,6 +24,8 @@ A interface SHALL usar a identidade escura e os destaques verde-esmeralda já ad
 #### Scenario: Tema responsivo
 - **WHEN** qualquer rota for visualizada em 320 px, tablet ou desktop
 - **THEN** o tema SHALL permanecer utilizável, sem sobreposição ou rolagem horizontal e sem quebrar os fluxos existentes
+
+## ADDED Requirements
 
 ### Requirement: Impedir área vazia por arraste horizontal
 
