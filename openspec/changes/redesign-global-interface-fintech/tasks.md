@@ -1,10 +1,10 @@
 ## 1. Design system e componentes-base
 
-- [ ] 1.1 Congelar o inventário das rotas, layouts, componentes, clientes de API, estados e testes descrito em `design.md`, registrando também os campos oficiais usados por cada tela; verificar o artefato contra `frontend/src/App.jsx`, `frontend/src/api/` e os testes existentes sem alterar código de produção.
-- [ ] 1.2 Criar a camada de tokens visuais e a base tipográfica/responsiva em `frontend/src/styles/`, com tema escuro, esmeralda, superfícies, estados semânticos, foco, espaçamento, raios e sombras; verificar com teste de estilos, `npm run lint` e `npm run build`.
-- [ ] 1.3 Implementar primitivas reutilizáveis em `frontend/src/components/ui/` para shell, superfícies, botões, campos, badges, métricas, tabelas, filtros, paginação, mensagens e diálogos; verificar cada primitiva com Testing Library para estados normais, disabled, foco e teclado.
-- [ ] 1.4 Extrair primitivas de visualização acessíveis em `frontend/src/components/data-viz/` a partir dos SVG/HTML existentes, mantendo pontos oficiais, unidade, moeda, período e alternativa textual/tabular; verificar com dados reais de teste dos clientes, sem mocks de domínio ou dependência de cor/hover.
-- [ ] 1.5 Consolidar `LoadingState`, `EmptyState`, `ErrorState`, confirmação, conflito e atualização pós-mutação sem alterar contratos de API; verificar reenvio bloqueado, erro recuperável, `aria-live` e foco de diálogo nos testes de componentes.
+- [x] 1.1 Congelar o inventário das rotas, layouts, componentes, clientes de API, estados e testes descrito em `design.md`, registrando também os campos oficiais usados por cada tela; verificar o artefato contra `frontend/src/App.jsx`, `frontend/src/api/` e os testes existentes sem alterar código de produção.
+- [x] 1.2 Criar a camada de tokens visuais e a base tipográfica/responsiva em `frontend/src/styles/`, com tema escuro, esmeralda, superfícies, estados semânticos, foco, espaçamento, raios e sombras; verificar com teste de estilos, `npm run lint` e `npm run build`.
+- [x] 1.3 Implementar primitivas reutilizáveis em `frontend/src/components/ui/` para shell, superfícies, botões, campos, badges, métricas, tabelas, filtros, paginação, mensagens e diálogos; verificar cada primitiva com Testing Library para estados normais, disabled, foco e teclado.
+- [x] 1.4 Extrair primitivas de visualização acessíveis em `frontend/src/components/data-viz/` a partir dos SVG/HTML existentes, mantendo pontos oficiais, unidade, moeda, período e alternativa textual/tabular; verificar com dados reais de teste dos clientes, sem mocks de domínio ou dependência de cor/hover.
+- [x] 1.5 Consolidar `LoadingState`, `EmptyState`, `ErrorState`, confirmação, conflito e atualização pós-mutação sem alterar contratos de API; verificar reenvio bloqueado, erro recuperável, `aria-live` e foco de diálogo nos testes de componentes.
 
 ## 2. Navegação, layouts e autenticação
 

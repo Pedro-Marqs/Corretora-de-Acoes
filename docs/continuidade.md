@@ -218,6 +218,10 @@ Este arquivo deve ser atualizado sempre que houver uma decisão relevante, alter
 
 ## Próximo passo
 
+- Em 2026-11-11, a Etapa 1 do change `redesign-global-interface-fintech` foi implementada sem avançar para as etapas posteriores. O inventário congelado de rotas, layouts, clientes de API, campos oficiais e testes foi registrado em `openspec/changes/redesign-global-interface-fintech/design.md`; as tarefas 1.1 a 1.5 estão comprovadas e marcadas como concluídas.
+- A fundação visual adicionou `frontend/src/styles/tokens.css`, `frontend/src/styles/components.css`, primitivas em `frontend/src/components/ui/`, visualizações acessíveis em `frontend/src/components/data-viz/` e compatibilidade de estados em `frontend/src/components/common/AsyncStates.jsx`. A identidade usa tema escuro, verde-esmeralda, superfícies em camadas, estados semânticos, foco visível, responsividade e alternativa tabular para dados oficiais; nenhuma página, layout, API, regra financeira ou autenticação foi migrada nesta etapa.
+- A validação final passou com `npm test` e `npm run test` em 383/383 testes, `npm run test:coverage` com 88,58% statements, 80,71% branches, 91,62% functions e 93,21% lines, `npm run lint`, `npm run build`, `openspec validate redesign-global-interface-fintech --strict`, `graphify update .` e `git diff --check`. As tarefas 2.1–6.5 permanecem pendentes; não houve alteração de backend, migrations, CI, Aula 15, changes arquivados, commit ou push.
+
 - As implementações da T29, T30, T31 e T32 estão concluídas e os changes correspondentes estão arquivados; T32 foi arquivada em `openspec/changes/archive/2026-09-08-implementar-t32-consulta-historico`.
 
 - As implementações da T33 estão concluídas e o change foi arquivado em `openspec/changes/archive/2026-09-08-implementar-t33-interface-historico`. A interface adicionou a rota privada `/app/historico`, filtros combináveis, paginação oficial de 20 registros, estados de carregamento/vazio/erro/sessão inválida e apresentação somente leitura.

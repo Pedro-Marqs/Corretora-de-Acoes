@@ -96,6 +96,34 @@ As páginas existentes serão migradas por fatias verticais, mantendo a aplicaç
 
 ## Migration Plan
 
+## Etapa 1 — inventário congelado
+
+O inventário abaixo foi conferido contra `frontend/src/App.jsx`, os clientes em `frontend/src/api/`, layouts, contextos e testes existentes. Ele registra somente campos já fornecidos pelos contratos atuais; a Etapa 1 não altera essas rotas nem cria consultas novas.
+
+| Área/rotas | Implementação atual | Fonte oficial e campos relevantes | Evidências existentes |
+| --- | --- | --- | --- |
+| `/cadastro` | `RegisterPage` em `App.jsx` | `createAccount`: `name`, `cpf`, `email`, `password`; resposta: `name`, `balance`, `status` | `App.test.jsx`, `App.account-lifecycle.test.jsx`, `accounts.test.js` |
+| `/login` | `LoginPage`/`LoginForm` + `AuthContext` | login/refresh/logout; conta: `name`, `cpfMasked`, `emailMasked`, `balance`, `status` | `App.test.jsx`, `AuthContext.test.jsx`, `auth.test.js` |
+| `/reativacao` e `/404` | `ReactivationPage` e `NotFoundPage` | reativação por `cpf` e estado de disponibilidade; 404 sem dados | `ReactivationPage.test.jsx`, `App.account-lifecycle.test.jsx` |
+| `/app`, `/app/dashboard`, `/app/investimentos` | `DashboardPage` | `GET /api/dashboard`: `availableBalanceBrl`, `patrimonyBrl`, `positions`, `distributions`, `exchangeRate`, `warnings`, `period`, `patrimonyHistory`, `investmentHistory` | `DashboardPage.test.jsx`, `dashboard.test.js` |
+| `/app/inicio` | `HomePage` | snapshot de `AuthContext`: nome e saldo disponível quando retornado | `App.test.jsx`, `App.wallet.test.jsx` |
+| `/app/banco` | `BankPage`, `WalletPage`, `BrokersPage` | saldo, aportes, retiradas, corretoras próprias e associações; campos de corretora do contrato de `brokers.js` | `BankPage.test.jsx`, `WalletPage.test.jsx`, `BrokersPage.test.jsx` |
+| `/app/bolsa`, `/app/bolsa/:market/:ticker` | `AssetsPage`, `AssetDetailPage` | ativo: `assetId`, `ticker`, `name`, `market`, `currency`, `originalPrice`, `priceBrl`, instantes e indicadores de stale; posição quando existente | `App.assets.test.jsx`, `AssetDetailPage.test.jsx`, `market.test.js` |
+| `/app/operacoes`, `/app/carteira`, `/app/negociar` | `PortfolioPage`, `WalletPage`, `OperationsPage` | posições: ativo, corretora, quantidade, preço médio, cotação, valor de mercado, resultado; operações com `assetId`, corretora, quantidade, preço oficial e instante | `PortfolioPage.test.jsx`, `OperationsPage.test.jsx`, `wallet.test.js` |
+| `/app/transferencias` | `TransfersPage` | posição e corretoras próprias; origem, destino, ativo e quantidade | `TransfersPage.test.jsx`, `wallet.test.js` |
+| `/app/historico` | `HistoryPage` | página de até 20 movimentos, `occurredAt`, tipo, ativo, mercado, corretoras, valores e saldo remanescente; filtros oficiais | `HistoryPage.test.jsx`, `history.test.js` |
+| `/app/corretoras`, `/app/conta` | `BrokersPage`, `AccountPage` | associações de corretora; conta mascarada, credenciais, ciclo de vida e mensagens oficiais | `BrokersPage.test.jsx`, `AccountPage.test.jsx`, `accounts.test.js`, `brokers.test.js` |
+| `/admin/login` | `AdminLoginPage` + `AdminAuthContext` | autenticação administrativa separada, token somente em memória, refresh e logout | `AdminPages.test.jsx`, `AdminAuthContext.test.jsx`, `admin-auth.test.js` |
+| `/admin` | `AdminLayout` + `AdminDashboardPage` | dashboard agregado: métricas atuais de contas, `newAccounts`, operações por período, volumes BRL/USD, séries e ranking | `AdminPages.test.jsx`, `admin-dashboard.test.js` |
+| `/admin/investors` | `AdminInvestorsPage` | página de investidores: id opaco, nome, e-mail/CPF mascarados, status e timestamps; filtros, paginação e conflito | `AdminPages.test.jsx`, `admin-investors.test.js` |
+
+### Fundação visual da Etapa 1
+
+- `styles/tokens.css` é a fonte dos tokens de canvas, superfícies, texto, esmeralda, estados semânticos, tipografia, espaçamento, raios, sombras, controles, breakpoints e movimento reduzido.
+- `components/ui/` contém primitivas sem regra financeira: shell, cabeçalho de seção, superfície, métrica, badge, botão, campos, filtros, tabela, paginação, estados, feedback e diálogo de confirmação.
+- `components/data-viz/` contém visualizações SVG/HTML que recebem pontos já interpretados, preservam unidade/período/moeda e oferecem consulta tabular acessível.
+- `components/common/AsyncStates.jsx` mantém a API usada pelas páginas atuais e passa a reutilizar o contrato visual de feedback/retentativa, sem migrar páginas nesta etapa.
+
 1. Congelar o inventário de rotas, contratos e estados atuais; criar tokens, primitivas e regras de acessibilidade sem alterar chamadas de API.
 2. Migrar shell, navegação, autenticação pública e proteção visual das rotas, mantendo os contextos JWT separados.
 3. Migrar dashboard e visualizações do investidor, validando patrimônio, investimento, moeda, câmbio e estados sem dados.
