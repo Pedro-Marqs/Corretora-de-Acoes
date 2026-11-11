@@ -7,7 +7,7 @@ O backend já centraliza saldo, histórico, patrimônio, cotações e regras fin
 **Goals:**
 - Introduzir retirada como movimentação financeira atômica e suportar seus timestamps.
 - Separar preço inicial da cotação de preço confirmado editável, mantendo validação no backend.
-- Reorganizar a experiência privada e aplicar um sistema visual azul-marinho responsivo.
+- Reorganizar a experiência privada usando a identidade escura e verde-esmeralda compartilhada, com responsividade preservada.
 - Usar componentes de gráfico acessíveis, com valores e estados textuais equivalentes.
 
 **Non-Goals:**
@@ -22,6 +22,7 @@ O backend já centraliza saldo, histórico, patrimônio, cotações e regras fin
 - **Cotação antiga como fechamento:** o estado de desatualização continua permitindo fallback, mas a camada de apresentação usará o rótulo “preço de fechamento” para evitar sugerir que o valor é intradiário atual.
 - **Gráficos progressivos:** preferir componentes existentes ou uma dependência pequena e acessível; cada gráfico terá tabela/resumo textual ou valores legíveis como fallback. Não serão criadas séries sintéticas.
 - **Shell e CSS tokens:** centralizar cores, superfícies, espaçamento, overflow e breakpoints em tokens compartilhados; corrigir causa de largura excedente em vez de ocultar o problema com rolagem horizontal global.
+- **Substituição da direção visual:** a decisão anterior de impor azul-marinho é substituída pela identidade escura e verde-esmeralda já implementada. Este change registra o comportamento visual atual; a evolução posterior do design system, sem alteração de regras financeiras, pertence ao change `redesign-global-interface-fintech`.
 - **Corretora revalidada no comando:** a associação deve consultar a situação cadastral ativa no momento da confirmação; indisponibilidade externa impede conclusão, não equivale a inatividade.
 
 ## Risks / Trade-offs

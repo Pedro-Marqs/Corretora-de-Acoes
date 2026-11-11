@@ -13,6 +13,6 @@
 
 ## 3. Shell visual e validação transversal
 
-- [x] 3.1 Fazer login direcionar para `/app` e reformular tela inicial, header e seções com fundo azul-marinho.
+- [x] 3.1 Fazer login direcionar para `/app` e reformular tela inicial, header e seções preservando a identidade escura e verde-esmeralda compartilhada.
 - [x] 3.2 Corrigir overflow horizontal e áreas vazias em telas estreitas, tablet e desktop.
 - [x] 3.3 Executar testes backend/frontend, lint, build, `git diff --check` e `openspec validate --strict`.

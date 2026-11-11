@@ -11,7 +11,7 @@ A experiência atual ainda não cobre retirada de saldo e não comunica claramen
 - Pré-preencher preço de compra/venda com a cotação, mantendo o campo editável, e permitir data/hora editável com padrão no momento atual.
 - Fazer o login conduzir à tela inicial privada, visualmente coerente com a tela de login.
 - Corrigir overflow e áreas vazias causadas por arraste horizontal em todos os tamanhos suportados.
-- Aplicar fundo azul-marinho e reformular o layout com referências visuais de Status Invest e Investidor10, sem copiar identidade, conteúdo ou elementos proprietários.
+- Preservar o fundo escuro e os destaques verde-esmeralda já adotados, reformulando o layout com referências visuais de Status Invest e Investidor10 apenas como inspiração, sem copiar identidade, conteúdo ou elementos proprietários.
 
 ## Capabilities
 
@@ -27,7 +27,7 @@ A experiência atual ainda não cobre retirada de saldo e não comunica claramen
 - `compra-venda-posicoes`: preço inicial editável e data/hora da operação.
 - `dashboards`: gráficos visíveis no dashboard.
 - `navegacao-interface-financeira`: destino pós-login e tela inicial privada.
-- `interface-estados`: tema azul-marinho, referências visuais e correção de overflow.
+- `interface-estados`: identidade escura e verde-esmeralda compartilhada, referências visuais e correção de overflow.
 
 ## Impact
 
