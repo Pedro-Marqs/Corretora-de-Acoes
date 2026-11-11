@@ -107,7 +107,7 @@ class AdminDashboardPostgreSqlTests {
         assertThat(response.purchaseVolume().usd()).isEqualByComparingTo("20.00");
         assertThat(response.purchaseVolume().equivalentBrl()).isEqualByComparingTo("160.00");
         assertThat(response.ranking()).hasSize(1);
-        assertThat(response.series()).hasSize(3);
+        assertThat(response.series()).hasSize(2);
     }
 
     private void cleanup() {

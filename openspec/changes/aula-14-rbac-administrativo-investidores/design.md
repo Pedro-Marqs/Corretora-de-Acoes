@@ -97,3 +97,7 @@ As métricas de conta têm semânticas distintas: `totalAccounts`, `activeAccoun
 O mesmo retorno contém volumes de compra/venda separados por `BRL` e `USD`, sem soma direta entre moedas; equivalente em BRL somente aparece com taxa `USD/BRL` válida e inclui valor da taxa e instante da cotação. Sem taxa válida, o equivalente é nulo e o estado é `UNAVAILABLE`, enquanto os valores nativos permanecem disponíveis.
 
 As séries são diárias e contêm apenas data, novas contas, compras e vendas. O ranking retorna no máximo `limit` ativos, ordenado por quantidade negociada decrescente, com desempate por ticker e mercado. Nenhuma projeção retorna identificador de investidor, saldo, patrimônio, posição, CPF completo ou e-mail completo.
+
+### Contrato mínimo de ciclo de vida do administrador
+
+Para fechar o mecanismo da task 2.3 sem criar tela de gestão de operadores, a operação controlada será exposta somente pelo endpoint autenticado `PATCH /api/admin/admins/{adminId}/status`, aceitando `{ "status": "ACTIVE"|"INACTIVE" }`. O controller exige principal `AdminPrincipal` com `ADMIN`, e o serviço revalida o ator ativo antes de alterar o `AdminUser` alvo. A desativação usa `DEACTIVATE_ADMIN`, revoga todas as famílias de refresh do alvo e rejeita o último administrador ativo com `409`; a reativação usa `ACTIVATE_ADMIN`.

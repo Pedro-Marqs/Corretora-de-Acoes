@@ -193,7 +193,7 @@ class SchemaMigrationTests {
             assertThat(tableExists(connection, "ADMIN_USER")).isTrue();
             insertFinancialAccount(connection, UUID.randomUUID());
 
-            liquibase.rollback(4, new Contexts(), new LabelExpression());
+            liquibase.rollback(5, new Contexts(), new LabelExpression());
             assertThat(tableExists(connection, "REFRESH_TOKEN")).isFalse();
             assertThat(tableExists(connection, "ADMIN_USER")).isFalse();
             assertThat(tableExists(connection, "ADMIN_AUDIT_EVENT")).isFalse();

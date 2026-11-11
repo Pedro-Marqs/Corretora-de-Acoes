@@ -57,7 +57,7 @@ class PostgreSqlMigrationTests {
     void migratesEmptyPostgreSqlDatabase() {
         Integer appliedMigrations = jdbc.queryForObject(
                 "SELECT COUNT(*) FROM databasechangelog WHERE exectype = 'EXECUTED'", Integer.class);
-        assertThat(appliedMigrations).isEqualTo(14);
+        assertThat(appliedMigrations).isEqualTo(15);
     }
 
     @Test
