@@ -10,7 +10,7 @@ O frontend atual já cobre os fluxos de investidor e administrador, mas a experi
 - Padronizar a apresentação de dados reais, mantendo separados BRL e USD, distinguindo movimentação financeira de desempenho patrimonial e preservando a semântica administrativa consolidada.
 - Garantir responsividade desktop, tablet e mobile, navegação por teclado, foco visível, semântica HTML e suporte a tecnologias assistivas.
 - Executar a implementação em seis entregas revisáveis: base visual; navegação/autenticação; dashboard do investidor; demais telas do investidor; telas administrativas; regressão, responsividade e acessibilidade.
-- Não alterar APIs, regras financeiras, persistência, migrations, CI, sessões JWT, refresh, CSRF, RBAC, isolamento de dados ou changes arquivados.
+- Não criar endpoints nem alterar regras financeiras, persistência, migrations, CI, sessões JWT, refresh, CSRF, RBAC, isolamento de dados ou changes arquivados. O contrato existente de `GET /api/dashboard` poderá ser refinado para incluir uma âncora patrimonial oficial no início dos períodos relativos.
 
 ## Capabilities
 
@@ -20,12 +20,12 @@ O frontend atual já cobre os fluxos de investidor e administrador, mas a experi
 
 ### Modified Capabilities
 
-Nenhuma. As especificações existentes continuam sendo os contratos funcionais e de segurança; esta capacidade acrescenta requisitos de apresentação e interação sem substituir regras de autenticação, finanças, navegação funcional ou dashboards consolidados.
+- `dashboards`: a série `patrimonyHistory` passa a incluir, quando existir, o último ponto patrimonial oficial registrado até o início do período selecionado, antes dos pontos da janela, para que a evolução comece com o patrimônio conhecido na fronteira sem valor artificial.
 
 ## Impact
 
 - Frontend React/Vite: `frontend/src/App.jsx`, layouts, páginas, componentes compartilhados, `frontend/src/styles/global.css`, formatadores e testes associados.
-- Clientes de API existentes serão apenas consumidos pelos novos componentes; os contratos reais de `dashboard`, `wallet`, `history`, `market`, `brokers`, autenticação e administração permanecem a fonte dos dados exibidos.
+- Clientes de API existentes serão apenas consumidos pelos novos componentes; os contratos reais de `dashboard`, `wallet`, `history`, `market`, `brokers`, autenticação e administração permanecem a fonte dos dados exibidos. O serviço atual do dashboard será ajustado somente para consultar a âncora patrimonial oficial da janela.
 - A configuração atual de testes Vitest/Testing Library e seus thresholds globais de 80% para statements, branches, functions e lines será preservada.
 - A biblioteca de gráficos atual é SVG/React nativo. A adoção de uma dependência adicional só poderá ser decidida durante a implementação se houver necessidade demonstrada e sem substituir dados oficiais por mocks.
-- Nenhum arquivo de backend, migration, CI ou change arquivado será modificado por este planejamento ou pelas etapas visuais previstas.
+- Nenhuma migration, CI ou change arquivado será modificada; a implementação da âncora poderá alterar apenas o serviço, repositório, testes e DTO já existentes do dashboard, sem criar regra financeira nova.

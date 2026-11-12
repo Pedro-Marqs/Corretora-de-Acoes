@@ -8,17 +8,17 @@
 
 ## 2. Navegação, layouts e autenticação
 
-- [ ] 2.1 Migrar cadastro, login, reativação, sessão transitória e página 404 para as primitivas do design system; verificar preservação de validações, mensagens, dados não persistidos e responsividade a partir de 320px nos testes das páginas públicas.
-- [ ] 2.2 Reestruturar `AppLayout` e a navegação privada do investidor com shell, busca, menu de conta, seções Investimentos/Banco/Bolsa e configuração; verificar seção ativa, menu por teclado/Escape, logout, busca de ativos e redirecionamento de sessão inválida.
-- [ ] 2.3 Reestruturar `AdminLayout` e o fluxo visual de `/admin/login` sem compartilhar contexto ou token com o investidor; verificar login, refresh, logout, erro 401/403, foco e encaminhamento para a rota administrativa correta.
-- [ ] 2.4 Executar regressão das rotas em `App.jsx` e dos guards públicos, privados e administrativos depois da migração; verificar que todas as rotas listadas no design continuam acessíveis somente ao papel autorizado e que nenhum conteúdo privado aparece durante loading/erro.
+- [x] 2.1 Migrar cadastro, login, reativação, sessão transitória e página 404 para as primitivas do design system; verificar preservação de validações, mensagens, dados não persistidos e responsividade a partir de 320px nos testes das páginas públicas.
+- [x] 2.2 Reestruturar `AppLayout` e a navegação privada do investidor com shell, busca, menu de conta, seções Investimentos/Banco/Bolsa e configuração; verificar seção ativa, menu por teclado/Escape, logout, busca de ativos e redirecionamento de sessão inválida.
+- [x] 2.3 Reestruturar `AdminLayout` e o fluxo visual de `/admin/login` sem compartilhar contexto ou token com o investidor; verificar login, refresh, logout, erro 401/403, foco e encaminhamento para a rota administrativa correta.
+- [x] 2.4 Executar regressão das rotas em `App.jsx` e dos guards públicos, privados e administrativos depois da migração; verificar que todas as rotas listadas no design continuam acessíveis somente ao papel autorizado e que nenhum conteúdo privado aparece durante loading/erro.
 
 ## 3. Dashboard e gráficos do investidor
 
-- [ ] 3.1 Migrar `DashboardPage` para cards de métricas, superfícies e filtros usando somente o snapshot de `/api/dashboard`; verificar saldo disponível, patrimônio, posições, resultados e avisos sem placeholders de posição ou cálculo financeiro local.
-- [ ] 3.2 Migrar gráfico patrimonial, série de investimento, distribuição por ativo/corretora/mercado e estados de câmbio; verificar `patrimonyHistory` separado de `investmentHistory`, BRL/USD identificados, período oficial e ausência de pontos inventados.
-- [ ] 3.3 Adaptar o dashboard do investidor para desktop, tablet e mobile; verificar ordem dos cards, legibilidade dos gráficos, ausência de overflow global e consulta acessível dos pontos em 320px, viewport intermediária e desktop.
-- [ ] 3.4 Cobrir os estados do dashboard durante troca de período/corretora, resposta vazia, cotação/câmbio stale, erro de API, 401 e retry; verificar que resultados antigos não são misturados e que a sessão é encaminhada ao login correto.
+- [x] 3.1 Migrar `DashboardPage` para cards de métricas, superfícies e filtros usando somente o snapshot de `/api/dashboard`; verificar saldo disponível, patrimônio, posições, resultados e avisos sem placeholders de posição ou cálculo financeiro local.
+- [x] 3.2 Migrar gráfico patrimonial, série de investimento, distribuição por ativo/corretora/mercado e estados de câmbio; verificar `patrimonyHistory` separado de `investmentHistory`, BRL/USD identificados, período oficial com âncora patrimonial persistida até o início da janela quando disponível e ausência de pontos inventados.
+- [x] 3.3 Adaptar o dashboard do investidor para desktop, tablet e mobile; verificar ordem dos cards, legibilidade dos gráficos, ausência de overflow global e consulta acessível dos pontos em 320px, viewport intermediária e desktop.
+- [x] 3.4 Cobrir os estados do dashboard durante troca de período/corretora, resposta vazia, cotação/câmbio stale, erro de API, 401 e retry; verificar que resultados antigos não são misturados e que a sessão é encaminhada ao login correto.
 
 ## 4. Demais telas do investidor
 

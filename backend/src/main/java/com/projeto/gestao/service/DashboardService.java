@@ -6,8 +6,10 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -26,6 +28,7 @@ import com.projeto.gestao.domain.model.MovementType;
 import com.projeto.gestao.domain.model.Position;
 import com.projeto.gestao.domain.model.PositionFinancialCalculator;
 import com.projeto.gestao.domain.model.PositionValuation;
+import com.projeto.gestao.domain.model.PatrimonialPoint;
 import com.projeto.gestao.domain.model.Quote;
 import com.projeto.gestao.repository.AccountRepository;
 import com.projeto.gestao.repository.AccountBrokerRepository;
@@ -177,8 +180,16 @@ public class DashboardService {
         }
         OffsetDateTime now = OffsetDateTime.now(clock);
         OffsetDateTime start = period.start(now, account.getCreatedAt());
-        return patrimonialPoints.findByAccountIdAndRecordedAtBetweenOrderByRecordedAtAscIdAsc(
-                        account.getId(), start, now).stream()
+        List<PatrimonialPoint> points = new ArrayList<>();
+        Optional<PatrimonialPoint> anchor = patrimonialPoints
+                .findTopByAccountIdAndRecordedAtLessThanEqualOrderByRecordedAtDescIdDesc(
+                        account.getId(), start);
+        anchor.ifPresent(points::add);
+        points.addAll(patrimonialPoints.findByAccountIdAndRecordedAtBetweenOrderByRecordedAtAscIdAsc(
+                account.getId(), start, now));
+        Map<UUID, PatrimonialPoint> uniquePoints = new LinkedHashMap<>();
+        points.forEach(point -> uniquePoints.putIfAbsent(point.getId(), point));
+        return uniquePoints.values().stream()
                 .map(point -> new DashboardPatrimonialPointView(
                         brasilia(point.getRecordedAt()),
                         new FinancialAmount(point.getPatrimonyBrl()).value()))

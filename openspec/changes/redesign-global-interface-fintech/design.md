@@ -19,7 +19,7 @@ Hoje o pacote frontend não declara biblioteca de gráficos dedicada. Os gráfic
 
 **Non-Goals:**
 
-- Alterar endpoints, DTOs, regras financeiras, cálculos de patrimônio, persistência, migrations, CI ou autenticação.
+- Criar endpoints ou DTOs novos, alterar regras financeiras, cálculos de patrimônio, migrations, CI ou autenticação. O contrato existente do dashboard poderá ser refinado para retornar uma âncora patrimonial oficial já persistida.
 - Criar novas métricas, séries históricas, cotações, conversões ou recomendações financeiras.
 - Copiar a marca ou os dados da imagem de referência, ou transformar a referência em requisito de conteúdo.
 - Introduzir uma segunda identidade visual para administradores.
@@ -51,7 +51,7 @@ Alternativa considerada: instalar uma biblioteca de componentes completa. Foi re
 
 ### 3. Manter SVG nativo como primeira opção para gráficos
 
-Os gráficos atuais de patrimônio, distribuição, séries administrativas e indicadores deverão ser refatorados para primitivas SVG/HTML reutilizáveis, com `aria-labelledby`, `title/desc`, unidades, período, moeda e tabela/detalhes acessíveis. A implementação deverá renderizar apenas os pontos oficiais retornados pelos clientes de API.
+Os gráficos atuais de patrimônio, distribuição, séries administrativas e indicadores deverão ser refatorados para primitivas SVG/HTML reutilizáveis, com `aria-labelledby`, `title/desc`, unidades, período, moeda e tabela/detalhes acessíveis. A implementação deverá renderizar apenas os pontos oficiais retornados pelos clientes de API, incluindo a âncora patrimonial oficial fornecida pelo backend quando o período relativo começar depois do último ponto persistido.
 
 Uma biblioteca como Recharts só será considerada durante a etapa de base visual se uma lacuna concreta de interação, resize ou acessibilidade não puder ser resolvida pelas primitivas existentes. Nesse caso, a decisão exigirá avaliação de bundle, cobertura, keyboard/fallback e ausência de transformação financeira. Não será adicionada por preferência estética.
 
@@ -63,7 +63,7 @@ As páginas continuarão usando os módulos atuais em `frontend/src/api/`. A eta
 
 | Área | Fonte oficial | Restrições de apresentação |
 | --- | --- | --- |
-| Dashboard do investidor | `GET /api/dashboard` | patrimônio, investimento, saldo, posições, distribuições, câmbio e avisos; BRL/USD identificados |
+| Dashboard do investidor | `GET /api/dashboard` | patrimônio, investimento, saldo, posições, distribuições, câmbio e avisos; BRL/USD identificados; `patrimonyHistory` com âncora oficial até o início do período quando disponível |
 | Carteira/posições | `/api/wallet/positions` e snapshot do dashboard | quantidade, preço médio, mercado e corretora conforme resposta; nenhum placeholder de posição |
 | Ativos/negociação | `/api/assets/search`, `/api/wallet/purchases`, `/api/wallet/sales` | cotação oficial somente leitura; preço não editável; sucesso somente após resposta |
 | Banco/transferências | `/api/wallet`, depósitos, retiradas e transferências | saldo e posição atualizados pela API; confirmação antes de mutar |
@@ -131,7 +131,7 @@ O inventário abaixo foi conferido contra `frontend/src/App.jsx`, os clientes em
 5. Migrar login, dashboard e gestão de investidores administrativos, incluindo mascaramento, conflitos e métricas sem dados individuais.
 6. Executar regressão visual e funcional em breakpoints, testar teclado/estados, rodar lint, build, suíte e coverage; corrigir apenas problemas introduzidos pelo change.
 
-Rollback é por etapa: cada entrega deve ser revertível no conjunto de componentes/estilos da etapa, sem rollback de backend ou alteração de dados. Como o change não modifica contratos de API, a reversão visual não exige migration ou operação de banco.
+Rollback é por etapa: cada entrega deve ser revertível no conjunto de componentes/estilos da etapa, sem alteração de dados. Como o change não cria endpoints nem migrations, a reversão da âncora exige somente reverter o serviço/repositório e os testes correspondentes; não exige operação de banco.
 
 ## Open Questions
 
