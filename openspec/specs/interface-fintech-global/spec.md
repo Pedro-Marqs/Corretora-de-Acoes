@@ -1,8 +1,9 @@
-## Purpose
+# interface-fintech-global Specification
 
+## Purpose
 Estabelecer uma linguagem visual e de interação única, premium e acessível para todas as áreas existentes da aplicação, preservando os contratos funcionais, financeiros e de segurança já consolidados.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Design system visual compartilhado
 
@@ -50,22 +51,6 @@ As visualizações SHALL usar exclusivamente valores, séries, cotações, câmb
 
 - **WHEN** a API não retornar pontos suficientes para uma visualização
 - **THEN** a interface SHALL mostrar estado vazio ou informação indisponível, SHALL manter os valores oficiais disponíveis e SHALL NOT preencher a série com dados estimados, zero artificial ou interpolação local; quando a API fornecer uma âncora oficial do início do período, SHALL renderizá-la como primeiro ponto
-
-## MODIFIED Requirements
-
-### Requirement: Âncora patrimonial no início do período
-
-O `GET /api/dashboard` SHALL manter o formato existente de `patrimonyHistory`, mas, para períodos relativos, SHALL incluir como primeiro ponto o último ponto patrimonial efetivamente persistido com instante menor ou igual ao início da janela, quando existir, seguido dos pontos persistidos dentro da janela até o instante atual. A âncora SHALL conservar o instante e o valor patrimonial persistidos; o sistema MUST NOT criar ponto com valor zero, interpolar cotações ou fabricar patrimônio. Quando não existir ponto anterior ou coincidente, a série SHALL iniciar no primeiro ponto persistido dentro da janela; quando não existir nenhum ponto aplicável, SHALL permanecer vazia. O período `MAX` SHALL continuar usando somente os pontos persistidos desde a criação da conta.
-
-#### Scenario: Período relativo com patrimônio anterior
-
-- **WHEN** o investidor consultar um período relativo e existir um ponto patrimonial persistido antes ou no início da janela
-- **THEN** `patrimonyHistory` SHALL iniciar com esse ponto oficial e SHALL continuar com os pontos persistidos posteriores até o fim do período, em ordem cronológica
-
-#### Scenario: Período relativo sem patrimônio anterior
-
-- **WHEN** não existir ponto persistido até o início da janela, mas existirem pontos dentro dela
-- **THEN** `patrimonyHistory` SHALL iniciar no primeiro ponto persistido da janela, sem criar uma âncora artificial
 
 #### Scenario: Dashboard administrativo por período
 
