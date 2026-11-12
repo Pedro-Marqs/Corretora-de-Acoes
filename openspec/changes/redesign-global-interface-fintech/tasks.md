@@ -37,8 +37,8 @@
 
 ## 6. Responsividade, acessibilidade e regressão final
 
-- [ ] 6.1 Auditar todas as rotas públicas, de investidor e administrativas em 320px, tablet e desktop, corrigindo composição, overflow, tabelas, diálogos e navegação; verificar checklist visual por tela sem alterar os dados exibidos.
-- [ ] 6.2 Executar auditoria de teclado e semântica para navegação, formulários, tabelas, filtros, gráficos, mensagens, menus e confirmações; verificar foco visível, labels, `aria-live`, ordem lógica, Escape e alternativa textual para visualizações.
-- [ ] 6.3 Remover estilos duplicados ou conflitantes somente após a migração das superfícies correspondentes; verificar que a identidade do investidor e do administrador continua única e que `git diff --check` não aponta problemas.
-- [ ] 6.4 Executar a suíte frontend completa com `npm test`, `npm run lint` e `npm run build`; executar `npm run test:coverage` e comprovar statements, branches, functions e lines iguais ou superiores a 80%, sem skips tratados como aprovação e sem alterar thresholds.
-- [ ] 6.5 Executar validação OpenSpec strict, atualizar Graphify após as alterações de código e revisar o diff final; verificar que somente frontend, testes e artefatos permitidos do change foram modificados e que backend, migrations, CI, Aulas 13/14/15 e changes arquivados permanecem intactos.
+- [x] 6.1 Auditar todas as rotas públicas, de investidor e administrativas em 320px, tablet e desktop, corrigindo composição, overflow, tabelas, diálogos e navegação; verificar checklist visual por tela sem alterar os dados exibidos.
+- [x] 6.2 Executar auditoria de teclado e semântica para navegação, formulários, tabelas, filtros, gráficos, mensagens, menus e confirmações; verificar foco visível, labels, `aria-live`, ordem lógica, Escape e alternativa textual para visualizações.
+- [x] 6.3 Remover estilos duplicados ou conflitantes somente após a migração das superfícies correspondentes; verificar que a identidade do investidor e do administrador continua única e que `git diff --check` não aponta problemas.
+- [x] 6.4 Executar a suíte frontend completa com `npm test`, `npm run lint` e `npm run build`; executar `npm run test:coverage` e comprovar statements, branches, functions e lines iguais ou superiores a 80%, sem skips tratados como aprovação e sem alterar thresholds.
+- [x] 6.5 Executar validação OpenSpec strict, atualizar Graphify após as alterações de código e revisar o diff final; verificar que somente frontend, testes e artefatos permitidos do change foram modificados e que backend, migrations, CI, Aulas 13/14/15 e changes arquivados permanecem intactos.

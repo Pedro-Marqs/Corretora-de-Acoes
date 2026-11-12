@@ -134,7 +134,7 @@ export default function AppLayout() {
   }
 
   return <div className={`private-layout${sidebarCollapsed ? ' sidebar-collapsed' : ''}`}>
-    <aside className={`app-sidebar${sidebarCollapsed ? ' is-collapsed' : ''}${mobileSidebarOpen ? ' is-mobile-open' : ''}`} aria-label="Navegação principal">
+    <aside id="app-navigation" className={`app-sidebar${sidebarCollapsed ? ' is-collapsed' : ''}${mobileSidebarOpen ? ' is-mobile-open' : ''}`} aria-label="Navegação principal">
       <div className="sidebar-brand-row">
         <NavLink className="sidebar-brand" to="/app" end aria-label="Carteira Clara - Dashboard" onClick={closeMobileSidebar}>
           <span className="sidebar-logo" aria-hidden="true">C</span><span className="sidebar-brand-name">Carteira Clara</span>
@@ -152,7 +152,7 @@ export default function AppLayout() {
     {mobileSidebarOpen && <Button className="sidebar-backdrop" variant="ghost" size="sm" type="button" aria-label="Fechar menu" onClick={closeMobileSidebar} />}
     <div className="app-workspace">
       <header className="app-topbar">
-        <Button className="mobile-menu-button" variant="ghost" size="sm" type="button" aria-label="Abrir menu" onClick={openNavigation} ref={mobileMenuButtonRef}>☰</Button>
+        <Button className="mobile-menu-button" variant="ghost" size="sm" type="button" aria-label="Abrir menu" aria-expanded={mobileSidebarOpen} aria-controls="app-navigation" onClick={openNavigation} ref={mobileMenuButtonRef}>☰</Button>
         <form className="app-search" onSubmit={searchFromHeader} role="search">
           <span aria-hidden="true">⌕</span>
           <input type="search" value={assetSearch} onChange={(event) => setAssetSearch(event.target.value)} placeholder="Busque ações, FIIs, índices, ETFs e etc" aria-label="Buscar ativos" disabled={assetSearchPending} />

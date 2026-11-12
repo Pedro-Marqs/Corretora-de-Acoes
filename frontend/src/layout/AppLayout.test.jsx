@@ -64,11 +64,15 @@ describe('AppLayout', () => {
   it('fecha o menu mobile com Escape e devolve o foco ao acionador', () => {
     setup()
     const trigger = screen.getByRole('button', { name: 'Abrir menu' })
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
+    expect(trigger).toHaveAttribute('aria-controls', 'app-navigation')
     fireEvent.click(trigger)
+    expect(trigger).toHaveAttribute('aria-expanded', 'true')
     expect(screen.getByRole('button', { name: 'Fechar menu' })).toBeInTheDocument()
     fireEvent.keyDown(document, { key: 'Escape' })
     expect(screen.queryByRole('button', { name: 'Fechar menu' })).not.toBeInTheDocument()
     expect(trigger).toHaveFocus()
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
   })
 
   it('continua para a busca ampla quando nenhum mercado encontra o ativo', async () => {

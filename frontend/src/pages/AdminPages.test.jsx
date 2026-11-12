@@ -70,7 +70,6 @@ describe('admin pages and routes', () => {
   })
 
   it('filtra, pagina e altera status de investidor', async () => {
-    vi.stubGlobal('confirm', vi.fn(() => true))
     withAuth(<AdminInvestorsPage />)
     expect(await screen.findByText('a***@example.com')).toBeInTheDocument()
     fireEvent.change(screen.getByLabelText('Buscar por nome ou e-mail'), { target: { value: 'Ana' } })
@@ -79,13 +78,27 @@ describe('admin pages and routes', () => {
     fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'INACTIVE' } })
     await waitFor(() => expect(listAdminInvestors).toHaveBeenCalledWith(expect.objectContaining({ status: 'INACTIVE' })))
     fireEvent.click(screen.getByRole('button', { name: 'Desativar' }))
+    expect(await screen.findByRole('dialog', { name: 'Confirmar alteração de status' })).toHaveTextContent('Confirma desativar o investidor Ana?')
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar desativar' }))
     await waitFor(() => expect(changeAdminInvestorStatus).toHaveBeenCalledWith('id-1', 'INACTIVE'))
     fireEvent.click(screen.getByRole('button', { name: 'Próxima' }))
     await waitFor(() => expect(listAdminInvestors).toHaveBeenCalledWith(expect.objectContaining({ page: 1 })))
   })
 
-  it('exibe lista vazia e não altera status quando a confirmação é cancelada', async () => {
-    vi.stubGlobal('confirm', vi.fn(() => false))
+  it('cancela a confirmação sem alterar o status', async () => {
+    withAuth(<AdminInvestorsPage />)
+    expect(await screen.findByText('a***@example.com')).toBeInTheDocument()
+    const trigger = screen.getByRole('button', { name: 'Desativar' })
+    trigger.focus()
+    fireEvent.click(trigger)
+    expect(await screen.findByRole('dialog', { name: 'Confirmar alteração de status' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(trigger).toHaveFocus()
+    expect(changeAdminInvestorStatus).not.toHaveBeenCalled()
+  })
+
+  it('exibe lista vazia sem ações de status', async () => {
     listAdminInvestors.mockResolvedValueOnce({ ...page, content: [], totalElements: 0, totalPages: 0 })
     withAuth(<AdminInvestorsPage />)
     expect(await screen.findByText('Nenhum investidor encontrado')).toBeInTheDocument()
@@ -94,12 +107,12 @@ describe('admin pages and routes', () => {
   })
 
   it('trata conflito, rede e autorização na alteração de status', async () => {
-    vi.stubGlobal('confirm', vi.fn(() => true))
     listAdminInvestors.mockResolvedValueOnce({ ...page, content: [{ ...page.content[0], status: 'INACTIVE', createdAt: null }], totalPages: 1 })
     changeAdminInvestorStatus.mockRejectedValueOnce({ status: 409, message: 'Conflito' })
     withAuth(<AdminInvestorsPage />)
     expect(await screen.findByText('Inativo')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Ativar' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar ativar' }))
     expect(await screen.findByRole('status')).toHaveTextContent('A conta já está nesse estado')
     cleanup()
     listAdminInvestors.mockRejectedValueOnce(new Error('Falha de rede'))
@@ -112,15 +125,14 @@ describe('admin pages and routes', () => {
   })
 
   it('desabilita ação duplicada enquanto a alteração está pendente', async () => {
-    vi.stubGlobal('confirm', vi.fn(() => true))
     let resolveChange
     changeAdminInvestorStatus.mockReturnValueOnce(new Promise((resolve) => { resolveChange = resolve }))
     withAuth(<AdminInvestorsPage />)
     expect(await screen.findByText('a***@example.com')).toBeInTheDocument()
     const button = screen.getByRole('button', { name: 'Desativar' })
     fireEvent.click(button)
-    expect(screen.getByRole('button', { name: 'Salvando…' })).toBeDisabled()
-    fireEvent.click(screen.getByRole('button', { name: 'Salvando…' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar desativar' }))
+    expect(screen.getByRole('button', { name: 'Confirmar desativar' })).toBeDisabled()
     expect(changeAdminInvestorStatus).toHaveBeenCalledTimes(1)
     resolveChange()
   })
@@ -157,11 +169,15 @@ describe('admin pages and routes', () => {
     const value = adminValue()
     withAuth(<Routes><Route path="/admin" element={<AdminLayout />}><Route index element={<p>Conteúdo</p>} /></Route></Routes>, value)
     const trigger = screen.getByRole('button', { name: 'Abrir menu administrativo' })
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
+    expect(trigger).toHaveAttribute('aria-controls', 'admin-navigation')
     fireEvent.click(trigger)
+    expect(trigger).toHaveAttribute('aria-expanded', 'true')
     expect(trigger.closest('.admin-shell')).toHaveClass('admin-shell--nav-open')
     fireEvent.keyDown(document, { key: 'Escape' })
     expect(trigger.closest('.admin-shell')).not.toHaveClass('admin-shell--nav-open')
     expect(trigger).toHaveFocus()
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
   })
 
   it('redireciona em logout 401/403 e mostra falha transitória', async () => {

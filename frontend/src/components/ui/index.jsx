@@ -131,22 +131,45 @@ export function MutationFeedback({ status = 'idle', successMessage = 'Alteraçã
 export function ConfirmDialog({ open, title, description, confirmLabel = 'Confirmar', cancelLabel = 'Cancelar', onConfirm, onClose, tone = 'primary', pending = false }) {
   const dialogRef = useRef(null)
   const previousFocus = useRef(null)
+  const onCloseRef = useRef(onClose)
+  const pendingRef = useRef(pending)
   const titleId = useId()
   const descriptionId = useId()
+
+  useEffect(() => { onCloseRef.current = onClose; pendingRef.current = pending }, [onClose, pending])
 
   useEffect(() => {
     if (!open) return undefined
     previousFocus.current = document.activeElement
     dialogRef.current?.focus()
     function handleKeyDown(event) {
-      if (event.key === 'Escape' && !pending) onClose?.()
+      if (event.key === 'Escape' && !pendingRef.current) {
+        event.preventDefault()
+        onCloseRef.current?.()
+        return
+      }
+      if (event.key !== 'Tab') return
+      const focusable = [...dialogRef.current.querySelectorAll('button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])')]
+      if (focusable.length === 0) {
+        event.preventDefault()
+        return
+      }
+      const first = focusable[0]
+      const last = focusable.at(-1)
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+      }
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
       previousFocus.current?.focus?.()
     }
-  }, [open, onClose, pending])
+  }, [open])
 
   if (!open) return null
   return <div className="ui-confirm-dialog__backdrop" role="presentation">

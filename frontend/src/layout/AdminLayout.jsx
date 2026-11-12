@@ -39,7 +39,7 @@ export default function AdminLayout() {
   function closeMobileNav() { setMobileNavOpen(false) }
 
   return <div className={`admin-shell${mobileNavOpen ? ' admin-shell--nav-open' : ''}`}>
-    <aside className="admin-sidebar" aria-label="Navegação administrativa">
+    <aside id="admin-navigation" className="admin-sidebar" aria-label="Navegação administrativa">
       <NavLink className="admin-brand" to="/admin" onClick={closeMobileNav}>
         <span className="admin-brand__mark" aria-hidden="true">C</span>
         <span><strong>Carteira Clara</strong><small>Operação administrativa</small></span>
@@ -55,7 +55,7 @@ export default function AdminLayout() {
     {mobileNavOpen && <Button className="admin-sidebar-backdrop" variant="ghost" size="sm" type="button" aria-label="Fechar menu administrativo" onClick={closeMobileNav} />}
     <div className="admin-workspace">
       <header className="admin-topbar">
-        <Button ref={menuButtonRef} className="admin-mobile-menu" variant="ghost" size="sm" type="button" aria-label="Abrir menu administrativo" onClick={() => setMobileNavOpen(true)}>☰</Button>
+        <Button ref={menuButtonRef} className="admin-mobile-menu" variant="ghost" size="sm" type="button" aria-label="Abrir menu administrativo" aria-expanded={mobileNavOpen} aria-controls="admin-navigation" onClick={() => setMobileNavOpen(true)}>☰</Button>
         <div><p className="admin-topbar__eyebrow">Contexto administrativo</p><h1>Painel de operação</h1></div>
         <div className="admin-topbar__actions"><Badge tone="info">Sessão protegida</Badge><Button className="admin-topbar__logout" variant="secondary" type="button" onClick={leave} disabled={pending}>{pending ? 'Saindo…' : 'Encerrar sessão'}</Button></div>
       </header>

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { changeAdminInvestorStatus, listAdminInvestors } from '../api/admin-investors.js'
 import { useAdminAuth } from '../context/admin-auth-context.js'
 import { EmptyState, ErrorState, LoadingState } from '../components/common/AsyncStates.jsx'
-import { Badge, Button, DataTable, FilterBar, Pagination, SectionHeader, SelectField, StatusMessage, TextField } from '../components/ui/index.jsx'
+import { Badge, Button, ConfirmDialog, DataTable, FilterBar, Pagination, SectionHeader, SelectField, StatusMessage, TextField } from '../components/ui/index.jsx'
 
 export default function AdminInvestorsPage() {
   const auth = useAdminAuth()
@@ -14,6 +14,7 @@ export default function AdminInvestorsPage() {
   const [state, setState] = useState({ status: 'loading', data: null, message: '', loadedKey: '' })
   const [changingId, setChangingId] = useState(null)
   const [message, setMessage] = useState(null)
+  const [confirmation, setConfirmation] = useState(null)
 
   useEffect(() => {
     let active = true
@@ -30,10 +31,22 @@ export default function AdminInvestorsPage() {
   function submitSearch(event) { event.preventDefault(); setFilters((current) => ({ ...current, search, page: 0 })) }
   function page(delta) { setFilters((current) => ({ ...current, page: Math.max(0, Math.min(current.page + delta, (state.data?.totalPages ?? 1) - 1)) })) }
 
-  async function changeStatus(investor) {
+  function requestStatusChange(investor) {
+    if (changingId) return
     const nextStatus = investor.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'
     const action = nextStatus === 'ACTIVE' ? 'ativar' : 'desativar'
-    if (!window.confirm(`Confirma ${action} o investidor ${investor.name}?`)) return
+    setMessage(null)
+    setConfirmation({ investor, nextStatus, action })
+  }
+
+  function closeConfirmation() {
+    if (changingId) return
+    setConfirmation(null)
+  }
+
+  async function confirmStatusChange() {
+    if (!confirmation || changingId) return
+    const { investor, nextStatus, action } = confirmation
     setChangingId(investor.id); setMessage(null)
     try {
       await changeAdminInvestorStatus(investor.id, nextStatus)
@@ -43,11 +56,25 @@ export default function AdminInvestorsPage() {
       if (error.status === 401 || error.status === 403) { clear(); navigate('/admin/login', { replace: true }) }
       else if (error.status === 409) setMessage({ kind: 'conflict', text: 'A conta já está nesse estado ou a transição não é válida.' })
       else setMessage({ kind: 'error', text: error.message })
-    } finally { setChangingId(null) }
+    } finally {
+      setChangingId(null)
+      setConfirmation(null)
+    }
   }
 
   const loading = state.status === 'loading' || state.loadedKey !== JSON.stringify(filters)
   return <section className="admin-page"><SectionHeader eyebrow="Contas da corretora" title="Investidores" description="Dados pessoais protegidos e status operacional de cada conta." />
+    {confirmation && <ConfirmDialog
+      open
+      title="Confirmar alteração de status"
+      description={`Confirma ${confirmation.action} o investidor ${confirmation.investor.name}? A alteração será enviada à API administrativa.`}
+      confirmLabel={`Confirmar ${confirmation.action}`}
+      cancelLabel="Cancelar"
+      tone={confirmation.nextStatus === 'INACTIVE' ? 'danger' : 'primary'}
+      onClose={closeConfirmation}
+      onConfirm={confirmStatusChange}
+      pending={changingId === confirmation.investor.id}
+    />}
     <FilterBar className="admin-investor-filters" aria-label="Filtros de investidores" onSubmit={submitSearch}>
       <TextField label="Buscar por nome ou e-mail" id="admin-search" value={search} onChange={(event) => setSearch(event.target.value)} maxLength="100" placeholder="Digite para buscar" />
       <SelectField label="Status" name="status" value={filters.status} onChange={updateFilter}><option value="ALL">Todos</option><option value="ACTIVE">Ativos</option><option value="INACTIVE">Inativos</option></SelectField>
@@ -57,7 +84,7 @@ export default function AdminInvestorsPage() {
     {message && <StatusMessage className="admin-status-message" kind={message.kind} role={message.kind === 'error' ? 'alert' : 'status'} title={message.kind === 'success' ? 'Atualização concluída.' : message.kind === 'conflict' ? 'Conflito na atualização.' : 'Não foi possível atualizar.'}>{message.text}</StatusMessage>}
     {loading && <LoadingState message="Carregando investidores…" />}
     {!loading && state.status === 'error' && <ErrorState message={state.message} onRetry={() => setFilters((current) => ({ ...current }))} />}
-    {!loading && state.status === 'ready' && <InvestorTable data={state.data} changingId={changingId} onChangeStatus={changeStatus} onPage={page} />}
+    {!loading && state.status === 'ready' && <InvestorTable data={state.data} changingId={changingId} onChangeStatus={requestStatusChange} onPage={page} />}
   </section>
 }
 
