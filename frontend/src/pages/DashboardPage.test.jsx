@@ -94,7 +94,7 @@ describe('DashboardPage', () => {
     const chart = within(history).getByRole('group', { name: /gráfico de linha do crescimento patrimonial/i })
     expect(within(chart).getAllByRole('button')).toHaveLength(1)
     expect(within(chart).getAllByRole('button')[0]).toHaveAccessibleName(new RegExp(new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Sao_Paulo' }).format(new Date(historicalPoint))))
-    expect(chart.querySelector('.line-chart-line').getAttribute('points').split(' ')).toHaveLength(1)
+    expect(chart.querySelector('.line-chart-line').getAttribute('points').split(' ')).toHaveLength(2)
     expect(chart).not.toHaveTextContent(/início do período|Patrimônio atual/)
     expect(within(history).getAllByRole('listitem')).toHaveLength(1)
   })
@@ -189,6 +189,29 @@ describe('DashboardPage', () => {
     expect(screen.queryByRole('button', { name: 'Ver toda a carteira' })).not.toBeInTheDocument()
   })
 
+  it('consolida as observacoes do mesmo dia usando o fechamento oficial', async () => {
+    getDashboard.mockResolvedValue({
+      ...complete,
+      patrimonyHistory: [
+        { recordedAt: '2026-09-09T11:15:00-03:00', patrimonyBrl: '10000.00' },
+        { recordedAt: '2026-09-09T15:07:00-03:00', patrimonyBrl: '10100.00' },
+        { recordedAt: '2026-09-09T15:08:00-03:00', patrimonyBrl: '10100.00' },
+        { recordedAt: '2026-09-09T15:10:00-03:00', patrimonyBrl: '10099.80' },
+        { recordedAt: '2026-09-23T09:26:00-03:00', patrimonyBrl: '10322.95' },
+      ],
+    })
+    setup(); await screen.findAllByText('PETR4')
+    const history = screen.getByRole('heading', { name: 'Crescimento patrimonial' }).closest('section')
+    const chart = within(history).getByRole('group', { name: /gráfico de linha do crescimento patrimonial/i })
+    expect(within(history).getByText('2 pontos oficiais')).toBeInTheDocument()
+    expect(within(chart).getAllByRole('button')).toHaveLength(2)
+    expect(within(chart).getAllByRole('button')[0]).toHaveAccessibleName(/10\.099,80/)
+    expect(within(chart).getAllByRole('button')[1]).toHaveAccessibleName(/10\.322,95/)
+    expect(within(history).getAllByRole('listitem')).toHaveLength(2)
+    expect(within(history).getAllByRole('listitem')[0]).toHaveTextContent('R$ 10.099,80')
+    expect(within(history).queryByText('R$ 10.000,00')).not.toBeInTheDocument()
+  })
+
   it.each([320, 390, 768, 1366, 1440])('mantém seções e filtros acessíveis no viewport de %d px', async (width) => {
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: width }); setup(); await screen.findAllByText('PETR4')
     expect(screen.getByRole('heading', { name: 'Indicadores' })).toBeInTheDocument(); expect(screen.getByLabelText('Visão')).toBeInTheDocument(); expect(screen.getByRole('group', { name: 'Período do patrimônio' })).toBeInTheDocument(); expect(document.querySelector('.line-chart')).toBeInTheDocument()
@@ -199,6 +222,6 @@ describe('DashboardPage', () => {
     setup(); await screen.findAllByText('PETR4')
     const chart = screen.getByRole('group', { name: /gráfico de linha do crescimento patrimonial/i })
     const values = [...chart.querySelectorAll('.line-chart-line, .line-chart-area, .line-chart-point')].flatMap((element) => [...element.attributes].map((attribute) => attribute.value)).join(' ')
-    expect(values).not.toMatch(/NaN|Infinity/); expect(within(chart).getAllByRole('button')).toHaveLength(2)
+    expect(values).not.toMatch(/NaN|Infinity/); expect(within(chart).getAllByRole('button')).toHaveLength(1)
   })
 })
