@@ -26,13 +26,17 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      SPRING_PROFILES_ACTIVE: dev
+      SPRING_PROFILES_ACTIVE: local
       DB_HOST: postgres
       POSTGRES_PORT: 5432
       POSTGRES_DB: ${POSTGRES_DB:?Defina POSTGRES_DB no arquivo .env}
       POSTGRES_USER: ${POSTGRES_USER:?Defina POSTGRES_USER no arquivo .env}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no arquivo .env}
-      APP_CORS_ALLOWED_ORIGIN: http://localhost:${FRONTEND_PORT:-3000}
+      APP_CORS_ALLOWED_ORIGIN: ${APP_CORS_ALLOWED_ORIGIN:-http://localhost:5173}
+      APP_SECURITY_SESSION_COOKIE_SECURE: ${APP_SECURITY_SESSION_COOKIE_SECURE:-false}
+      APP_JWT_ENABLED: ${APP_JWT_ENABLED:-true}
+      APP_JWT_SESSION_COMPATIBILITY: ${APP_JWT_SESSION_COMPATIBILITY:-false}
+      APP_JWT_SECRET: ${APP_JWT_SECRET:?Defina APP_JWT_SECRET no arquivo .env}
       BRAPI_TOKEN: ${BRAPI_TOKEN:-}
       TWELVE_DATA_API_KEY: ${TWELVE_DATA_API_KEY:-}
       AWESOME_API_KEY: ${AWESOME_API_KEY:-}
