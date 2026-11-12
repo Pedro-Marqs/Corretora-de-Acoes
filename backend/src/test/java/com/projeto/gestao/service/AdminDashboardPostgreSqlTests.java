@@ -83,7 +83,7 @@ class AdminDashboardPostgreSqlTests {
         movements.saveAndFlush(Movement.purchase(UUID.randomUUID(), account, "AAPL", Market.US,
                 new BigDecimal("10.00"), new BigDecimal("50.00"), new BigDecimal("5.00"), 2,
                 new BigDecimal("100.00"), Currency.USD, "Broker", new BigDecimal("9840.00"),
-                now.minusHours(12)));
+                now.minusDays(1).withHour(1).withMinute(0).withSecond(0).withNano(0)));
         exchangeRates.saveAndFlush(new ExchangeRate("USD/BRL", new BigDecimal("5.00"),
                 now.minusDays(1), now.minusDays(1), "test"));
     }

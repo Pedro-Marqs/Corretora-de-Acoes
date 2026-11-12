@@ -12,8 +12,8 @@
 
 ## 3. Mutação e mocks
 
-- [ ] 3.1 Escolher uma condição relevante de segurança ou cálculo, executar mutação temporária e registrar o teste que falha; verificar restauração integral do código original.
-- [ ] 3.2 Documentar justificativa de cada mock novo ou alterado, distinguindo dependência externa, relógio, falha injetada e sistema sob teste real; verificar que não há mock do comportamento testado.
+- [x] 3.1 Escolher uma condição relevante de segurança ou cálculo, executar mutação temporária e registrar o teste que falha; verificar restauração integral do código original.
+- [x] 3.2 Documentar justificativa de cada mock novo ou alterado, distinguindo dependência externa, relógio, falha injetada e sistema sob teste real; verificar que não há mock do comportamento testado.
 
 ## 4. Relatórios finais
 
