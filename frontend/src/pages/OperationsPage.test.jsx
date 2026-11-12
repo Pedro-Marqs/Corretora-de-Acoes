@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { getActiveBrokers } from '../api/brokers.js'
@@ -50,6 +50,9 @@ describe('OperationsPage', () => {
     fireEvent.change(screen.getByLabelText('Data e hora da operação'), { target: { value: '2026-01-01T10:00' } })
     fireEvent.click(screen.getByRole('button', { name: 'Comprar' }))
     expect(await screen.findByText('Confirmar compra')).toBeInTheDocument()
+    const confirmationSummary = screen.getByLabelText('Resumo da operação')
+    expect(within(confirmationSummary).getByText('Preço unitário')).toBeInTheDocument()
+    expect(within(confirmationSummary).getByText('R$ 130,00')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar operação' }))
     await waitFor(() => expect(purchaseAsset).toHaveBeenCalledWith('asset-2', 'broker-1', 2, '65', expect.stringContaining('2026-01-01T10:00')))
     await waitFor(() => expect(getWalletPositions).toHaveBeenCalledTimes(2))
@@ -69,6 +72,19 @@ describe('OperationsPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar operação' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('Saldo insuficiente.')
     expect(sellAsset).toHaveBeenCalledTimes(1)
+  })
+
+  it('calcula o total em tempo real e sinaliza quando supera o saldo', async () => {
+    setup({ positions: [] })
+    await screen.findByText('Sua carteira ainda está vazia')
+    fireEvent.change(screen.getByLabelText('Ticker'), { target: { value: 'VALE3' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Buscar ativo' }))
+    await screen.findByRole('dialog')
+    fireEvent.change(screen.getByLabelText('Quantidade'), { target: { value: '20' } })
+    const total = screen.getByText('R$ 1.300,00')
+    expect(total).toBeInTheDocument()
+    expect(total.closest('.operation-total')).toHaveClass('operation-total--over-limit')
+    expect(screen.getByText('Acima do saldo disponível')).toBeInTheDocument()
   })
 
   it('trata ativo inexistente, erro de cotação e sessão expirada', async () => {

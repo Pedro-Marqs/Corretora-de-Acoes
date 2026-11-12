@@ -13,11 +13,11 @@ export function PageShell({ as: Component = 'main', className, children, ...prop
   return <Component className={joinClasses('ui-page-shell', className)} {...props}>{children}</Component>
 }
 
-export function SectionHeader({ eyebrow, title, description, actions, className, ...props }) {
+export function SectionHeader({ eyebrow, title, titleId, description, actions, className, ...props }) {
   return <header className={joinClasses('ui-section-header', className)} {...props}>
     <div className="ui-section-header__copy">
       {eyebrow && <p className="ui-section-header__eyebrow">{eyebrow}</p>}
-      <h1 className="ui-section-header__title">{title}</h1>
+      <h1 className="ui-section-header__title" id={titleId}>{title}</h1>
       {description && <p className="ui-section-header__description">{description}</p>}
     </div>
     {actions && <div className="ui-section-header__actions">{actions}</div>}
@@ -41,11 +41,12 @@ export function Badge({ tone = 'neutral', children, className, ...props }) {
   return <span className={joinClasses('ui-badge', `ui-badge--${tone}`, className)} {...props}>{children}</span>
 }
 
-export function Button({ variant = 'primary', size = 'md', loading = false, className, children, disabled, ...props }) {
-  return <button className={joinClasses('ui-button', `ui-button--${variant}`, size !== 'md' && `ui-button--${size}`, className)} disabled={disabled || loading} aria-busy={loading || undefined} {...props}>
+export function Button({ as: Component = 'button', variant = 'primary', size = 'md', loading = false, className, children, disabled, ...props }) {
+  const stateProps = Component === 'button' ? { disabled: disabled || loading } : { 'aria-disabled': disabled || loading || undefined }
+  return <Component className={joinClasses('ui-button', `ui-button--${variant}`, size !== 'md' && `ui-button--${size}`, className)} {...stateProps} aria-busy={loading || undefined} {...props}>
     {loading && <span className="ui-button__spinner" aria-hidden="true" />}
     {children}
-  </button>
+  </Component>
 }
 
 export function TextField({ label, id, hint, error, required = false, className, ...props }) {
@@ -57,7 +58,7 @@ export function TextField({ label, id, hint, error, required = false, className,
   const describedBy = [hintId, errorId].filter(Boolean).join(' ') || undefined
   return <div className={joinClasses('ui-field', className)}>
     <label className="ui-field__label" htmlFor={fieldId}>{label}{required && <span className="ui-field__required" aria-hidden="true"> *</span>}</label>
-    <input className="ui-field__control" id={fieldId} required={required} aria-invalid={messages.length > 0} aria-describedby={describedBy} {...props} />
+    <input className="ui-field__control" id={fieldId} required={required} aria-label={props['aria-label'] || label} aria-invalid={messages.length > 0} aria-describedby={describedBy} {...props} />
     {hint && messages.length === 0 && <span className="ui-field__hint" id={hintId}>{hint}</span>}
     {messages.length > 0 && <span className="ui-field__error" id={errorId}>{messages.map((message, index) => <span key={`${message}-${index}`}>{message}</span>)}</span>}
   </div>
@@ -72,7 +73,7 @@ export function SelectField({ label, id, hint, error, required = false, classNam
   const describedBy = [hintId, errorId].filter(Boolean).join(' ') || undefined
   return <div className={joinClasses('ui-field', className)}>
     <label className="ui-field__label" htmlFor={fieldId}>{label}{required && <span className="ui-field__required" aria-hidden="true"> *</span>}</label>
-    <select className="ui-field__control" id={fieldId} required={required} aria-invalid={messages.length > 0} aria-describedby={describedBy} {...props}>{children}</select>
+    <select className="ui-field__control" id={fieldId} required={required} aria-label={props['aria-label'] || label} aria-invalid={messages.length > 0} aria-describedby={describedBy} {...props}>{children}</select>
     {hint && messages.length === 0 && <span className="ui-field__hint" id={hintId}>{hint}</span>}
     {messages.length > 0 && <span className="ui-field__error" id={errorId}>{messages.map((message, index) => <span key={`${message}-${index}`}>{message}</span>)}</span>}
   </div>

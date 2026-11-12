@@ -153,6 +153,17 @@ describe('admin pages and routes', () => {
     await waitFor(() => expect(value.logout).toHaveBeenCalled())
   })
 
+  it('fecha a navegação administrativa mobile com Escape e devolve o foco', () => {
+    const value = adminValue()
+    withAuth(<Routes><Route path="/admin" element={<AdminLayout />}><Route index element={<p>Conteúdo</p>} /></Route></Routes>, value)
+    const trigger = screen.getByRole('button', { name: 'Abrir menu administrativo' })
+    fireEvent.click(trigger)
+    expect(trigger.closest('.admin-shell')).toHaveClass('admin-shell--nav-open')
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(trigger.closest('.admin-shell')).not.toHaveClass('admin-shell--nav-open')
+    expect(trigger).toHaveFocus()
+  })
+
   it('redireciona em logout 401/403 e mostra falha transitória', async () => {
     const denied = adminValue({ logout: vi.fn().mockRejectedValue({ status: 403 }) })
     withAuth(<Routes><Route path="/admin" element={<AdminLayout />}><Route index element={<p>Conteúdo</p>} /></Route><Route path="/admin/login" element={<p>Login administrativo</p>} /></Routes>, denied)

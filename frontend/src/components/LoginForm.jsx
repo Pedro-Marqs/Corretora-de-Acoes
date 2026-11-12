@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { login } from '../api/auth.js'
+import AuthFrame from './auth/AuthFrame.jsx'
+import { Button, SectionHeader, StatusMessage, SurfaceCard, TextField } from './ui/index.jsx'
 
 export default function LoginForm({ onAuthenticated, onRegister, onReactivate, notice }) {
   const [credentials, setCredentials] = useState({ email: '', password: '' })
@@ -15,7 +17,9 @@ export default function LoginForm({ onAuthenticated, onRegister, onReactivate, n
 
   async function submit(event) {
     event.preventDefault()
-    setLoading(true); setMessage(''); setFieldErrors({})
+    setLoading(true)
+    setMessage('')
+    setFieldErrors({})
     try {
       await login(credentials)
       setCredentials({ email: '', password: '' })
@@ -23,30 +27,25 @@ export default function LoginForm({ onAuthenticated, onRegister, onReactivate, n
     } catch (error) {
       setMessage(error.message)
       setFieldErrors(error.fieldErrors ?? {})
-    } finally { setLoading(false) }
+    } finally {
+      setLoading(false)
+    }
   }
 
-  return (
-    <main className="auth-page">
-      <section className="login-card" aria-labelledby="login-title">
-        <a className="brand brand-dark" href="/" aria-label="Carteira Clara — início"><span className="brand-mark" aria-hidden="true">C</span><span>Carteira Clara</span></a>
-        <header className="form-header login-header"><p className="eyebrow">Acesse sua conta</p><h1 id="login-title">Bem-vindo de volta.</h1><p>Entre com o e-mail e a senha cadastrados.</p></header>
-        {notice && <div className="message" role="status">{notice}</div>}
-        {message && <div className="error-banner" role="alert">{message}</div>}
-        <form onSubmit={submit} noValidate>
-          <LoginField label="E-mail" name="email" errors={fieldErrors.email}><input id="login-email" name="email" type="email" autoComplete="email" value={credentials.email} onChange={update} required aria-invalid={Boolean(fieldErrors.email)} aria-describedby={fieldErrors.email ? 'login-email-error' : undefined} /></LoginField>
-          <LoginField label="Senha" name="password" errors={fieldErrors.password}><input id="login-password" name="password" type="password" autoComplete="current-password" value={credentials.password} onChange={update} required aria-invalid={Boolean(fieldErrors.password)} aria-describedby={fieldErrors.password ? 'login-password-error' : undefined} /></LoginField>
-          <button className="primary-button" type="submit" disabled={loading}>{loading ? 'Entrando…' : 'Entrar'}</button>
-        </form>
-        <div className="login-links">
-          <button className="text-button" type="button" onClick={onRegister}>Ainda não tenho conta</button>
-          <button className="text-button" type="button" onClick={onReactivate}>Reativar uma conta</button>
-        </div>
-      </section>
-    </main>
-  )
-}
-
-function LoginField({ label, name, errors, children }) {
-  return <div className="form-field"><label htmlFor={`login-${name}`}>{label}</label>{children}{errors ? <span className="field-error" id={`login-${name}-error`}>{errors.map((error) => <span key={error}>{error}</span>)}</span> : null}</div>
+  return <AuthFrame title="Bem-vindo de volta." description="Acesse sua carteira com os dados cadastrados.">
+    <SurfaceCard as="section" className="auth-form-surface" aria-labelledby="login-title">
+      <SectionHeader titleId="login-title" eyebrow="Acesse sua conta" title="Entre com seus dados" description="Use o e-mail e a senha cadastrados." />
+      {notice && <StatusMessage kind="info">{notice}</StatusMessage>}
+      {message && <StatusMessage kind="error" title="Não foi possível entrar.">{message}</StatusMessage>}
+      <form className="auth-form" onSubmit={submit} noValidate>
+        <TextField label="E-mail" id="login-email" name="email" type="email" autoComplete="email" value={credentials.email} onChange={update} required error={fieldErrors.email} />
+        <TextField label="Senha" id="login-password" name="password" type="password" autoComplete="current-password" value={credentials.password} onChange={update} required error={fieldErrors.password} />
+        <Button className="auth-submit" type="submit" disabled={loading}>{loading ? 'Entrando…' : 'Entrar'}</Button>
+      </form>
+      <div className="auth-links">
+        <Button className="auth-link" variant="ghost" type="button" onClick={onRegister}>Ainda não tenho conta</Button>
+        <Button className="auth-link" variant="ghost" type="button" onClick={onReactivate}>Reativar uma conta</Button>
+      </div>
+    </SurfaceCard>
+  </AuthFrame>
 }

@@ -34,7 +34,7 @@ describe('AssetDetailPage', () => {
     const dialog = await screen.findByRole('dialog')
     expect(within(dialog).getByRole('heading', { name: /PETR4.*Petrobras/ })).toBeInTheDocument()
     expect(within(dialog).getByLabelText('Quantidade')).toBeInTheDocument()
-    expect(within(dialog).getByText('Preço oficial unitário').nextElementSibling).toHaveTextContent('R$ 35,50')
+    expect(within(dialog).getByText('Total da operação').nextElementSibling).toHaveTextContent('R$ 0,00')
     expect(within(dialog).queryByRole('textbox', { name: /preço/i })).not.toBeInTheDocument()
   })
 })
