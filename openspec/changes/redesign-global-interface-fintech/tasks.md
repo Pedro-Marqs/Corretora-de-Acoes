@@ -22,11 +22,11 @@
 
 ## 4. Demais telas do investidor
 
-- [ ] 4.1 Migrar `HomePage`, `AccountPage`, `ReactivationPage` e componentes de perfil/sessão; verificar dados mascarados, alterações de credencial, confirmações destrutivas, revogação visual após resposta oficial e mensagens seguras.
-- [ ] 4.2 Migrar `BankPage`, `WalletPage` e `TransfersPage` com cards de saldo, aportes, retiradas e transferências; verificar confirmação, CSRF/cliente existente, bloqueio de duplicidade e atualização somente pela resposta oficial da API.
-- [ ] 4.3 Migrar `AssetsPage`, `AssetDetailPage`, `OperationsPage` e `PortfolioPage`; verificar busca real, mercados BR/US, moeda correspondente, preço oficial somente leitura, compra/venda, posição e rejeições sem falso sucesso.
-- [ ] 4.4 Migrar `HistoryPage` e `BrokersPage` com tabelas/filtros responsivos; verificar limite de 20 itens, filtros combinados e paginação oficiais, corretoras próprias por CNPJ, remoção/recadastro e estados vazios/erro.
-- [ ] 4.5 Executar testes focados de todas as telas do investidor e dos clientes de API alterados apenas para apresentação; verificar sucesso, loading, vazio, erro, autorização e rejeição de mutação sem alterar regras financeiras ou endpoints.
+- [x] 4.1 Migrar `HomePage`, `AccountPage`, `ReactivationPage` e componentes de perfil/sessão; verificar dados mascarados, alterações de credencial, confirmações destrutivas, revogação visual após resposta oficial e mensagens seguras.
+- [x] 4.2 Migrar `BankPage`, `WalletPage` e `TransfersPage` com cards de saldo, aportes, retiradas e transferências; verificar confirmação, CSRF/cliente existente, bloqueio de duplicidade e atualização somente pela resposta oficial da API.
+- [x] 4.3 Migrar `AssetsPage`, `AssetDetailPage`, `OperationsPage` e `PortfolioPage`; verificar busca real, mercados BR/US, moeda correspondente, preço oficial somente leitura, compra/venda, posição e rejeições sem falso sucesso.
+- [x] 4.4 Migrar `HistoryPage` e `BrokersPage` com tabelas/filtros responsivos; verificar limite de 20 itens, filtros combinados e paginação oficiais, corretoras próprias por CNPJ, remoção/recadastro e estados vazios/erro.
+- [x] 4.5 Executar testes focados de todas as telas do investidor e dos clientes de API alterados apenas para apresentação; verificar sucesso, loading, vazio, erro, autorização e rejeição de mutação sem alterar regras financeiras ou endpoints.
 
 ## 5. Dashboard e telas administrativas
 

@@ -1,0 +1,354 @@
+/* Etapa 4: linguagem visual compartilhada das telas privadas do investidor. */
+.private-layout .foundation-home.ui-page-shell,
+.private-layout .account-page,
+.private-layout .bank-page,
+.private-layout .wallet-page,
+.private-layout .assets-page,
+.private-layout .asset-detail-page,
+.private-layout .operations-page,
+.private-layout .portfolio-page,
+.private-layout .transfers-page,
+.private-layout .history-page,
+.private-layout .brokers-page {
+  width: 100%;
+  max-width: var(--layout-content);
+  min-width: 0;
+  margin-inline: auto;
+  padding: clamp(var(--space-6), 4vw, var(--space-10)) 0 var(--space-16);
+}
+
+.private-layout .ui-section-header__title,
+.private-layout .foundation-home h1,
+.private-layout .account-page h1,
+.private-layout .bank-page h1,
+.private-layout .wallet-page h1,
+.private-layout .assets-page h1,
+.private-layout .asset-detail-page h1,
+.private-layout .operations-page h1,
+.private-layout .portfolio-page h1,
+.private-layout .transfers-page h1,
+.private-layout .history-page h1,
+.private-layout .brokers-page h1,
+.private-layout .foundation-home h2,
+.private-layout .account-page h2,
+.private-layout .bank-page h2,
+.private-layout .wallet-page h2,
+.private-layout .assets-page h2,
+.private-layout .asset-detail-page h2,
+.private-layout .operations-page h2,
+.private-layout .portfolio-page h2,
+.private-layout .transfers-page h2,
+.private-layout .history-page h2,
+.private-layout .brokers-page h2 {
+  font-family: var(--font-family-display);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: -.035em;
+}
+
+.private-layout .ui-section-header { margin-bottom: var(--space-8); }
+.private-layout .ui-section-header__title { font-size: clamp(2rem, 4vw, 3.35rem); }
+.private-layout .ui-section-header__description { max-width: 54rem; }
+
+/* Home */
+.private-layout .foundation-home.ui-page-shell { display: block; }
+.private-layout .foundation-home > .ui-section-header { align-items: flex-end; }
+.private-layout .foundation-home > .ui-section-header .ui-badge { flex: 0 0 auto; }
+.private-layout .home-balance-strip.ui-surface {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  margin-bottom: var(--space-12);
+  padding: clamp(var(--space-5), 4vw, var(--space-8));
+  border-color: #266052;
+  background: linear-gradient(135deg, #173b31, #1a2d28);
+  box-shadow: var(--shadow-md);
+}
+.private-layout .home-balance-strip div { min-width: 0; }
+.private-layout .home-balance-strip div span,
+.private-layout .home-balance-strip div strong { display: block; }
+.private-layout .home-balance-strip div span { color: var(--color-text-secondary); font-size: var(--font-size-sm); font-weight: var(--font-weight-semibold); }
+.private-layout .home-balance-strip strong { margin-top: var(--space-2); overflow-wrap: anywhere; color: var(--color-text); font-size: clamp(1.65rem, 4vw, 2.5rem); letter-spacing: -.04em; }
+.private-layout .home-balance-action.ui-button { flex: 0 0 auto; color: var(--color-text); border-color: #3f6f61; background: transparent; text-decoration: none; }
+.private-layout .home-balance-action.ui-button:hover { background: var(--color-primary-surface); }
+.private-layout .home-contexts > .ui-section-header { margin-bottom: var(--space-4); }
+.private-layout .home-contexts > .ui-section-header .ui-section-header__title { font-size: var(--font-size-xl); }
+.private-layout .home-section-links { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4); margin-top: 0; }
+.private-layout .home-context-card {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+  min-height: 13rem;
+  padding: var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  color: var(--color-text);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  text-decoration: none;
+  transition: border-color var(--motion-fast), background var(--motion-fast), transform var(--motion-fast);
+}
+.private-layout .home-context-card:hover,
+.private-layout .home-context-card:focus-visible { border-color: var(--color-primary); background: var(--color-surface-raised); transform: translateY(-2px); }
+.private-layout .home-context-icon { display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: var(--radius-md); color: var(--color-primary-contrast); background: var(--color-primary); font-weight: var(--font-weight-bold); }
+.private-layout .home-context-card strong { color: var(--color-text); font-size: var(--font-size-lg); }
+.private-layout .home-context-card > span:not(.home-context-icon) { min-height: 0; color: var(--color-text-secondary); line-height: var(--line-height-body); }
+.private-layout .home-context-card b { margin-top: auto; color: var(--color-primary); font-size: var(--font-size-sm); }
+
+/* Account and session */
+.private-layout .account-page > header { margin-bottom: var(--space-6); }
+.private-layout .account-page > header h1 { margin: 0; font-size: clamp(2rem, 4vw, 3.35rem); }
+.private-layout .account-page > header > p:last-child { max-width: 52rem; margin-top: var(--space-3); color: var(--color-text-secondary); line-height: var(--line-height-body); }
+.private-layout .account-page .profile-card { margin: 0 0 var(--space-6); padding: var(--space-6); }
+.private-layout .profile-card dl { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-5); }
+.private-layout .profile-card dt { color: var(--color-text-muted); }
+.private-layout .profile-card dd { overflow-wrap: anywhere; color: var(--color-text); }
+.private-layout .settings-list { gap: var(--space-3); }
+.private-layout .settings-card { padding: 0; overflow: hidden; }
+.private-layout .settings-toggle { min-height: var(--control-height-lg); padding: var(--space-4) var(--space-5); color: var(--color-text); background: transparent; font: var(--font-weight-semibold) var(--font-size-lg) / var(--line-height-tight) var(--font-family-display); }
+.private-layout .settings-toggle:hover,
+.private-layout .settings-toggle:focus-visible { color: var(--color-primary); background: var(--color-surface-muted); }
+.private-layout .settings-content { display: grid; gap: var(--space-4); padding: var(--space-5); }
+.private-layout .settings-content .form-field { margin: 0; }
+.private-layout .settings-content .primary-button { width: fit-content; min-width: 12rem; margin: 0; }
+.private-layout .danger-zone { align-items: center; margin-top: var(--space-6); padding: var(--space-6); }
+.private-layout .danger-zone-copy h2 { margin: 0; font-size: var(--font-size-xl); }
+.private-layout .danger-zone-copy > p:last-child { margin-bottom: 0; line-height: var(--line-height-body); }
+.private-layout .danger-trigger { width: fit-content; min-width: 12rem; }
+.private-layout .account-modal-card { border: 1px solid var(--color-border-strong); border-radius: var(--radius-xl); color: var(--color-text); background: var(--color-surface-raised); }
+.private-layout .account-modal-card h2 { font-size: var(--font-size-xl); }
+.private-layout .account-modal-card .form-field { margin-bottom: var(--space-4); }
+.private-layout .account-modal-card input { color: var(--color-text); background: var(--color-surface); }
+.private-layout .modal-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: var(--space-2); }
+
+.session-home.ui-page-shell { display: grid; place-items: center; max-width: 48rem; min-height: 100dvh; padding: var(--space-8) var(--space-4); background: var(--color-canvas); }
+.session-home .session-card { width: min(100%, 38rem); padding: clamp(var(--space-6), 6vw, var(--space-10)); text-align: center; }
+.session-home .session-card .ui-section-header { display: block; margin-bottom: var(--space-5); }
+.session-home .session-card .ui-section-header__title { font-size: clamp(2rem, 6vw, 3.25rem); }
+.session-home .session-card .ui-section-header__description { margin-inline: auto; }
+.session-home .session-card > .ui-button { width: 100%; }
+.session-home .ui-status-message { margin-bottom: var(--space-4); text-align: left; }
+.session-home .success-icon { margin-inline: auto; color: var(--color-primary); background: var(--color-primary-surface); }
+
+/* Shared legacy page structures, restyled with the same primitives. */
+.private-layout .bank-heading,
+.private-layout .wallet-heading,
+.private-layout .assets-heading,
+.private-layout .operations-heading,
+.private-layout .portfolio-heading,
+.private-layout .transfers-heading,
+.private-layout .history-heading,
+.private-layout .brokers-heading { margin-bottom: var(--space-6); }
+.private-layout .bank-heading h1,
+.private-layout .wallet-heading h1,
+.private-layout .assets-heading h1,
+.private-layout .operations-heading h1,
+.private-layout .portfolio-heading h1,
+.private-layout .transfers-heading h1,
+.private-layout .history-heading h1,
+.private-layout .brokers-heading h1 { margin: 0; font-size: clamp(2rem, 4vw, 3.35rem); }
+.private-layout .bank-heading > p:last-child,
+.private-layout .wallet-heading > p:last-child,
+.private-layout .assets-heading > p:last-child,
+.private-layout .operations-heading > p:last-child,
+.private-layout .portfolio-heading > p:last-child,
+.private-layout .transfers-heading > p:last-child,
+.private-layout .history-heading > p:last-child,
+.private-layout .brokers-heading > p:last-child { max-width: 52rem; margin-top: var(--space-3); color: var(--color-text-secondary); line-height: var(--line-height-body); }
+.private-layout .wallet-balance,
+.private-layout .deposit-card,
+.private-layout .withdrawal-card,
+.private-layout .broker-search-card,
+.private-layout .broker-preview,
+.private-layout .brokers-list-section,
+.private-layout .asset-search-card,
+.private-layout .asset-response,
+.private-layout .popular-assets,
+.private-layout .investment-asset-detail,
+.private-layout .operation-card,
+.private-layout .positions-section,
+.private-layout .transfer-card,
+.private-layout .transfer-positions,
+.private-layout .history-filters,
+.private-layout .history-results { border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--shadow-sm); }
+.private-layout .wallet-balance { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: var(--space-6); background: linear-gradient(135deg, #173b31, #1a2d28); }
+.private-layout .wallet-balance p { margin: 0 0 var(--space-2); color: var(--color-text-secondary); font-weight: var(--font-weight-semibold); }
+.private-layout .wallet-balance strong { color: var(--color-text); font-size: clamp(2rem, 5vw, 3.35rem); letter-spacing: -.04em; }
+.private-layout .wallet-balance > span { display: grid; place-items: center; width: 3.5rem; height: 3.5rem; border-radius: var(--radius-lg); color: var(--color-primary); background: var(--color-primary-surface); font-weight: var(--font-weight-bold); }
+.private-layout .deposit-card,
+.private-layout .withdrawal-card,
+.private-layout .broker-search-card { display: grid; grid-template-columns: minmax(0, .9fr) minmax(18rem, 1.1fr); gap: var(--space-6); margin-top: var(--space-4); padding: var(--space-6); }
+.private-layout .deposit-card h2,
+.private-layout .withdrawal-card h2,
+.private-layout .broker-search-card h2,
+.private-layout .asset-search-card h2 { margin: 0; font-size: var(--font-size-xl); }
+.private-layout .deposit-card p:last-child,
+.private-layout .withdrawal-card p:last-child,
+.private-layout .broker-search-card p:last-child { color: var(--color-text-secondary); line-height: var(--line-height-body); }
+.private-layout .form-field { min-width: 0; margin-bottom: var(--space-4); }
+.private-layout .form-field label { color: var(--color-text-secondary); }
+.private-layout .form-field input,
+.private-layout .form-field select { color: var(--color-text); background: var(--color-surface-raised); }
+.private-layout .primary-button,
+.private-layout .secondary-button { min-height: var(--control-height-md); border-radius: var(--radius-md); font-family: var(--font-family-sans); }
+.private-layout .primary-button { color: var(--color-primary-contrast); background: var(--color-primary); }
+.private-layout .primary-button:hover:not(:disabled) { background: var(--color-primary-hover); }
+.private-layout .secondary-button { color: var(--color-text); border-color: var(--color-border-strong); background: transparent; }
+.private-layout .secondary-button:hover:not(:disabled) { border-color: var(--color-primary); background: var(--color-primary-surface); }
+
+/* Search, cards and official data */
+.private-layout .asset-search-card { display: grid; grid-template-columns: minmax(0, .8fr) minmax(20rem, 1.2fr); gap: var(--space-6); padding: var(--space-6); }
+.private-layout .asset-search-form,
+.private-layout .operations-search { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: end; gap: var(--space-3); }
+.private-layout .asset-search-form .primary-button,
+.private-layout .operations-search .primary-button { grid-column: 1 / -1; }
+.private-layout .popular-assets { display: flex; justify-content: space-between; gap: var(--space-6); margin-top: var(--space-4); padding: var(--space-5); }
+.private-layout .popular-assets-list,
+.private-layout .asset-suggestions { display: grid; grid-template-columns: repeat(3, minmax(8rem, 1fr)); gap: var(--space-2); min-width: min(100%, 32rem); }
+.private-layout .popular-assets-list button,
+.private-layout .asset-suggestions button { display: grid; gap: var(--space-1); min-width: 0; padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); color: var(--color-text); background: var(--color-surface-raised); text-align: left; cursor: pointer; }
+.private-layout .popular-assets-list button:hover,
+.private-layout .asset-suggestions button:hover,
+.private-layout .popular-assets-list button:focus-visible,
+.private-layout .asset-suggestions button:focus-visible { border-color: var(--color-primary); background: var(--color-primary-surface); }
+.private-layout .popular-assets-list span,
+.private-layout .asset-suggestions span { overflow: hidden; color: var(--color-text-muted); font-size: var(--font-size-xs); text-overflow: ellipsis; white-space: nowrap; }
+.private-layout .asset-response { min-height: 12rem; margin-top: var(--space-4); padding: var(--space-5); }
+.private-layout .asset-result header,
+.private-layout .investment-asset-detail > header,
+.private-layout .positions-section > header,
+.private-layout .transfer-positions > header,
+.private-layout .brokers-list-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-4); }
+.private-layout .asset-result h2,
+.private-layout .investment-asset-detail h1 { margin: 0; font-size: clamp(2rem, 4vw, 3rem); }
+.private-layout .asset-details,
+.private-layout .operation-details,
+.private-layout .operation-snapshot,
+.private-layout .history-card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: var(--space-3); margin: var(--space-5) 0; }
+.private-layout .asset-details > div,
+.private-layout .operation-details > div,
+.private-layout .operation-snapshot > div,
+.private-layout .history-card-grid > div { min-width: 0; padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface-raised); }
+.private-layout .asset-details dt,
+.private-layout .operation-details dt,
+.private-layout .operation-snapshot dt,
+.private-layout .history-card-grid dt { color: var(--color-text-muted); font-size: var(--font-size-xs); }
+.private-layout .asset-details dd,
+.private-layout .operation-details dd,
+.private-layout .operation-snapshot dd,
+.private-layout .history-card-grid dd { margin: var(--space-1) 0 0; overflow-wrap: anywhere; color: var(--color-text); font-weight: var(--font-weight-semibold); }
+.private-layout .asset-wallet-status,
+.private-layout .asset-broker-positions { display: grid; gap: var(--space-3); margin-top: var(--space-4); padding: var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface-muted); }
+.private-layout .asset-broker-positions { margin: 0; padding: 0; list-style: none; }
+.private-layout .asset-broker-positions li { display: flex; justify-content: space-between; gap: var(--space-3); padding-top: var(--space-3); border-top: 1px solid var(--color-border); }
+.private-layout .asset-result-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-5); }
+.private-layout .asset-result-actions button { width: auto; margin: 0; }
+
+/* Tables become cards on narrow screens while retaining all official fields. */
+.private-layout .positions-section,
+.private-layout .transfer-positions,
+.private-layout .brokers-list-section,
+.private-layout .history-results { margin-top: var(--space-5); padding: var(--space-5); }
+.private-layout .positions-table { overflow-x: auto; }
+.private-layout .positions-table-head,
+.private-layout .position-row { display: grid; grid-template-columns: minmax(7rem, 1.4fr) repeat(5, minmax(6.5rem, 1fr)); gap: var(--space-3); align-items: center; min-width: 58rem; }
+.private-layout .positions-table-head { padding: 0 var(--space-3) var(--space-3); color: var(--color-text-muted); font-size: var(--font-size-xs); font-weight: var(--font-weight-bold); letter-spacing: .05em; text-transform: uppercase; }
+.private-layout .positions-list { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+.private-layout .position-row { width: 100%; padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); color: var(--color-text); background: var(--color-surface-raised); text-align: left; cursor: pointer; }
+.private-layout .position-row:hover,
+.private-layout .position-row:focus-visible { border-color: var(--color-primary); background: var(--color-primary-surface); }
+.private-layout .position-cell { min-width: 0; display: grid; gap: var(--space-1); }
+.private-layout .position-cell strong,
+.private-layout .position-cell small { overflow-wrap: anywhere; }
+.private-layout .position-cell small { color: var(--color-text-muted); }
+.private-layout .transfer-positions ul { display: grid; gap: var(--space-2); margin: var(--space-4) 0 0; padding: 0; list-style: none; }
+.private-layout .transfer-positions li { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: var(--space-3); padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface-raised); }
+.private-layout .transfer-positions li span { display: grid; gap: var(--space-1); min-width: 0; }
+.private-layout .transfer-positions li small { color: var(--color-text-muted); }
+.private-layout .history-filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); padding: var(--space-5); }
+.private-layout .history-filter-actions { display: flex; flex-wrap: wrap; align-items: end; gap: var(--space-2); grid-column: 1 / -1; }
+.private-layout .history-filter-actions button { width: auto; margin: 0; }
+.private-layout .history-list { display: grid; gap: var(--space-3); }
+.private-layout .history-card { padding: var(--space-5); border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface-raised); }
+.private-layout .history-card > header { display: flex; justify-content: space-between; gap: var(--space-3); }
+.private-layout .history-card time { color: var(--color-text-muted); font-size: var(--font-size-sm); }
+
+/* Dialogs and focus */
+.private-layout .operation-modal,
+.private-layout .deposit-confirmation,
+.private-layout .transfer-confirmation { position: fixed; z-index: 80; inset: 0; display: grid; place-items: center; overflow: auto; padding: var(--space-4); background: rgb(2 8 6 / 78%); }
+.private-layout .operation-modal-card,
+.private-layout .deposit-confirmation > div,
+.private-layout .transfer-confirmation > section { width: min(100%, 46rem); max-height: calc(100dvh - 2rem); overflow: auto; padding: var(--space-6); border: 1px solid var(--color-border-strong); border-radius: var(--radius-xl); background: var(--color-surface-raised); box-shadow: var(--shadow-md); }
+.private-layout .operation-modal-card > header { display: flex; justify-content: space-between; gap: var(--space-4); }
+.private-layout .operation-modal-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
+.private-layout .confirmation-actions,
+.private-layout .modal-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-5); }
+.private-layout :focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+
+@media (max-width: 56.25rem) {
+  .private-layout .home-section-links { grid-template-columns: 1fr; }
+  .private-layout .deposit-card,
+  .private-layout .withdrawal-card,
+  .private-layout .broker-search-card,
+  .private-layout .asset-search-card { grid-template-columns: 1fr; }
+  .private-layout .popular-assets { display: grid; }
+  .private-layout .popular-assets-list,
+  .private-layout .asset-suggestions { min-width: 0; }
+  .private-layout .history-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .private-layout .positions-table { overflow: visible; }
+  .private-layout .positions-table-head { display: none; }
+  .private-layout .positions-table .position-row { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; min-width: 0; gap: var(--space-3); }
+  .private-layout .positions-table .position-ticker { grid-column: 1 / -1 !important; }
+  .private-layout .positions-table .position-row > .position-cell:nth-child(2) { display: grid !important; justify-content: initial; text-align: left; }
+  .private-layout .positions-table .position-row > .position-cell:nth-child(2) strong { width: auto; text-align: left; }
+  .private-layout .positions-table .position-cell small { overflow: visible; text-overflow: clip; white-space: normal; }
+  .private-layout .position-cell:not(:first-child)::before { color: var(--color-text-muted); font-size: var(--font-size-xs); font-weight: var(--font-weight-bold); letter-spacing: .05em; text-transform: uppercase; }
+  .private-layout .position-cell:nth-child(2)::before { content: 'Quantidade'; }
+  .private-layout .position-cell:nth-child(3)::before { content: 'Saldo / posição'; }
+  .private-layout .position-cell:nth-child(4)::before { content: 'Preço atual'; }
+  .private-layout .position-cell:nth-child(5)::before { content: 'Preço médio'; }
+  .private-layout .position-cell:nth-child(6)::before { content: 'Resultado oficial'; }
+  .private-layout .position-ticker small { white-space: normal; }
+}
+
+@media (max-width: 40rem) {
+  .private-layout .foundation-home.ui-page-shell,
+  .private-layout .account-page,
+  .private-layout .bank-page,
+  .private-layout .wallet-page,
+  .private-layout .assets-page,
+  .private-layout .asset-detail-page,
+  .private-layout .operations-page,
+  .private-layout .portfolio-page,
+  .private-layout .transfers-page,
+  .private-layout .history-page,
+  .private-layout .brokers-page { padding-block: var(--space-5) var(--space-10); }
+  .private-layout .home-balance-strip { align-items: stretch; flex-direction: column; }
+  .private-layout .home-balance-action.ui-button { width: 100%; }
+  .private-layout .profile-card dl { grid-template-columns: 1fr; }
+  .private-layout .danger-zone { grid-template-columns: 1fr; }
+  .private-layout .danger-trigger { width: 100%; }
+  .private-layout .asset-search-form,
+  .private-layout .operations-search,
+  .private-layout .operation-modal-grid,
+  .private-layout .history-filters { grid-template-columns: 1fr; }
+  .private-layout .history-filter-actions { grid-column: auto; }
+  .private-layout .history-filter-actions button,
+  .private-layout .asset-result-actions button,
+  .private-layout .modal-actions button,
+  .private-layout .confirmation-actions button { flex: 1 1 10rem; }
+  .private-layout .popular-assets-list,
+  .private-layout .asset-suggestions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .private-layout .asset-result header,
+  .private-layout .investment-asset-detail > header,
+  .private-layout .positions-section > header,
+  .private-layout .transfer-positions > header,
+  .private-layout .brokers-list-heading { flex-direction: column; }
+  .private-layout .transfer-positions li { grid-template-columns: 1fr; }
+  .private-layout .asset-broker-positions li { align-items: flex-start; flex-direction: column; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .private-layout .home-context-card:hover { transform: none; }
+}

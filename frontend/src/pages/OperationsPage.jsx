@@ -135,4 +135,4 @@ function calculateOperationTotalBrl(asset, totalNative) {
 }
 function currentPrice(position) { return position.quotePrice == null ? 'Indisponível' : position.market === 'US' ? formatMoney(position.quotePrice, 'USD') : formatCurrency(position.quotePriceBrl) }
 function averagePrice(position) { if (position.averagePriceBrl == null) return 'Indisponível'; if (position.market !== 'US') return formatCurrency(position.averagePriceBrl); const rate = Number(position.usdBrlRate); return rate > 0 ? formatMoney(Number(position.averagePriceBrl) / rate, 'USD') : 'Indisponível' }
-function profitability(position) { const result = Number(position.unrealizedResultBrl); const invested = Number(position.averagePriceBrl) * Number(position.quantity); return Number.isFinite(result) && invested > 0 ? `${(result / invested * 100).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%` : 'Percentual indisponível' }
+function profitability() { return 'Percentual não fornecido pela API' }
