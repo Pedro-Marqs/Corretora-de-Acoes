@@ -1,6 +1,22 @@
 # Continuidade do projeto
 
+## Etapa 5 — modernização administrativa — 2026-11-12
+
+As tasks 5.1–5.4 do change `redesign-global-interface-fintech` foram implementadas somente no frontend. `AdminLoginPage` e `AdminLayout` continuam usando contexto, JWT, refresh single-flight, CSRF, cookies e logout administrativos separados do investidor. `AdminDashboardPage` agora usa as primitivas compartilhadas para os oito indicadores oficiais, séries diárias, volumes BRL/USD separados, estados `NOT_REQUIRED`/`UNAVAILABLE`, ranking e alternativa tabular acessível. `AdminInvestorsPage` usa filtros, busca, ordenação, paginação, dados mascarados, confirmação, feedback de conflito e atualização somente após sucesso oficial.
+
+No Chrome autenticado com sessão ADMIN legítima, `/admin` e `/admin/investors` foram verificadas em 320, 390, 768, 1366 e 1440px. Após corrigir um overflow de 320px no topbar administrativo, todas as larguras ficaram sem overflow global; tabelas largas permanecem em rolagem horizontal contida com caption e cabeçalho acessíveis. O foco visível e o retorno de foco após Escape no menu mobile foram confirmados. Capturas reais estão fora do repositório em `%TEMP%\corretora-etapa5-browser-final`.
+
+Os gates frontend passaram com 394/394 testes, coverage de 88,49% statements, 81,44% branches, 92,04% functions e 93,30% lines, além de lint, build, OpenSpec strict, Graphify e `git diff --check`. Nenhum backend, contrato de API, regra financeira, autenticação ou CI foi alterado. Não houve staging, commit, push ou início da Etapa 6.
+
 ## Validação real da task 3.3 — 2026-11-12
+
+O acesso administrativo local foi corrigido após o bootstrap do administrador: o Compose não estava repassando `APP_ADMIN_JWT_ENABLED` e `APP_ADMIN_JWT_SECRET`, deixando as rotas ADMIN desativadas. O `compose.yaml` passou a habilitar o JWT administrativo no ambiente local, usando a chave JWT local existente como fallback. A autenticação real de `admin@gmail.com` respondeu HTTP 204 após CSRF HTTP 200; PostgreSQL, volumes, autenticação do investidor e backend funcional não foram alterados.
+
+Após a revisão visual do usuário, foi corrigido o caso real em que a conta possuía somente uma âncora patrimonial oficial anterior à janela 4W. O valor persistido continua sendo um único ponto na tabela e na acessibilidade, mas a linha SVG parte da borda inicial da janela e permanece visualmente contínua até o fim do gráfico; nenhum ponto histórico, timestamp ou valor financeiro adicional é criado. A captura Chrome confirmou `polyline` com dois extremos visuais e o ponto oficial preservado.
+
+Na revisão seguinte, foi confirmado que a API pode retornar várias observações patrimoniais oficiais no mesmo dia. A apresentação do dashboard agora agrupa a série por data de Brasília e exibe somente a última observação oficial de cada dia como fechamento, no gráfico e na tabela acessível. O payload bruto, os timestamps persistidos, os valores financeiros e o backend permanecem inalterados; não há média, máximo, interpolação ou ponto sintético.
+
+No Chrome autenticado com a sessão INVESTOR, o período 3M real exibiu dois fechamentos oficiais (09/09 e 23/09), dois pontos no SVG e duas linhas na alternativa acessível; as cinco larguras 320, 390, 768, 1366 e 1440px ficaram sem overflow horizontal. O período 4W real continuou com uma única âncora oficial e linha horizontal visual, sem variação inventada. As capturas desta verificação estão fora do repositório em `%TEMP%\corretora-etapa3-browser\dashboard-{320,390,768,1366,1440}-daily-close.png` e `dashboard-1440-daily-close-chart.png`.
 
 Foi confirmada a branch `feature/aulas-13-15`, sem staging, commit, push ou descarte. O Graphify foi consultado antes da inspeção e apontou `DashboardPage`, `LineChart`, `InvestmentHistory`, `DashboardWarnings`, `ResponsiveLineChart`, `BarList` e `DashboardPage.test.jsx` como o escopo relevante.
 

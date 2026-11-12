@@ -30,10 +30,10 @@
 
 ## 5. Dashboard e telas administrativas
 
-- [ ] 5.1 Migrar `AdminLoginPage` e `AdminLayout` para as primitivas compartilhadas, preservando a identidade de área restrita e a separação do investidor; verificar token somente em memória, refresh single-flight, logout e sessão revogada nos testes existentes.
-- [ ] 5.2 Migrar `AdminDashboardPage` para cards, séries, ranking e visualizações agregadas; verificar que `totalAccounts`, `activeAccounts` e `inactiveAccounts` são atuais, que `newAccounts` e operações respeitam o período e que BRL/USD/conversão exibem `NOT_REQUIRED` e indisponibilidade corretamente.
-- [ ] 5.3 Migrar a tabela de `AdminInvestorsPage` com filtros, busca, ordenação, paginação, dados mascarados, status e confirmação; verificar atualização após sucesso, conflito 409 sem falso sucesso e ausência de CPF/e-mail não mascarados ou dados financeiros individuais.
-- [ ] 5.4 Cobrir as telas administrativas em loading, vazio, erro, 401/403, conflito e viewport estreita; verificar que o dashboard não expõe investidores individuais e que nenhuma ação administrativa altera regras de segurança ou contexto do investidor.
+- [x] 5.1 Migrar `AdminLoginPage` e `AdminLayout` para as primitivas compartilhadas, preservando a identidade de área restrita e a separação do investidor; verificar token somente em memória, refresh single-flight, logout e sessão revogada nos testes existentes.
+- [x] 5.2 Migrar `AdminDashboardPage` para cards, séries, ranking e visualizações agregadas; verificar que `totalAccounts`, `activeAccounts` e `inactiveAccounts` são atuais, que `newAccounts` e operações respeitam o período e que BRL/USD/conversão exibem `NOT_REQUIRED` e indisponibilidade corretamente.
+- [x] 5.3 Migrar a tabela de `AdminInvestorsPage` com filtros, busca, ordenação, paginação, dados mascarados, status e confirmação; verificar atualização após sucesso, conflito 409 sem falso sucesso e ausência de CPF/e-mail não mascarados ou dados financeiros individuais.
+- [x] 5.4 Cobrir as telas administrativas em loading, vazio, erro, 401/403, conflito e viewport estreita; verificar que o dashboard não expõe investidores individuais e que nenhuma ação administrativa altera regras de segurança ou contexto do investidor.
 
 ## 6. Responsividade, acessibilidade e regressão final
 

@@ -1,0 +1,259 @@
+/* Etapa 5: superfícies administrativas sobre os tokens compartilhados. */
+.admin-shell {
+  background: var(--color-canvas);
+}
+
+.admin-topbar {
+  background: rgb(17 28 24 / 92%);
+  backdrop-filter: blur(1rem);
+}
+
+.admin-page {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.admin-page > .ui-section-header {
+  margin-bottom: var(--space-2);
+}
+
+.admin-page .ui-section-header__title {
+  font-size: clamp(2rem, 4vw, 3.35rem);
+  letter-spacing: -.045em;
+}
+
+.admin-page .ui-section-header__description {
+  max-width: 58rem;
+}
+
+.admin-period-field {
+  min-width: 10rem;
+}
+
+.admin-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.admin-metric-grid .ui-metric-card {
+  min-height: 8.75rem;
+  background: linear-gradient(145deg, var(--color-surface-raised), var(--color-surface));
+}
+
+.admin-metric-grid .ui-metric-card:nth-child(1) {
+  border-color: var(--color-primary);
+  background: linear-gradient(145deg, var(--color-primary-surface), var(--color-surface));
+}
+
+.admin-metric-grid .ui-metric-card__value {
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-volume-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.admin-panel {
+  padding: clamp(var(--space-4), 3vw, var(--space-6));
+}
+
+.admin-panel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.admin-panel-heading h2,
+.admin-chart-card h3 {
+  margin: 0;
+  color: var(--color-text);
+  font-family: var(--font-family-display);
+  letter-spacing: -.025em;
+}
+
+.admin-panel-heading h2 { font-size: var(--font-size-xl); }
+.admin-chart-card h3 { font-size: var(--font-size-lg); }
+.admin-panel-heading p:last-child { margin: var(--space-2) 0 0; color: var(--color-text-secondary); font-size: var(--font-size-sm); }
+.admin-eyebrow { margin: 0 0 var(--space-2); color: var(--color-primary); font-size: var(--font-size-xs); font-weight: var(--font-weight-bold); letter-spacing: .08em; text-transform: uppercase; }
+
+.admin-volume-card dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin: 0;
+}
+
+.admin-volume-card dt,
+.admin-table th {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.admin-volume-card dd {
+  margin: var(--space-2) 0 0;
+  color: var(--color-text);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-volume-card > small {
+  display: block;
+  margin-top: var(--space-5);
+  color: var(--color-text-muted);
+  line-height: var(--line-height-body);
+}
+
+.admin-warning { color: var(--color-warning) !important; }
+
+.admin-series-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.admin-chart-card {
+  padding: var(--space-4);
+}
+
+.admin-chart-card .ui-viz__svg {
+  min-height: 9rem;
+  margin-top: var(--space-3);
+}
+
+.admin-chart-card .ui-viz__details {
+  margin-top: var(--space-2);
+}
+
+.admin-ranking-list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-ranking-list li {
+  display: grid;
+  grid-template-columns: 2rem minmax(6rem, 1fr) 3rem auto;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+}
+
+.admin-ranking-list li > span,
+.admin-ranking-list li > small { color: var(--color-text-muted); }
+.admin-ranking-list li > strong { color: var(--color-text); }
+.admin-ranking-list li > b { color: var(--color-primary); font-size: var(--font-size-sm); white-space: nowrap; }
+
+.admin-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.admin-table {
+  width: 100%;
+  min-width: 42rem;
+  border-collapse: collapse;
+}
+
+.admin-table caption {
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-text-secondary);
+  text-align: left;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.admin-table td {
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-table tbody tr:hover { background: rgb(60 221 176 / 5%); }
+.admin-table tbody tr:last-child td { border-bottom: 0; }
+
+.admin-investor-filters {
+  grid-template-columns: minmax(14rem, 1.6fr) repeat(2, minmax(10rem, 1fr)) auto;
+}
+
+.admin-investor-filters .ui-filter-bar__actions {
+  align-self: end;
+}
+
+.admin-investor-filters .ui-filter-bar__actions .ui-button {
+  min-width: 7rem;
+}
+
+.admin-status-message { margin: 0; }
+
+.admin-investors-panel {
+  min-width: 0;
+}
+
+.admin-investors-panel .ui-table-wrap {
+  border: 0;
+}
+
+.admin-investors-panel .ui-table {
+  min-width: 48rem;
+}
+
+.admin-investors-panel .ui-table__empty {
+  padding: var(--space-8);
+}
+
+.admin-action {
+  min-width: 6.5rem;
+  color: var(--color-primary);
+}
+
+.admin-login-card {
+  background: var(--color-surface);
+}
+
+@media (max-width: 75rem) {
+  .admin-metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .admin-series-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 56.25rem) {
+  .admin-volume-grid { grid-template-columns: 1fr; }
+  .admin-investor-filters { grid-template-columns: 1fr 1fr; }
+  .admin-investor-filters > .ui-field:first-child { grid-column: 1 / -1; }
+  .admin-investor-filters .ui-filter-bar__actions { grid-column: 1 / -1; }
+  .admin-investor-filters .ui-filter-bar__actions .ui-button { width: 100%; }
+}
+
+@media (max-width: 40rem) {
+  .admin-topbar { padding-inline: var(--space-3); }
+  .admin-topbar > div:not(.admin-topbar__actions) { min-width: 0; flex: 1 1 auto; }
+  .admin-topbar__actions { flex: 0 0 auto; min-width: 0; }
+  .admin-metric-grid { grid-template-columns: 1fr; }
+  .admin-page .ui-section-header__actions,
+  .admin-page .ui-section-header__actions .ui-field { width: 100%; }
+  .admin-panel-heading { align-items: flex-start; flex-direction: column; }
+  .admin-volume-card dl { grid-template-columns: 1fr; gap: var(--space-3); }
+  .admin-investor-filters { grid-template-columns: 1fr; }
+  .admin-investor-filters > .ui-field:first-child,
+  .admin-investor-filters .ui-filter-bar__actions { grid-column: auto; }
+  .admin-ranking-list li { grid-template-columns: 1.5rem 1fr 2.5rem; }
+  .admin-ranking-list li > b { grid-column: 2 / -1; }
+}

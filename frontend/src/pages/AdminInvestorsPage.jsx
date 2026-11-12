@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { changeAdminInvestorStatus, listAdminInvestors } from '../api/admin-investors.js'
 import { useAdminAuth } from '../context/admin-auth-context.js'
 import { EmptyState, ErrorState, LoadingState } from '../components/common/AsyncStates.jsx'
+import { Badge, Button, DataTable, FilterBar, Pagination, SectionHeader, SelectField, StatusMessage, TextField } from '../components/ui/index.jsx'
 
 export default function AdminInvestorsPage() {
   const auth = useAdminAuth()
@@ -12,7 +13,7 @@ export default function AdminInvestorsPage() {
   const [search, setSearch] = useState('')
   const [state, setState] = useState({ status: 'loading', data: null, message: '', loadedKey: '' })
   const [changingId, setChangingId] = useState(null)
-  const [message, setMessage] = useState('')
+  const [message, setMessage] = useState(null)
 
   useEffect(() => {
     let active = true
@@ -33,21 +34,27 @@ export default function AdminInvestorsPage() {
     const nextStatus = investor.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'
     const action = nextStatus === 'ACTIVE' ? 'ativar' : 'desativar'
     if (!window.confirm(`Confirma ${action} o investidor ${investor.name}?`)) return
-    setChangingId(investor.id); setMessage('')
+    setChangingId(investor.id); setMessage(null)
     try {
       await changeAdminInvestorStatus(investor.id, nextStatus)
-      setMessage(`Investidor ${action === 'ativar' ? 'ativado' : 'desativado'} com sucesso.`)
+      setMessage({ kind: 'success', text: `Investidor ${action === 'ativar' ? 'ativado' : 'desativado'} com sucesso.` })
       setFilters((current) => ({ ...current }))
     } catch (error) {
       if (error.status === 401 || error.status === 403) { clear(); navigate('/admin/login', { replace: true }) }
-      else setMessage(error.status === 409 ? 'A conta já está nesse estado ou a transição não é válida.' : error.message)
+      else if (error.status === 409) setMessage({ kind: 'conflict', text: 'A conta já está nesse estado ou a transição não é válida.' })
+      else setMessage({ kind: 'error', text: error.message })
     } finally { setChangingId(null) }
   }
 
   const loading = state.status === 'loading' || state.loadedKey !== JSON.stringify(filters)
-  return <section className="admin-page"><header className="admin-page-heading"><div><p className="eyebrow">Contas da corretora</p><h1>Investidores</h1><p>Dados pessoais protegidos e status operacional de cada conta.</p></div></header>
-    <section className="admin-panel admin-filters" aria-label="Filtros de investidores"><form onSubmit={submitSearch}><label htmlFor="admin-search">Buscar por nome ou e-mail<input id="admin-search" value={search} onChange={(event) => setSearch(event.target.value)} maxLength="100" placeholder="Digite para buscar" /></label><button className="secondary-button" type="submit">Buscar</button></form><label>Status<select name="status" value={filters.status} onChange={updateFilter}><option value="ALL">Todos</option><option value="ACTIVE">Ativos</option><option value="INACTIVE">Inativos</option></select></label><label>Ordenar<select name="sort" value={filters.sort} onChange={updateFilter}><option value="createdAt,desc">Mais recentes</option><option value="createdAt,asc">Mais antigos</option><option value="name,asc">Nome A–Z</option><option value="name,desc">Nome Z–A</option></select></label></section>
-    {message && <div className="message admin-status-message" role="status">{message}</div>}
+  return <section className="admin-page"><SectionHeader eyebrow="Contas da corretora" title="Investidores" description="Dados pessoais protegidos e status operacional de cada conta." />
+    <FilterBar className="admin-investor-filters" aria-label="Filtros de investidores" onSubmit={submitSearch}>
+      <TextField label="Buscar por nome ou e-mail" id="admin-search" value={search} onChange={(event) => setSearch(event.target.value)} maxLength="100" placeholder="Digite para buscar" />
+      <SelectField label="Status" name="status" value={filters.status} onChange={updateFilter}><option value="ALL">Todos</option><option value="ACTIVE">Ativos</option><option value="INACTIVE">Inativos</option></SelectField>
+      <SelectField label="Ordenar" name="sort" value={filters.sort} onChange={updateFilter}><option value="createdAt,desc">Mais recentes</option><option value="createdAt,asc">Mais antigos</option><option value="name,asc">Nome A–Z</option><option value="name,desc">Nome Z–A</option></SelectField>
+      <div className="ui-filter-bar__actions"><Button variant="secondary" type="submit">Buscar</Button></div>
+    </FilterBar>
+    {message && <StatusMessage className="admin-status-message" kind={message.kind} role={message.kind === 'error' ? 'alert' : 'status'} title={message.kind === 'success' ? 'Atualização concluída.' : message.kind === 'conflict' ? 'Conflito na atualização.' : 'Não foi possível atualizar.'}>{message.text}</StatusMessage>}
     {loading && <LoadingState message="Carregando investidores…" />}
     {!loading && state.status === 'error' && <ErrorState message={state.message} onRetry={() => setFilters((current) => ({ ...current }))} />}
     {!loading && state.status === 'ready' && <InvestorTable data={state.data} changingId={changingId} onChangeStatus={changeStatus} onPage={page} />}
@@ -55,7 +62,15 @@ export default function AdminInvestorsPage() {
 }
 
 function InvestorTable({ data, changingId, onChangeStatus, onPage }) {
-  return <section className="admin-panel"><div className="admin-table-wrap">{data.content.length === 0 ? <EmptyState title="Nenhum investidor encontrado" description="Ajuste os filtros e tente novamente." /> : <table className="admin-table"><thead><tr><th>Nome</th><th>E-mail</th><th>CPF</th><th>Status</th><th>Criado em</th><th>Ação</th></tr></thead><tbody>{data.content.map((investor) => <tr key={investor.id}><td>{investor.name}</td><td>{investor.emailMasked}</td><td>{investor.cpfMasked}</td><td><span className={`admin-status admin-status-${investor.status.toLowerCase()}`}>{investor.status === 'ACTIVE' ? 'Ativo' : 'Inativo'}</span></td><td>{formatDate(investor.createdAt)}</td><td><button className="text-button admin-action" type="button" disabled={changingId === investor.id} onClick={() => onChangeStatus(investor)}>{changingId === investor.id ? 'Salvando…' : investor.status === 'ACTIVE' ? 'Desativar' : 'Ativar'}</button></td></tr>)}</tbody></table>}</div><footer className="admin-pagination"><span>{data.totalElements} resultado(s) · página {data.page + 1} de {Math.max(1, data.totalPages)}</span><div><button className="secondary-button" type="button" disabled={data.page === 0} onClick={() => onPage(-1)}>Anterior</button><button className="secondary-button" type="button" disabled={data.page + 1 >= data.totalPages} onClick={() => onPage(1)}>Próxima</button></div></footer></section>
+  const columns = [
+    { key: 'name', label: 'Nome' },
+    { key: 'emailMasked', label: 'E-mail' },
+    { key: 'cpfMasked', label: 'CPF' },
+    { key: 'status', label: 'Status', render: (investor) => <Badge tone={investor.status === 'ACTIVE' ? 'success' : 'danger'}>{investor.status === 'ACTIVE' ? 'Ativo' : 'Inativo'}</Badge> },
+    { key: 'createdAt', label: 'Criado em', render: (investor) => formatDate(investor.createdAt) },
+    { key: 'action', label: 'Ação', render: (investor) => <Button className="admin-action" variant="ghost" size="sm" type="button" disabled={changingId === investor.id} onClick={() => onChangeStatus(investor)}>{changingId === investor.id ? 'Salvando…' : investor.status === 'ACTIVE' ? 'Desativar' : 'Ativar'}</Button> },
+  ]
+  return <section className="admin-panel admin-investors-panel"><div className="admin-table-wrap">{data.content.length === 0 ? <EmptyState title="Nenhum investidor encontrado" description="Ajuste os filtros e tente novamente." /> : <DataTable caption="Investidores administrativos; dados pessoais mascarados." columns={columns} rows={data.content} rowKey={(investor) => investor.id} />}</div><Pagination page={data.page} totalPages={data.totalPages} onPageChange={(nextPage) => onPage(nextPage - data.page)} /></section>
 }
 
 function formatDate(value) { return value ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeZone: 'America/Sao_Paulo' }).format(new Date(value)) : '—' }
