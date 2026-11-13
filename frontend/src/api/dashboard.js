@@ -1,4 +1,4 @@
-import { API_BASE_URL, ApiError, groupFieldErrors, parseJson } from './http.js'
+import { API_BASE_URL, ApiError, authenticatedFetch, groupFieldErrors, parseJson } from './http.js'
 
 export class DashboardApiError extends ApiError {
   constructor(message, fieldErrors = {}, status) {
@@ -66,7 +66,7 @@ export async function getDashboard({ brokerAssociationId, period = '4W' } = {}) 
   const params = new URLSearchParams({ period })
   if (typeof brokerAssociationId === 'string' && brokerAssociationId.trim()) params.set('brokerAssociationId', brokerAssociationId.trim())
   try {
-    const response = await fetch(`${API_BASE_URL}/api/dashboard?${params}`, { credentials: 'include' })
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/dashboard?${params}`)
     const body = await parseJson(response)
     if (!response.ok) throw new DashboardApiError(body?.message ?? 'Não foi possível consultar o dashboard.', groupFieldErrors(body?.fieldErrors), response.status)
     return requireDashboard(body)

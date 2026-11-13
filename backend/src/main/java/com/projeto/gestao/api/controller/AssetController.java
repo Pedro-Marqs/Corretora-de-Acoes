@@ -4,6 +4,7 @@ import com.projeto.gestao.domain.model.Market;
 import com.projeto.gestao.service.AssetCatalogService;
 import jakarta.validation.constraints.Pattern;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Validated
 @RestController
 @RequestMapping("/api/assets")
+@PreAuthorize("hasRole('USER') and principal instanceof T(com.projeto.gestao.security.AccountPrincipal)")
 public class AssetController {
     private final AssetCatalogService service;
 

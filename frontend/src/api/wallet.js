@@ -1,4 +1,4 @@
-import { API_BASE_URL, ApiError, getCsrfToken, groupFieldErrors, parseJson } from './http.js'
+import { API_BASE_URL, ApiError, authenticatedFetch, getCsrfToken, groupFieldErrors, parseJson } from './http.js'
 
 export class WalletApiError extends ApiError {
   constructor(message, fieldErrors = {}, status) {
@@ -52,7 +52,7 @@ function requirePositions(body) {
 
 export async function getWalletPositions() {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/wallet/positions`, { credentials: 'include' })
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/wallet/positions`)
     const body = await parseJson(response)
     if (!response.ok) throw new WalletApiError(body?.message ?? 'Não foi possível consultar a carteira.', groupFieldErrors(body?.fieldErrors), response.status)
     return requirePositions(body)
@@ -87,8 +87,9 @@ function requireTransfer(body) {
 async function operate(path, operation, assetId, brokerId, quantity, unitPrice, occurredAt) {
   try {
     const token = await getCsrfToken(WalletApiError, 'Não foi possível iniciar a operação. Tente novamente.')
-    const response = await fetch(`${API_BASE_URL}/api/wallet/${path}`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/wallet/${path}`, {
       method: 'POST', credentials: 'include',
+      retryOnUnauthorized: false,
       headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': token },
       body: JSON.stringify({ assetId, brokerId, quantity, ...(unitPrice == null ? {} : { unitPrice }), ...(occurredAt == null ? {} : { occurredAt }) }),
     })
@@ -112,8 +113,9 @@ export function sellAsset(assetId, brokerId, quantity, unitPrice, occurredAt) {
 export async function transferPosition(originBrokerId, destinationBrokerId, assetId, quantity) {
   try {
     const token = await getCsrfToken(WalletApiError, 'Não foi possível iniciar a transferência. Tente novamente.')
-    const response = await fetch(`${API_BASE_URL}/api/wallet/transfers`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/wallet/transfers`, {
       method: 'POST', credentials: 'include',
+      retryOnUnauthorized: false,
       headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': token },
       body: JSON.stringify({ originBrokerId, destinationBrokerId, assetId, quantity }),
     })
@@ -128,7 +130,7 @@ export async function transferPosition(originBrokerId, destinationBrokerId, asse
 
 export async function getWalletBalance() {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/wallet`, { credentials: 'include' })
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/wallet`)
     const body = await parseJson(response)
     if (!response.ok) {
       throw new WalletApiError(
@@ -147,9 +149,10 @@ export async function getWalletBalance() {
 export async function deposit(amount) {
   try {
     const token = await getCsrfToken(WalletApiError, 'Não foi possível iniciar o aporte. Tente novamente.')
-    const response = await fetch(`${API_BASE_URL}/api/wallet/deposits`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/wallet/deposits`, {
       method: 'POST',
       credentials: 'include',
+      retryOnUnauthorized: false,
       headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': token },
       body: JSON.stringify({ amount }),
     })
@@ -171,8 +174,9 @@ export async function deposit(amount) {
 export async function withdraw(amount) {
   try {
     const token = await getCsrfToken(WalletApiError, 'Não foi possível iniciar a retirada. Tente novamente.')
-    const response = await fetch(`${API_BASE_URL}/api/wallet/withdrawals`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/wallet/withdrawals`, {
       method: 'POST', credentials: 'include',
+      retryOnUnauthorized: false,
       headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': token },
       body: JSON.stringify({ amount }),
     })

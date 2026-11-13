@@ -9,6 +9,7 @@ vi.mock('./api/accounts.js', async (load) => {
   const actual = await load()
   return { ...actual, getCurrentAccount: vi.fn() }
 })
+vi.mock('./api/auth.js', async (load) => ({ ...await load(), restoreSession: vi.fn().mockResolvedValue('access-1') }))
 vi.mock('./api/wallet.js', async (load) => {
   const actual = await load()
   return { ...actual, deposit: vi.fn(), getWalletBalance: vi.fn() }

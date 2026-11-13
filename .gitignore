@@ -43,3 +43,6 @@ Thumbs.db
 /.m2-repo.bak/
 /.mvn/validation-cache-*/
 **/.codex-test-tmp/
+
+### Graphify generated artifacts ###
+graphify-out/

@@ -6,6 +6,7 @@ import { getCurrentAccount } from './api/accounts.js'
 import { getActiveBrokers } from './api/brokers.js'
 
 vi.mock('./api/accounts.js', async (load) => ({ ...await load(), getCurrentAccount: vi.fn() }))
+vi.mock('./api/auth.js', async (load) => ({ ...await load(), restoreSession: vi.fn().mockResolvedValue('access-1') }))
 vi.mock('./api/brokers.js', async (load) => ({ ...await load(), associateBroker: vi.fn(), getActiveBrokers: vi.fn(), removeBroker: vi.fn(), searchBroker: vi.fn() }))
 afterEach(cleanup)
 

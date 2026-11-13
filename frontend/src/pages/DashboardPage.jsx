@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { getActiveBrokers } from '../api/brokers.js'
 import { getDashboard } from '../api/dashboard.js'
 import { EmptyState, ErrorState, LoadingState, Message } from '../components/common/AsyncStates.jsx'
+import { BarList, ResponsiveLineChart } from '../components/data-viz/index.jsx'
 import { useAuth } from '../context/auth-context.js'
 import { formatBrasiliaDateTime, formatCurrency, formatMoney } from '../utils/formatters.js'
 
@@ -15,9 +16,10 @@ export default function DashboardPage() {
   const [state, setState] = useState({ status: 'loading', data: null, message: '' })
   const [brokers, setBrokers] = useState([]); const [brokerError, setBrokerError] = useState('')
   const expireSession = useCallback(() => { sequence.current += 1; brokerSequence.current += 1; setState({ status: 'unauthenticated', data: null, message: '' }); clear(); navigate('/login', { replace: true, state: { message: 'Sua sessão foi encerrada. Entre novamente.' } }) }, [clear, navigate])
-  const load = useCallback(async (selection) => {
+  const load = useCallback(async (selection, { preserveData = false } = {}) => {
     const key = JSON.stringify(selection); if (activeQueries.current.has(key)) return
-    activeQueries.current.add(key); const request = ++sequence.current; setState({ status: 'loading', data: null, message: '' })
+    activeQueries.current.add(key); const request = ++sequence.current
+    setState((current) => ({ status: preserveData && current.data ? 'refreshing' : 'loading', data: preserveData ? current.data : null, message: '' }))
     try { const data = await getDashboard(selection); if (request === sequence.current) setState({ status: 'ready', data, message: '' }) }
     catch (error) { if (request !== sequence.current) return; if (error?.status === 401) expireSession(); else setState({ status: 'error', data: null, message: error?.message || 'Não foi possível consultar o dashboard.' }) }
     finally { activeQueries.current.delete(key) }
@@ -28,103 +30,116 @@ export default function DashboardPage() {
     catch (error) { if (request !== brokerSequence.current) return; if (error?.status === 401) expireSession(); else setBrokerError(error?.message || 'Não foi possível carregar as corretoras.') }
   }, [expireSession])
   useEffect(() => { const initialLoad = window.setTimeout(() => { load(filters); loadBrokers() }, 0); return () => { window.clearTimeout(initialLoad); sequence.current += 1; brokerSequence.current += 1 } }, []) // eslint-disable-line react-hooks/exhaustive-deps
-  function selectFilter(event) { const next = { ...filters, [event.target.name]: event.target.value }; setFilters(next); load(next) }
+  function selectFilter(event) { const next = { ...filters, [event.target.name]: event.target.value }; setFilters(next); load(next, { preserveData: true }) }
   return <main className="dashboard-page">
     <header className="dashboard-heading"><p className="eyebrow">Visão consolidada</p><h1>Investimentos</h1><p>Acompanhe os valores oficiais da sua conta e das suas posições.</p></header>
     <nav className="investment-shortcuts" aria-label="Ações de investimentos"><Link to="/app/transferencias">Transferências</Link><Link to="/app/historico">Histórico</Link></nav>
     <section className="dashboard-filters" aria-labelledby="dashboard-filters-title"><h2 id="dashboard-filters-title">Filtros do dashboard</h2><div className="form-field"><label htmlFor="dashboard-view">Visão</label><select id="dashboard-view" name="brokerAssociationId" value={filters.brokerAssociationId} onChange={selectFilter} disabled={state.status === 'loading'}><option value="">Visão geral</option>{brokers.map((broker) => <option key={broker.associationId} value={broker.associationId}>{broker.tradeName}</option>)}</select></div><fieldset><legend>Período do patrimônio</legend><div className="dashboard-periods">{PERIODS.map((period) => <label key={period.value}><input type="radio" name="period" value={period.value} checked={filters.period === period.value} onChange={selectFilter} disabled={state.status === 'loading'} /><span>{period.value}<small>{period.label}</small></span></label>)}</div></fieldset></section>
     {brokerError && <Message kind="error"><p>{brokerError}</p><button className="secondary-button" type="button" onClick={loadBrokers}>Tentar carregar corretoras novamente</button></Message>}
-    <section className="dashboard-content" aria-live="polite" aria-busy={state.status === 'loading'}>{state.status === 'loading' && <LoadingState message="Carregando dashboard…" />}{state.status === 'error' && <ErrorState message={state.message} onRetry={() => load(filters)} />}{state.status === 'ready' && <DashboardContent data={state.data} selectedBroker={brokers.find((broker) => broker.associationId === filters.brokerAssociationId)} />}</section>
+    <section className="dashboard-content" aria-live="polite" aria-busy={state.status === 'loading' || state.status === 'refreshing'}>{state.status === 'loading' && <LoadingState message="Carregando dashboard…" />}{state.status === 'refreshing' && <div className="dashboard-refreshing" role="status">Atualizando dashboard…</div>}{state.status === 'error' && <ErrorState message={state.message} onRetry={() => load(filters)} />}{(state.status === 'ready' || state.status === 'refreshing') && state.data && <DashboardContent data={state.data} selectedBroker={brokers.find((broker) => broker.associationId === state.data.selectedBrokerAssociationId)} />}</section>
   </main>
 }
 
 function DashboardContent({ data, selectedBroker }) {
   const [market, setMarket] = useState(''); const navigate = useNavigate()
-  const positions = aggregatePositions(data.positions)
+  const positions = Array.isArray(data.positions) ? data.positions : []
+  const distributions = data.distributions ?? { byAsset: [], byBroker: [], byMarket: [] }
   const selectedPositions = market ? positions.filter((position) => position.market === market) : positions
   return <><section className="dashboard-context" aria-label="Contexto da consulta"><strong>{selectedBroker ? selectedBroker.tradeName : 'Todas as corretoras'}</strong><span>Período: {data.period}</span><span>Dados confirmados pelo servidor</span></section>
-    <section aria-labelledby="dashboard-indicators-title"><h2 id="dashboard-indicators-title" className="section-title">Indicadores</h2><div className="dashboard-indicators dashboard-indicators-primary"><Indicator label="Total investido" value={data.positionsMarketValueBrl} note="Valor atual das posições" featured /><Indicator label="Saldo em conta" value={data.availableBalanceBrl} note="Compartilhado pela conta" /><Indicator label="Patrimônio total" value={data.patrimonyBrl} note="Investimentos + saldo" /><Indicator label="Resultado realizado" value={data.realizedResultBrl} /><Indicator label="Valorização não realizada" value={data.unrealizedResultBrl} /><Indicator label="Resultado total" value={data.totalResultBrl} /></div></section>
-    <History points={(data.investmentHistory ?? data.patrimonyHistory).map((point) => ({ recordedAt: point.recordedAt, patrimonyBrl: point.positionsValueBrl ?? point.patrimonyBrl }))} period={data.period} valuation={data.unrealizedResultBrl} />
-    <AllocationPie balance={data.availableBalanceBrl} marketSlices={data.distributions.byMarket} />
-    <section aria-labelledby="investment-allocation-title"><h2 id="investment-allocation-title" className="section-title">Distribuição por mercado</h2><div className="investment-market-cards"><MarketCard label="Ações nacionais" market="BR" slices={data.distributions.byMarket} selected={market === 'BR'} onSelect={setMarket} /><MarketCard label="Ações internacionais" market="US" slices={data.distributions.byMarket} selected={market === 'US'} onSelect={setMarket} /><article className="investment-market-card"><span>Saldo em conta</span><strong>{formatCurrency(data.availableBalanceBrl)}</strong><small>Valor oficial compartilhado</small></article></div></section>
-    <section className="investment-wallet" aria-labelledby="investment-wallet-title"><header><div><h2 id="investment-wallet-title" className="section-title">Carteira</h2><p>{market ? 'Posições de ' + (market === 'BR' ? 'ações nacionais' : 'ações internacionais') : 'Todas as posições abertas'}</p></div>{market && <button className="text-button" type="button" onClick={() => setMarket('')}>Ver toda a carteira</button>}</header>{selectedPositions.length === 0 ? <EmptyState title={market ? 'Nenhuma posição nesta categoria' : 'Sua carteira ainda está vazia'} description="Nenhuma posição oficial foi retornada para esta seleção." /> : <DashboardPositionTable positions={selectedPositions} exchangeRate={data.exchangeRate} onInvest={(position) => navigate('/app/bolsa/' + position.market + '/' + position.ticker)} />}</section>
+    <DashboardWarnings warnings={data.warnings} exchangeRate={data.exchangeRate} />
+    <section aria-labelledby="dashboard-indicators-title"><h2 id="dashboard-indicators-title" className="section-title">Indicadores</h2><div className="dashboard-indicators dashboard-indicators-primary"><Indicator label="Valor de mercado das posições" value={data.positionsMarketValueBrl} note="Valor oficial das posições" featured /><Indicator label="Saldo em conta" value={data.availableBalanceBrl} note="Compartilhado pela conta" /><Indicator label="Patrimônio total" value={data.patrimonyBrl} note="Investimentos + saldo" /><Indicator label="Resultado realizado" value={data.realizedResultBrl} /><Indicator label="Valorização não realizada" value={data.unrealizedResultBrl} /><Indicator label="Resultado total" value={data.totalResultBrl} /></div></section>
+    <History points={data.patrimonyHistory} period={data.period} currentPatrimony={data.patrimonyBrl} valuation={data.unrealizedResultBrl} />
+    <InvestmentHistory points={data.investmentHistory} period={data.period} />
+    <AllocationPie balance={data.availableBalanceBrl} marketSlices={distributions.byMarket} />
+    <DistributionPanels distributions={distributions} />
+    <section aria-labelledby="investment-allocation-title"><h2 id="investment-allocation-title" className="section-title">Distribuição por mercado</h2><div className="investment-market-cards"><MarketCard label="Ações nacionais" market="BR" slices={distributions.byMarket} selected={market === 'BR'} onSelect={setMarket} /><MarketCard label="Ações internacionais" market="US" slices={distributions.byMarket} selected={market === 'US'} onSelect={setMarket} /><article className="investment-market-card"><span>Saldo em conta</span><strong>{formatCurrency(data.availableBalanceBrl)}</strong><small>Valor oficial compartilhado</small></article></div></section>
+    <section className="investment-wallet" aria-labelledby="investment-wallet-title"><header><div><h2 id="investment-wallet-title" className="section-title">Carteira</h2><p>{market ? 'Posições de ' + (market === 'BR' ? 'ações nacionais' : 'ações internacionais') : 'Todas as posições abertas'}</p></div>{market && <button className="text-button" type="button" onClick={() => setMarket('')}>Ver toda a carteira</button>}</header>{selectedPositions.length === 0 ? <EmptyState title={market ? 'Nenhuma posição nesta categoria' : 'Sua carteira ainda está vazia'} description="Nenhuma posição oficial foi retornada para esta seleção." /> : <DashboardPositionTable positions={selectedPositions} onInvest={(position) => navigate('/app/bolsa/' + position.market + '/' + position.ticker)} />}</section>
   </>
 }
 
-function AllocationPie({ balance, marketSlices }) {
-  const slices = [
-    { identifier: 'balance', label: 'Saldo em carteira', value: numeric(balance), color: '#70dec2' },
-    { identifier: 'BR', label: 'Ações nacionais', value: marketTotal(marketSlices, 'BR'), color: '#008f7a' },
-    { identifier: 'US', label: 'Ações internacionais', value: marketTotal(marketSlices, 'US'), color: '#2bc3a2' },
-  ]
-  const total = slices.reduce((sum, slice) => sum + slice.value, 0)
-  let cursor = 0
-  const gradient = total > 0 ? `conic-gradient(${slices.map((slice) => { const start = cursor / total * 360; cursor += slice.value; return `${slice.color} ${start}deg ${cursor / total * 360}deg` }).join(', ')})` : '#343a38'
-  return <section className="allocation-overview" aria-labelledby="allocation-overview-title"><header><div><p className="eyebrow">Visão patrimonial</p><h2 id="allocation-overview-title">Distribuição do patrimônio</h2></div></header><div className="allocation-pie-layout"><div className="allocation-pie-stack"><strong className="allocation-pie-total">{formatCurrency(total)}</strong><small className="allocation-pie-caption">Total distribuído</small><div className="allocation-pie" role="img" aria-label="Gráfico de pizza com saldo em carteira, ações nacionais e ações internacionais" style={{ background: gradient }}><div aria-hidden="true" /></div></div><ul className="allocation-legend">{slices.map((slice) => <li key={slice.identifier}><span className="allocation-dot" style={{ background: slice.color }} /><span>{slice.label}</span><strong>{formatCurrency(slice.value)}</strong><small>{total > 0 ? `${(slice.value / total * 100).toFixed(1).replace('.', ',')}%` : '0,0%'}</small></li>)}</ul></div></section>
+function DashboardWarnings({ warnings = [], exchangeRate }) {
+  const messages = (Array.isArray(warnings) ? warnings : []).map((warning) => {
+    if (warning.type === 'STALE_QUOTE') return { key: `${warning.type}-${warning.ticker}-${warning.observedAt}`, text: `A cotação de ${warning.ticker || 'um ativo'} está desatualizada.`, reference: warning.observedAt }
+    if (warning.type === 'STALE_EXCHANGE_RATE') return { key: `${warning.type}-${warning.observedAt}`, text: `A cotação ${exchangeRate?.currencyPair || 'USD/BRL'} está desatualizada.`, reference: warning.observedAt }
+    return null
+  }).filter(Boolean)
+  if (messages.length === 0) return null
+  return <section className="dashboard-warnings" aria-label="Avisos de atualização de dados">{messages.map((message) => <Message key={message.key} kind="warning"><p><strong>{message.text}</strong> <span>Referência: {formatBrasiliaDateTime(message.reference)}.</span></p></Message>)}</section>
 }
 
-function numeric(value) { const number = Number(value); return Number.isFinite(number) && number > 0 ? number : 0 }
-function marketTotal(slices, market) { return (slices ?? []).filter((slice) => String(slice.identifier).toUpperCase() === market).reduce((sum, slice) => sum + numeric(slice.valueBrl), 0) }
-function Indicator({ label, value, note, featured = false }) { return <article className={'dashboard-indicator' + (featured ? ' dashboard-indicator-featured' : '')}><span>{label}</span><strong>{formatCurrency(value)}</strong>{note && <small>{note}</small>}</article> }
-function MarketCard({ label, market, slices, selected, onSelect }) { const official = slices.find((slice) => slice.identifier === market); return <button className={'investment-market-card' + (selected ? ' selected' : '')} type="button" aria-pressed={selected} onClick={() => onSelect(market)}><span>{label}</span><strong>{official ? formatCurrency(official.valueBrl) : 'Sem dados'}</strong><small>Abrir posições</small></button> }
-function DashboardPositionTable({ positions, exchangeRate, onInvest }) { const visiblePositions = positions.length > 5 ? positions.slice(0, 5) : positions; return <div className="dashboard-positions-table" role="table" aria-label="Posições da carteira"><div className="dashboard-positions-head" role="row"><span role="columnheader">Ticker</span><span role="columnheader">Quantidade</span><span role="columnheader">Saldo / posição</span><span role="columnheader">Preço atual</span><span role="columnheader">Preço médio</span><span role="columnheader">Rentabilidade</span></div><ul>{visiblePositions.map((position, index) => <li key={position.ticker + '-' + position.brokerageName + '-' + index}><button className="dashboard-position-row" type="button" onClick={() => onInvest(position)}><span className="dashboard-position-cell dashboard-position-ticker"><strong>{position.ticker}</strong><small>{position.name} · {position.market} · {position.brokerageName}</small></span><span className="dashboard-position-cell"><strong>{position.quantity}</strong></span><span className="dashboard-position-cell"><strong>{formatCurrency(position.marketValueBrl)}</strong><small>Valor da posição</small></span><span className="dashboard-position-cell"><strong>{dashboardCurrentPrice(position)}</strong>{position.market === 'US' && <small>({formatCurrency(position.quotePriceBrl)})</small>}</span><span className="dashboard-position-cell"><strong>{dashboardAveragePrice(position, exchangeRate)}</strong>{position.market === 'US' && <small>({formatCurrency(position.averagePriceBrl)})</small>}</span><span className={'dashboard-position-cell ' + (Number(position.unrealizedResultBrl) >= 0 ? 'positive-value' : 'negative-value')}><strong>{formatCurrency(position.unrealizedResultBrl)}</strong><small>{dashboardProfitability(position)}</small></span></button></li>)}</ul>{positions.length > 5 && <Link className="positions-more-link" to="/app/operacoes">Ver lista completa de ações <span aria-hidden="true">→</span></Link>}</div> }
-function aggregatePositions(positions) {
-  const groups = new Map()
-  for (const position of positions ?? []) {
-    const key = `${position.market}:${position.ticker}`
-    const current = groups.get(key)
-    if (!current) {
-      groups.set(key, { ...position, brokerPositions: [position] })
-      continue
-    }
-    const quantity = Number(current.quantity) + Number(position.quantity)
-    const totalCostBrl = Number(current.totalCostBrl) + Number(position.totalCostBrl)
-    groups.set(key, {
-      ...current,
-      quantity,
-      totalCostBrl,
-      averagePriceBrl: quantity > 0 ? totalCostBrl / quantity : current.averagePriceBrl,
-      marketValueBrl: Number(current.marketValueBrl) + Number(position.marketValueBrl),
-      unrealizedResultBrl: Number(current.unrealizedResultBrl) + Number(position.unrealizedResultBrl),
-      brokerageName: 'Várias corretoras',
-      brokerPositions: [...current.brokerPositions, position],
-    })
-  }
-  return [...groups.values()]
+function AllocationPie({ balance, marketSlices }) {
+  const officialSlices = Array.isArray(marketSlices) ? marketSlices : []
+  const slices = [
+    { identifier: 'balance', label: 'Saldo em carteira', value: officialNumber(balance), color: '#70dec2' },
+    { identifier: 'BR', label: 'Ações nacionais', value: officialNumber(officialSlices.find((slice) => String(slice.identifier).toUpperCase() === 'BR')?.valueBrl), color: '#008f7a' },
+    { identifier: 'US', label: 'Ações internacionais', value: officialNumber(officialSlices.find((slice) => String(slice.identifier).toUpperCase() === 'US')?.valueBrl), color: '#2bc3a2' },
+  ]
+  const totalForGeometry = slices.reduce((sum, slice) => sum + numeric(slice.value), 0)
+  let cursor = 0
+  const gradient = totalForGeometry > 0 ? `conic-gradient(${slices.map((slice) => { const start = cursor / totalForGeometry * 360; cursor += numeric(slice.value); return `${slice.color} ${start}deg ${cursor / totalForGeometry * 360}deg` }).join(', ')})` : '#343a38'
+  return <section className="allocation-overview" aria-labelledby="allocation-overview-title"><header><div><p className="eyebrow">Visão patrimonial</p><h2 id="allocation-overview-title">Distribuição do patrimônio</h2></div></header><div className="allocation-pie-layout"><div className="allocation-pie-stack"><strong className="allocation-pie-total">Valores oficiais</strong><small className="allocation-pie-caption">Composição por dimensão</small><div className="allocation-pie" role="img" aria-label="Gráfico de pizza com saldo em carteira, ações nacionais e ações internacionais" style={{ background: gradient }}><div aria-hidden="true" /></div></div><ul className="allocation-legend">{slices.map((slice) => <li key={slice.identifier}><span className="allocation-dot" style={{ background: slice.color }} /><span>{slice.label}</span><strong>{formatOfficialCurrency(slice.value)}</strong><small>Percentual não fornecido pela API</small></li>)}</ul></div></section>
 }
-function dashboardCurrentPrice(position) { return position.quotePrice == null ? 'Indisponível' : position.market === 'US' ? formatMoney(position.quotePrice, 'USD') : formatCurrency(position.quotePriceBrl) }
-function dashboardAveragePrice(position, exchangeRate) { if (position.averagePriceBrl == null) return 'Indisponível'; if (position.market !== 'US') return formatCurrency(position.averagePriceBrl); const rate = Number(exchangeRate?.rate); return rate > 0 ? formatMoney(Number(position.averagePriceBrl) / rate, 'USD') : 'Indisponível' }
-function dashboardProfitability(position) { const result = Number(position.unrealizedResultBrl); const invested = Number(position.averagePriceBrl) * Number(position.quantity); return Number.isFinite(result) && Number.isFinite(invested) && invested > 0 ? `${(result / invested * 100).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%` : 'Percentual indisponível' }
-function History({ points, period, valuation }) {
-  const orderedPoints = [...(points ?? [])].sort((left, right) => new Date(left.recordedAt) - new Date(right.recordedAt))
-  const changedPoints = orderedPoints.filter((point, index) => Number(point.patrimonyBrl) > 0 && (index === 0 || Number(point.patrimonyBrl) !== Number(orderedPoints[index - 1].patrimonyBrl)))
-  const firstValue = Number(changedPoints[0]?.patrimonyBrl)
-  const lastValue = Number(changedPoints.at(-1)?.patrimonyBrl)
-  const changeValue = Number.isFinite(Number(valuation)) ? Number(valuation) : Number.isFinite(firstValue) && Number.isFinite(lastValue) ? lastValue - firstValue : null
-  const chartPoints = addPeriodStartPoint(changedPoints, period)
-  const changeLabel = changeValue == null ? 'Resultado' : changeValue >= 0 ? 'Valorização' : 'Desvalorização'
-  return <section className="dashboard-history" aria-labelledby="dashboard-history-title"><header className="dashboard-history-header"><div><p className="eyebrow">Série oficial</p><h2 id="dashboard-history-title">Crescimento patrimonial</h2><p>Crescimento apenas dos investimentos, desde a transação mais antiga, com oscilações das cotações.</p></div><span>{period}</span></header>{changedPoints.length === 0 ? <EmptyState title="Sem pontos neste período" description="Nenhuma posição foi registrada neste período." /> : <><div className="dashboard-history-body"><div className="line-chart-wrap"><LineChart points={chartPoints} /></div><aside className="history-summary" aria-label="Resumo da evolução"><dl><div><dt>Valor atual</dt><dd>{formatCurrency(lastValue)}</dd></div><div><dt>{changeLabel}</dt><dd className={changeValue == null || changeValue >= 0 ? 'positive-value' : 'negative-value'}>{changeValue == null ? 'Valor indisponível' : formatCurrency(Math.abs(changeValue))}</dd></div><div><dt>Período consultado</dt><dd>{period}</dd></div></dl><p className="history-summary-note">Valor atual das posições menos o total investido.</p></aside></div><details className="history-data"><summary>Ver dados da evolução</summary><ol>{chartPoints.map((point, index) => <li key={point.recordedAt + '-' + index}><time dateTime={point.recordedAt}>{formatBrasiliaDateTime(point.recordedAt)}</time><strong>{formatCurrency(point.patrimonyBrl)}</strong></li>)}</ol></details></>}</section>
+
+function DistributionPanels({ distributions }) {
+  const panels = [{ key: 'byAsset', title: 'Por ativo', label: 'Distribuição oficial por ativo' }, { key: 'byBroker', title: 'Por corretora', label: 'Distribuição oficial por corretora' }, { key: 'byMarket', title: 'Por mercado', label: 'Distribuição oficial por mercado' }]
+  return <section className="dashboard-distribution-grid" aria-labelledby="dashboard-distributions-title"><div className="dashboard-distribution-heading"><h2 id="dashboard-distributions-title" className="section-title">Distribuições oficiais</h2><p>Valores retornados pelo servidor; percentuais não são calculados nesta tela.</p></div><div className="dashboard-series-grid">{panels.map((panel) => <article className="dashboard-distribution" key={panel.key}><h3>{panel.title}</h3><BarList data={toBarData(distributions[panel.key])} label={panel.label} formatValue={formatCurrency} emptyMessage="Nenhuma distribuição oficial foi retornada." /></article>)}</div></section>
 }
-function addPeriodStartPoint(points, period) {
-  if (!points.length || period === 'MAX') return points
-  const start = new Date()
-  if (period === '4W') start.setDate(start.getDate() - 28)
-  else if (period === '3M') start.setMonth(start.getMonth() - 3)
-  else if (period === '6M') start.setMonth(start.getMonth() - 6)
-  else if (period === '1Y') start.setFullYear(start.getFullYear() - 1)
-  else if (period === '5Y') start.setFullYear(start.getFullYear() - 5)
-  else return points
-  start.setHours(0, 0, 0, 0)
-  const firstPoint = new Date(points[0].recordedAt)
-  return start < firstPoint ? [{ recordedAt: start.toISOString(), patrimonyBrl: 0 }, ...points] : points
+
+function toBarData(slices) { return (Array.isArray(slices) ? slices : []).map((slice) => ({ label: slice.label, value: slice.valueBrl })) }
+function numeric(value) { const number = Number(value); return Number.isFinite(number) && number >= 0 ? number : 0 }
+function officialNumber(value) { if (value === null || value === undefined || value === '') return null; const number = Number(value); return Number.isFinite(number) ? number : null }
+function formatOfficialCurrency(value) { return officialNumber(value) === null ? 'Indisponível' : formatCurrency(value) }
+function formatOfficialMoney(value, currency) { return officialNumber(value) === null ? 'Indisponível' : formatMoney(value, currency) }
+function Indicator({ label, value, note, featured = false }) { return <article className={'dashboard-indicator' + (featured ? ' dashboard-indicator-featured' : '')}><span>{label}</span><strong>{formatOfficialCurrency(value)}</strong>{note && <small>{note}</small>}</article> }
+function MarketCard({ label, market, slices, selected, onSelect }) { const official = (slices ?? []).find((slice) => slice.identifier === market); return <button className={'investment-market-card' + (selected ? ' selected' : '')} type="button" aria-pressed={selected} onClick={() => onSelect(market)}><span>{label}</span><strong>{official ? formatOfficialCurrency(official.valueBrl) : 'Sem dados'}</strong><small>Abrir posições</small></button> }
+function DashboardPositionTable({ positions, onInvest }) { const visiblePositions = positions.length > 5 ? positions.slice(0, 5) : positions; return <div className="dashboard-positions-table" role="table" aria-label="Posições da carteira"><div className="dashboard-positions-head" role="row"><span role="columnheader">Ticker</span><span role="columnheader">Quantidade</span><span role="columnheader">Saldo / posição</span><span role="columnheader">Última cotação</span><span role="columnheader">Preço médio (BRL)</span><span role="columnheader">Resultado oficial</span></div><ul>{visiblePositions.map((position, index) => <li key={position.ticker + '-' + position.brokerageName + '-' + index}><button className="dashboard-position-row" type="button" onClick={() => onInvest(position)}><span className="dashboard-position-cell dashboard-position-ticker"><strong>{position.ticker}</strong><small>{position.name} · {position.market} · {position.brokerageName}</small></span><span className="dashboard-position-cell"><strong>{position.quantity ?? 'Indisponível'}</strong></span><span className="dashboard-position-cell"><strong>{formatOfficialCurrency(position.marketValueBrl)}</strong><small>Valor de mercado da posição</small></span><span className="dashboard-position-cell"><strong>{dashboardCurrentPrice(position)}</strong>{position.quoteStale && <small>Referência: {formatBrasiliaDateTime(position.quoteQuotedAt)}</small>}{position.market === 'US' && !position.quoteStale && <small>BRL: {formatOfficialCurrency(position.quotePriceBrl)}</small>}</span><span className="dashboard-position-cell"><strong>{dashboardAveragePrice(position)}</strong></span><span className={'dashboard-position-cell ' + (Number(position.unrealizedResultBrl) >= 0 ? 'positive-value' : 'negative-value')}><strong>{formatOfficialCurrency(position.unrealizedResultBrl)}</strong><small>Resultado oficial em BRL</small></span></button></li>)}</ul>{positions.length > 5 && <Link className="positions-more-link" to="/app/operacoes">Ver lista completa de ações <span aria-hidden="true">→</span></Link>}</div> }
+function dashboardCurrentPrice(position) { if (position.quotePrice == null && position.quotePriceBrl == null) return 'Indisponível'; const value = position.market === 'US' ? formatOfficialMoney(position.quotePrice, 'USD') : formatOfficialCurrency(position.quotePriceBrl); return position.quoteStale ? `Última cotação: ${value}` : value }
+function dashboardAveragePrice(position) { return formatOfficialCurrency(position.averagePriceBrl) }
+
+function History({ points, period, currentPatrimony, valuation }) {
+  const orderedPoints = [...(Array.isArray(points) ? points : [])].filter((point) => validPoint(point)).sort((left, right) => new Date(left.recordedAt) - new Date(right.recordedAt))
+  const dailyPoints = closingPointsByBrasiliaDate(orderedPoints)
+  const lastValue = officialNumber(currentPatrimony)
+  const valuationValue = valuation === null || valuation === undefined || valuation === '' ? null : Number(valuation)
+  const valuationIsAvailable = Number.isFinite(valuationValue)
+  const firstDate = dailyPoints[0]?.recordedAt
+  const lastDate = dailyPoints.at(-1)?.recordedAt
+  return <section className="dashboard-history" aria-labelledby="dashboard-history-title"><header className="dashboard-history-header"><div><p className="eyebrow">Série oficial</p><div className="dashboard-history-title-row"><h2 id="dashboard-history-title">Crescimento patrimonial</h2><span className="dashboard-history-point-count">{dailyPoints.length} {dailyPoints.length === 1 ? 'ponto oficial' : 'pontos oficiais'}</span></div><p>Evolução patrimonial oficial no período, com oscilações das cotações.</p></div><span className="dashboard-history-period">{period}</span></header>{dailyPoints.length === 0 ? <EmptyState title="Sem pontos neste período" description="Nenhum ponto patrimonial foi retornado neste período." /> : <><div className="history-summary" aria-label="Resumo patrimonial"><article><span>Patrimônio atual</span><strong>{formatOfficialCurrency(lastValue)}</strong><small>Snapshot oficial atual</small></article><article><span>Resultado não realizado</span><strong className={valuationValue >= 0 ? 'positive-value' : 'negative-value'}>{valuationIsAvailable ? formatOfficialCurrency(valuationValue) : 'Valor indisponível'}</strong><small>Resultado oficial das posições</small></article><article><span>Período consultado</span><strong>{period}</strong><small>{formatChartDate(firstDate)} — {formatChartDate(lastDate)}</small></article></div><div className="dashboard-history-chart"><div className="line-chart-wrap"><LineChart points={dailyPoints} /></div><p className="line-chart-note">A série exibe o fechamento oficial de cada dia, usando a última observação retornada naquele dia. A linha permanece visualmente contínua entre os fechamentos; nenhum ponto adicional é criado.</p></div><details className="history-data"><summary>Ver dados da evolução</summary><ol>{dailyPoints.map((point, index) => <li key={point.recordedAt + '-' + index}><time dateTime={point.recordedAt}>{formatBrasiliaDateTime(point.recordedAt)}</time><strong>{formatOfficialCurrency(point.patrimonyBrl)}</strong></li>)}</ol></details></>}</section>
+}
+
+function InvestmentHistory({ points, period }) {
+  const officialPoints = Array.isArray(points) ? points : []
+  return <section className="dashboard-series-panel" aria-labelledby="investment-history-title"><header><div><p className="eyebrow">Série oficial</p><h2 id="investment-history-title">Evolução do valor investido</h2><p>Histórico oficial do valor de mercado das posições, separado do patrimônio total.</p></div></header>{officialPoints.length === 0 ? <EmptyState title="Sem histórico de investimentos" description="Nenhum ponto oficial de investimento foi retornado neste período." /> : <ResponsiveLineChart data={officialPoints} label="Evolução do valor investido" description="Série oficial do valor de mercado das posições." period={period} currency="BRL" valueKey="positionsValueBrl" labelKey="recordedAt" formatLabel={formatChartDate} formatValue={formatCurrency} />}</section>
+}
+
+function validPoint(point) { return point && point.patrimonyBrl !== null && point.patrimonyBrl !== undefined && point.patrimonyBrl !== '' && !Number.isNaN(new Date(point.recordedAt).getTime()) && Number.isFinite(Number(point.patrimonyBrl)) }
+function closingPointsByBrasiliaDate(points) {
+  const latestByDay = new Map()
+  points.forEach((point) => {
+    const day = brasiliaDayKey(point.recordedAt)
+    const current = latestByDay.get(day)
+    if (!current || new Date(point.recordedAt) > new Date(current.recordedAt)) latestByDay.set(day, point)
+  })
+  return [...latestByDay.values()].sort((left, right) => new Date(left.recordedAt) - new Date(right.recordedAt))
+}
+function brasiliaDayKey(value) {
+  const date = new Date(value)
+  const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(date)
+  const values = Object.fromEntries(parts.map(({ type, value: partValue }) => [type, partValue]))
+  return `${values.year}-${values.month}-${values.day}`
 }
 function LineChart({ points }) {
-  const values = points.map((point) => Number(point.patrimonyBrl)); const rawMin = Math.min(...values); const rawMax = Math.max(...values); const rawSpan = rawMax - rawMin; const paddingScale = rawSpan || Math.max(rawMax * .1, 1); const min = Math.max(0, rawMin - paddingScale * .08); const max = rawMax + paddingScale * .08; const span = max - min || 1
-  const width = 820; const height = 290; const padding = { top: 18, right: 18, bottom: 50, left: 72 }; const plotWidth = width - padding.left - padding.right; const plotHeight = height - padding.top - padding.bottom; const tickCount = 5
+  const [selectedIndex, setSelectedIndex] = useState(Math.max(points.length - 1, 0))
+  const activeIndex = Math.min(selectedIndex, Math.max(points.length - 1, 0))
+  const gradientId = `dashboard-history-gradient-${useId().replaceAll(':', '')}`
+  const values = points.map((point) => Number(point.patrimonyBrl)); const rawMin = Math.min(...values); const rawMax = Math.max(...values); const rawSpan = rawMax - rawMin; const paddingScale = rawSpan || Math.max(Math.abs(rawMax) * .1, 1); const min = rawMin - paddingScale * .08; const max = rawMax + paddingScale * .08; const span = max - min || 1
+  const width = 820; const height = 330; const padding = { top: 24, right: 26, bottom: 58, left: 82 }; const plotWidth = width - padding.left - padding.right; const plotHeight = height - padding.top - padding.bottom; const tickCount = 5
   const timestamps = points.map((point) => new Date(point.recordedAt).getTime()); const firstTimestamp = Math.min(...timestamps); const lastTimestamp = Math.max(...timestamps); const timeSpan = lastTimestamp - firstTimestamp || 1
-  const coordinates = points.map((point, index) => ({ x: padding.left + (points.length === 1 ? plotWidth / 2 : (timestamps[index] - firstTimestamp) / timeSpan * plotWidth), y: padding.top + (1 - (Number(point.patrimonyBrl) - min) / span) * plotHeight, ...point }))
-  const line = coordinates.map(({ x, y }) => `${x},${y}`).join(' '); const ticks = Array.from({ length: tickCount }, (_, index) => max - span * index / (tickCount - 1)); const labelIndexes = new Set(points.length <= 5 ? points.map((_, index) => index) : [0, Math.floor((points.length - 1) / 2), points.length - 1])
-  return <svg className="line-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Gráfico de linha do crescimento patrimonial"><desc>Evolução oficial dos investimentos no período selecionado.</desc>{ticks.map((value, index) => { const y = padding.top + plotHeight * index / (tickCount - 1); return <g key={value}><line className="line-chart-grid" x1={padding.left} y1={y} x2={width - padding.right} y2={y} /><text className="line-chart-axis-label" x={padding.left - 12} y={y + 4} textAnchor="end">{formatChartCurrency(value)}</text></g> })}<polyline className="line-chart-line" points={line} fill="none" />{coordinates.map((point, index) => <g key={point.recordedAt}><title>{formatBrasiliaDateTime(point.recordedAt)} — {formatCurrency(point.patrimonyBrl)}</title><circle className="line-chart-point" cx={point.x} cy={point.y} r="5" />{labelIndexes.has(index) && <text className="line-chart-date" x={point.x} y={height - 14} textAnchor="middle">{formatChartDate(point.recordedAt)}</text>}</g>)}</svg>
+  const coordinates = points.map((point, index) => ({ x: padding.left + (points.length === 1 ? 0 : (timestamps[index] - firstTimestamp) / timeSpan * plotWidth), y: padding.top + (1 - (Number(point.patrimonyBrl) - min) / span) * plotHeight, ...point }))
+  const line = points.length === 1 ? `${padding.left},${coordinates[0].y} ${width - padding.right},${coordinates[0].y}` : coordinates.map(({ x, y }) => `${x},${y}`).join(' '); const area = `${padding.left},${padding.top + plotHeight} ${line} ${width - padding.right},${padding.top + plotHeight}`; const ticks = Array.from({ length: tickCount }, (_, index) => max - span * index / (tickCount - 1)); const labelIndexes = new Set(points.length <= 5 ? points.map((_, index) => index) : [0, Math.floor((points.length - 1) / 2), points.length - 1]); const activePoint = coordinates[activeIndex] ?? coordinates.at(-1); const tooltipWidth = 184; const tooltipHeight = 58; const tooltipX = Math.min(Math.max(activePoint.x - tooltipWidth / 2, padding.left), width - padding.right - tooltipWidth); const tooltipY = activePoint.y - tooltipHeight - 14 >= padding.top ? activePoint.y - tooltipHeight - 14 : activePoint.y + 14
+  function moveActive(event, index) { if (event.key === 'ArrowRight' || event.key === 'ArrowDown') { event.preventDefault(); setSelectedIndex(Math.min(index + 1, points.length - 1)) } if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') { event.preventDefault(); setSelectedIndex(Math.max(index - 1, 0)) } if (event.key === 'Home') { event.preventDefault(); setSelectedIndex(0) } if (event.key === 'End') { event.preventDefault(); setSelectedIndex(points.length - 1) } }
+  return <div className="line-chart-shell"><svg className="line-chart" viewBox={`0 0 ${width} ${height}`} role="group" aria-label="Gráfico de linha do crescimento patrimonial"><title>Evolução patrimonial oficial</title><desc>O gráfico apresenta somente as observações oficiais retornadas. Use Tab para focar os pontos e as setas para navegar entre as observações.</desc><defs><linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="var(--chart-fill-start)" /><stop offset="100%" stopColor="var(--chart-fill-end)" /></linearGradient></defs>{ticks.map((value, index) => { const y = padding.top + plotHeight * index / (tickCount - 1); return <g key={value}><line className="line-chart-grid" x1={padding.left} y1={y} x2={width - padding.right} y2={y} /><text className="line-chart-axis-label" x={padding.left - 14} y={y + 4} textAnchor="end">{formatChartCurrency(value)}</text></g> })}<polygon className="line-chart-area" points={area} fill={`url(#${gradientId})`} /><polyline className="line-chart-line" points={line} fill="none" />{coordinates.map((point, index) => <g key={point.recordedAt + '-' + index} className={'line-chart-point-group' + (index === activeIndex ? ' is-active' : '') + (index === points.length - 1 ? ' is-last' : '')} role="button" tabIndex="0" aria-label={`${formatBrasiliaDateTime(point.recordedAt)} — ${formatCurrency(point.patrimonyBrl)}`} onClick={() => setSelectedIndex(index)} onFocus={() => setSelectedIndex(index)} onMouseEnter={() => setSelectedIndex(index)} onKeyDown={(event) => moveActive(event, index)}><circle className="line-chart-point" cx={point.x} cy={point.y} r={index === points.length - 1 ? 5 : 4} />{labelIndexes.has(index) && <text className="line-chart-date" x={points.length === 1 ? point.x : index === 0 ? padding.left : index === points.length - 1 ? width - padding.right : point.x} y={height - 16} textAnchor={points.length === 1 ? 'middle' : index === 0 ? 'start' : index === points.length - 1 ? 'end' : 'middle'}>{formatChartDate(point.recordedAt)}</text>}</g>)}<g className="line-chart-tooltip" aria-hidden="true" transform={`translate(${tooltipX} ${tooltipY})`}><rect width={tooltipWidth} height={tooltipHeight} rx="10" /><text x="14" y="22">{formatChartDate(activePoint.recordedAt)}</text><text x="14" y="44">{formatCurrency(activePoint.patrimonyBrl)}</text></g></svg><span className="sr-only" aria-live="polite">Ponto selecionado: {formatBrasiliaDateTime(activePoint.recordedAt)} — {formatCurrency(activePoint.patrimonyBrl)}</span></div>
 }
+
 function formatChartCurrency(value) { const number = Number(value); if (!Number.isFinite(number)) return '—'; if (Math.abs(number) >= 1000) return `R$ ${(number / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mil`; return formatCurrency(number) }
 function formatChartDate(value) { const date = new Date(value); return Number.isNaN(date.getTime()) ? 'Data indisponível' : new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'America/Sao_Paulo' }).format(date) }

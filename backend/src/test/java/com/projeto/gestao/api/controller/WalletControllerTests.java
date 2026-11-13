@@ -21,6 +21,7 @@ import com.projeto.gestao.domain.model.Currency;
 import com.projeto.gestao.domain.model.Market;
 import com.projeto.gestao.domain.model.MarketQuote;
 import com.projeto.gestao.domain.model.FinancialAmount;
+import com.projeto.gestao.domain.model.MovementType;
 import com.projeto.gestao.domain.model.Position;
 import com.projeto.gestao.domain.model.PositionBalance;
 import com.projeto.gestao.domain.model.PositionQuantity;
@@ -339,6 +340,47 @@ class WalletControllerTests {
                 .isEqualByComparingTo("10500.01");
         assertThat(accountRepository.findById(second.getId()).orElseThrow().getBalance())
                 .isEqualByComparingTo("10000.00");
+    }
+
+    @Test
+    void withdrawsThroughAuthenticatedHttpChainAndKeepsFinancialHistoryConsistent() throws Exception {
+        Cookie session = login(first.getEmail());
+        CsrfCredentials csrf = csrf();
+
+        mockMvc.perform(post("/api/wallet/withdrawals").cookie(session, csrf.cookie())
+                        .header("X-XSRF-TOKEN", csrf.token())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("amount", 125.00))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.balance").value(9875.00))
+                .andExpect(jsonPath("$.accountId").doesNotExist());
+
+        assertThat(accountRepository.findById(first.getId()).orElseThrow().getBalance())
+                .isEqualByComparingTo("9875.00");
+        assertThat(accountRepository.findById(second.getId()).orElseThrow().getBalance())
+                .isEqualByComparingTo("10000.00");
+        assertThat(movementRepository.count()).isEqualTo(1);
+        var movement = movementRepository.findAll().get(0);
+        assertThat(movement.getMovementType()).isEqualTo(MovementType.WITHDRAWAL);
+        assertThat(movement.getAccount().getId()).isEqualTo(first.getId());
+        assertThat(movement.getTotalAmount()).isEqualByComparingTo("125.00");
+        assertThat(movement.getRemainingBalance()).isEqualByComparingTo("9875.00");
+        assertThat(movement.getCurrency()).isEqualTo(Currency.BRL);
+        assertThat(movement.getOccurredAt()).isNotNull();
+        assertThat(patrimonialPointRepository.count()).isEqualTo(1);
+        var point = patrimonialPointRepository.findAll().get(0);
+        assertThat(point.getAccount().getId()).isEqualTo(first.getId());
+        assertThat(point.getMovement().getId()).isEqualTo(movement.getId());
+        assertThat(point.getBalanceBrl()).isEqualByComparingTo("9875.00");
+        assertThat(point.getPatrimonyBrl()).isEqualByComparingTo("9875.00");
+
+        mockMvc.perform(get("/api/history").param("type", "WITHDRAWAL").cookie(session))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].type").value("WITHDRAWAL"))
+                .andExpect(jsonPath("$.content[0].totalAmount").value(125.00))
+                .andExpect(jsonPath("$.content[0].remainingBalance").value(9875.00))
+                .andExpect(jsonPath("$.content[0].occurredAt").exists());
     }
 
     @Test

@@ -1,7 +1,9 @@
-import { cloneElement, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { checkReactivation, reactivateAccount } from '../api/accounts.js'
 import { ErrorState } from '../components/common/AsyncStates.jsx'
+import AuthFrame from '../components/auth/AuthFrame.jsx'
+import { Button, SectionHeader, StatusMessage, SurfaceCard, TextField } from '../components/ui/index.jsx'
 
 function formatCpf(value) {
   return value.replace(/\D/g, '').slice(0, 11).replace(/^(\d{3})(\d)/, '$1.$2')
@@ -25,9 +27,8 @@ export default function ReactivationPage() {
   }
 
   function showError(error, retry) {
-    if (!error.status || error.status >= 500) {
-      setTechnical({ message: error.message, retry })
-    } else {
+    if (!error.status || error.status >= 500) setTechnical({ message: error.message, retry })
+    else {
       setFieldErrors(error.fieldErrors ?? {})
       setMessage(error.message)
     }
@@ -40,15 +41,12 @@ export default function ReactivationPage() {
       setMessage('Informe o CPF para consultar a reativação.')
       return
     }
-
     locks.current.check = true
     setPending((current) => ({ ...current, check: true }))
     clearFeedback()
-    try {
-      setResult(await checkReactivation(cpf))
-    } catch (error) {
-      showError(error, performCheck)
-    } finally {
+    try { setResult(await checkReactivation(cpf)) }
+    catch (error) { showError(error, performCheck) }
+    finally {
       locks.current.check = false
       setPending((current) => ({ ...current, check: false }))
     }
@@ -67,9 +65,8 @@ export default function ReactivationPage() {
     try {
       await reactivateAccount(cpf)
       navigate('/login', { replace: true, state: { message: 'Conta reativada. Entre com seu e-mail e senha.' } })
-    } catch (error) {
-      showError(error, performReactivation)
-    } finally {
+    } catch (error) { showError(error, performReactivation) }
+    finally {
       locks.current.reactivate = false
       setPending((current) => ({ ...current, reactivate: false }))
     }
@@ -85,69 +82,49 @@ export default function ReactivationPage() {
     navigate('/cadastro', { state: { fromReactivation: true, cpf } })
   }
 
-  return (
-    <main className="auth-page reactivation-page">
-      <section className="reactivation-card" aria-labelledby="reactivation-title">
-        <a className="brand brand-dark" href="/" aria-label="Carteira Clara — início"><span className="brand-mark" aria-hidden="true">C</span><span>Carteira Clara</span></a>
-        <header className="form-header reactivation-header">
-          <p className="eyebrow">Ciclo da conta</p>
-          <h1 id="reactivation-title">Reative sua conta.</h1>
-          <p>Consulte um CPF para recuperar uma conta inativa ou criar uma nova conta independente.</p>
-        </header>
-        <div className="risk-notice">
-          <strong>Limitação desta versão acadêmica</strong>
-          <p>A reativação não solicita comprovação adicional de identidade. Ela não cria uma sessão: após concluir, será necessário entrar normalmente.</p>
+  return <AuthFrame title="Reative sua conta." description="Recupere uma conta inativa ou crie uma nova conta independente." size="wide">
+    <SurfaceCard as="section" className="auth-form-surface reactivation-surface" aria-labelledby="reactivation-title">
+      <SectionHeader titleId="reactivation-title" eyebrow="Ciclo da conta" title="Consulte sua conta" description="Informe o CPF para verificar as opções disponíveis." />
+      <div className="risk-notice">
+        <strong>Limitação desta versão acadêmica</strong>
+        <p>A reativação não solicita comprovação adicional de identidade. Ela não cria uma sessão: após concluir, será necessário entrar normalmente.</p>
+      </div>
+      {technical && <ErrorState message={technical.message} onRetry={technical.retry} />}
+      {message && <StatusMessage kind="error" title="Não foi possível continuar.">{message}</StatusMessage>}
+
+      {!result && <form className="auth-form" onSubmit={submitCheck} noValidate>
+        <TextField label="CPF" id="reactivationCpf" error={fieldErrors.cpf} type="text" inputMode="numeric" autoComplete="off" required value={cpf} onChange={updateCpf} placeholder="000.000.000-00" />
+        <Button className="auth-submit" type="submit" disabled={pending.check}>{pending.check ? 'Consultando…' : 'Consultar possibilidade'}</Button>
+      </form>}
+
+      {result?.reactivationAvailable && <div className="reactivation-result">
+        <div>
+          <p className="ui-section-header__eyebrow">Conta encontrada</p>
+          <h2>Escolha como continuar</h2>
+          <p role="status">Você pode reativar a conta preservada ou começar novamente com uma conta distinta.</p>
         </div>
-        {technical && <ErrorState message={technical.message} onRetry={technical.retry} />}
-        {message && <div className="error-banner" role="alert">{message}</div>}
+        <div className="reactivation-options">
+          <article className="option-card">
+            <h3>Reativar conta existente</h3>
+            <p>Restaura o acesso aos dados preservados. Depois, entre normalmente com suas credenciais.</p>
+            <Button className="auth-submit" type="button" onClick={performReactivation} disabled={pending.reactivate}>{pending.reactivate ? 'Reativando…' : 'Reativar conta'}</Button>
+          </article>
+          <article className="option-card option-card-secondary">
+            <h3>Criar uma nova conta</h3>
+            <p>A nova conta será independente, começará com R$ 10.000,00 e a conta anterior permanecerá inacessível.</p>
+            <Button variant="secondary" type="button" onClick={createIndependentAccount} disabled={pending.reactivate}>Criar nova conta</Button>
+          </article>
+        </div>
+        <Button className="auth-link" variant="ghost" type="button" onClick={() => setResult(null)} disabled={pending.reactivate}>Consultar outro CPF</Button>
+      </div>}
 
-        {!result && (
-          <form onSubmit={submitCheck} noValidate>
-            <ReactivationField label="CPF" id="reactivationCpf" errors={fieldErrors.cpf}>
-              <input id="reactivationCpf" type="text" inputMode="numeric" autoComplete="off" required value={cpf} onChange={updateCpf} placeholder="000.000.000-00" />
-            </ReactivationField>
-            <button className="primary-button" type="submit" disabled={pending.check}>{pending.check ? 'Consultando…' : 'Consultar possibilidade'}</button>
-          </form>
-        )}
+      {result && !result.reactivationAvailable && <div className="reactivation-result">
+        <h2>Reativação indisponível</h2>
+        <p role="status">Não foi encontrada uma conta elegível para este CPF.</p>
+        <Button variant="secondary" type="button" onClick={() => setResult(null)}>Consultar outro CPF</Button>
+      </div>}
 
-        {result?.reactivationAvailable && (
-          <div className="reactivation-result">
-            <div>
-              <p className="eyebrow">Conta encontrada</p>
-              <h2>Escolha como continuar</h2>
-              <p role="status">Você pode reativar a conta preservada ou começar novamente com uma conta distinta.</p>
-            </div>
-            <div className="reactivation-options">
-              <article className="option-card">
-                <h3>Reativar conta existente</h3>
-                <p>Restaura o acesso aos dados preservados. Depois, entre normalmente com suas credenciais.</p>
-                <button className="primary-button" type="button" onClick={performReactivation} disabled={pending.reactivate}>{pending.reactivate ? 'Reativando…' : 'Reativar conta'}</button>
-              </article>
-              <article className="option-card option-card-secondary">
-                <h3>Criar uma nova conta</h3>
-                <p>A nova conta será independente, começará com R$ 10.000,00 e a conta anterior permanecerá inacessível.</p>
-                <button className="secondary-button" type="button" onClick={createIndependentAccount} disabled={pending.reactivate}>Criar nova conta</button>
-              </article>
-            </div>
-            <button className="text-button" type="button" onClick={() => setResult(null)} disabled={pending.reactivate}>Consultar outro CPF</button>
-          </div>
-        )}
-
-        {result && !result.reactivationAvailable && (
-          <div className="reactivation-result">
-            <h2>Reativação indisponível</h2>
-            <p role="status">Não foi encontrada uma conta elegível para este CPF.</p>
-            <button className="secondary-button" type="button" onClick={() => setResult(null)}>Consultar outro CPF</button>
-          </div>
-        )}
-
-        <button className="text-button" type="button" onClick={() => navigate('/login')}>Voltar para o login</button>
-      </section>
-    </main>
-  )
-}
-
-function ReactivationField({ label, id, errors, children }) {
-  const errorId = `${id}-error`
-  return <div className="form-field"><label htmlFor={id}>{label} <span aria-hidden="true">*</span><span className="sr-only"> obrigatório</span></label>{cloneElement(children, { 'aria-invalid': Boolean(errors), 'aria-describedby': errors ? errorId : undefined })}{errors && <span className="field-error" id={errorId}>{errors.map((item) => <span key={item}>{item}</span>)}</span>}</div>
+      <Button className="auth-link" variant="ghost" type="button" onClick={() => navigate('/login')}>Voltar para o login</Button>
+    </SurfaceCard>
+  </AuthFrame>
 }

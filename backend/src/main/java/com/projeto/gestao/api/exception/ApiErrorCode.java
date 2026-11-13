@@ -6,6 +6,7 @@ public enum ApiErrorCode {
     VALIDATION_ERROR(HttpStatus.BAD_REQUEST, "Os dados informados são inválidos."),
     AUTHENTICATION_ERROR(HttpStatus.UNAUTHORIZED, "Não foi possível autenticar a solicitação."),
     AUTHORIZATION_ERROR(HttpStatus.FORBIDDEN, "Você não tem permissão para realizar esta operação."),
+    NOT_FOUND_ERROR(HttpStatus.NOT_FOUND, "O recurso solicitado não foi encontrado."),
     CONFLICT_ERROR(HttpStatus.CONFLICT, "A solicitação está em conflito com os dados existentes."),
     BUSINESS_RULE_ERROR(HttpStatus.UNPROCESSABLE_ENTITY, "A operação não atende às regras de negócio."),
     EXTERNAL_DEPENDENCY_ERROR(HttpStatus.SERVICE_UNAVAILABLE, "Um serviço necessário está indisponível."),
