@@ -9,7 +9,7 @@ function renderRoute(value) {
   return render(<AuthContext.Provider value={value}><MemoryRouter initialEntries={['/login']}><Routes><Route path="/login" element={<PublicRoute><div>Página pública</div></PublicRoute>} /><Route path="/app" element={<div>Área privada</div>} /></Routes></MemoryRouter></AuthContext.Provider>)
 }
 describe('PublicRoute', () => {
-  it('hidrata sessão desconhecida e mostra loading', () => { const refresh=vi.fn(); renderRoute({ status:'unknown', refresh }); expect(screen.getByRole('status')).toHaveTextContent('Validando sua sessão'); expect(refresh).toHaveBeenCalled() })
+  it('mantém loading enquanto o AuthProvider restaura uma sessão desconhecida', () => { const refresh=vi.fn(); renderRoute({ status:'unknown', refresh }); expect(screen.getByRole('status')).toHaveTextContent('Validando sua sessão'); expect(refresh).not.toHaveBeenCalled() })
   it('redireciona sessão válida', () => { renderRoute({ status:'authenticated', refresh:vi.fn() }); expect(screen.getByText('Área privada')).toBeInTheDocument() })
   it('permite rota pública após 401', () => { renderRoute({ status:'anonymous', refresh:vi.fn() }); expect(screen.getByText('Página pública')).toBeInTheDocument() })
   it('mostra erro recuperável em falha de rede', () => { const refresh=vi.fn(); renderRoute({ status:'error', error:'Sem conexão', refresh }); expect(screen.getByRole('alert')).toHaveTextContent('Sem conexão'); screen.getByRole('button').click(); expect(refresh).toHaveBeenCalled() })

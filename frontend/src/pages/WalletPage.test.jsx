@@ -1,30 +1,35 @@
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { deposit, WalletApiError, getWalletBalance } from '../api/wallet.js'
+import { deposit, withdraw, WalletApiError, getWalletBalance } from '../api/wallet.js'
 import { AuthContext } from '../context/auth-context.js'
 import WalletPage from './WalletPage.jsx'
 
 vi.mock('../api/wallet.js', async (load) => {
   const actual = await load()
-  return { ...actual, deposit: vi.fn(), getWalletBalance: vi.fn() }
+  return { ...actual, deposit: vi.fn(), withdraw: vi.fn(), getWalletBalance: vi.fn() }
 })
 
 afterEach(cleanup)
 
-function setup(auth = { clear: vi.fn() }) {
+function setup(auth = { clear: vi.fn() }, options = {}) {
   render(
     <AuthContext.Provider value={auth}>
       <MemoryRouter initialEntries={['/app/carteira']}>
         <Routes>
-          <Route path="/app/carteira" element={<WalletPage />} />
+          <Route path="/app/carteira" element={<WalletPage {...options} />} />
           <Route path="/login" element={<p>Login destino</p>} />
         </Routes>
       </MemoryRouter>
     </AuthContext.Provider>,
   )
   return auth
+}
+
+function withdrawalContinueButton() {
+  const form = screen.getByLabelText(/Valor da retirada/).closest('form')
+  return within(form).getByRole('button', { name: 'Continuar' })
 }
 
 describe('WalletPage balance', () => {
@@ -192,5 +197,47 @@ describe('WalletPage balance', () => {
     expect(await screen.findByText('Login destino')).toBeInTheDocument()
     expect(auth.clear).toHaveBeenCalledTimes(1)
     expect(screen.queryByText('R$ 10.000,00')).not.toBeInTheDocument()
+  })
+
+  it.each(['', '0'])('rejeita retirada inválida: %s', async (value) => {
+    getWalletBalance.mockResolvedValue({ balance: 10000 })
+    setup({ clear: vi.fn() }, { showWithdrawal: true })
+    await screen.findByText('R$ 10.000,00')
+    fireEvent.change(screen.getByLabelText(/Valor da retirada/), { target: { value } })
+    fireEvent.click(withdrawalContinueButton())
+    expect(screen.getByLabelText(/Valor da retirada/)).toHaveAttribute('aria-invalid', 'true')
+    expect(withdraw).not.toHaveBeenCalled()
+  })
+
+  it('confirma retirada, atualiza saldo e impede envios duplicados', async () => {
+    getWalletBalance.mockResolvedValue({ balance: 10000 })
+    withdraw.mockResolvedValue({ balance: 9800 })
+    setup({ clear: vi.fn() }, { showWithdrawal: true })
+    await screen.findByText('R$ 10.000,00')
+    fireEvent.change(screen.getByLabelText(/Valor da retirada/), { target: { value: '20000' } })
+    fireEvent.click(withdrawalContinueButton())
+    const confirm = screen.getByRole('button', { name: 'Confirmar retirada' })
+    fireEvent.click(confirm)
+    fireEvent.click(confirm)
+    await waitFor(() => expect(withdraw).toHaveBeenCalledTimes(1))
+    expect(await screen.findByText('R$ 9.800,00')).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('Retirada realizada')
+  })
+
+  it('preserva formulário após falha de retirada e trata expiração de sessão', async () => {
+    getWalletBalance.mockResolvedValue({ balance: 10000 })
+    withdraw.mockRejectedValueOnce(new WalletApiError('Saldo insuficiente.', { amount: ['Saldo insuficiente.'] }))
+      .mockRejectedValueOnce(new WalletApiError('Sessão inválida.', {}, 401))
+    const auth = setup({ clear: vi.fn() }, { showWithdrawal: true })
+    await screen.findByText('R$ 10.000,00')
+    const input = screen.getByLabelText(/Valor da retirada/)
+    fireEvent.change(input, { target: { value: '20000' } })
+    fireEvent.click(withdrawalContinueButton())
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar retirada' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Saldo insuficiente.')
+    expect(screen.getAllByText('Saldo insuficiente.').length).toBeGreaterThanOrEqual(1)
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar retirada' }))
+    expect(await screen.findByText('Login destino')).toBeInTheDocument()
+    expect(auth.clear).toHaveBeenCalled()
   })
 })

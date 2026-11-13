@@ -2,25 +2,34 @@ import { useState } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { createAccount } from './api/accounts.js'
 import AccountHome from './components/AccountHome.jsx'
+import AuthFrame from './components/auth/AuthFrame.jsx'
+import { Button, SectionHeader, StatusMessage, SurfaceCard, TextField } from './components/ui/index.jsx'
 import { AuthProvider } from './context/AuthContext.jsx'
+import { AdminAuthProvider } from './context/AdminAuthContext.jsx'
+import AdminLayout from './layout/AdminLayout.jsx'
+import AppLayout from './layout/AppLayout.jsx'
+import AdminPrivateRoute from './routing/AdminPrivateRoute.jsx'
+import AdminPublicRoute from './routing/AdminPublicRoute.jsx'
 import PrivateRoute from './routing/PrivateRoute.jsx'
 import PublicRoute from './routing/PublicRoute.jsx'
-import AppLayout from './layout/AppLayout.jsx'
+import AdminDashboardPage from './pages/AdminDashboardPage.jsx'
+import AdminInvestorsPage from './pages/AdminInvestorsPage.jsx'
+import AdminLoginPage from './pages/AdminLoginPage.jsx'
+import AssetDetailPage from './pages/AssetDetailPage.jsx'
+import AssetsPage from './pages/AssetsPage.jsx'
+import AccountPage from './pages/AccountPage.jsx'
+import BankPage from './pages/BankPage.jsx'
+import BrokersPage from './pages/BrokersPage.jsx'
+import DashboardPage from './pages/DashboardPage.jsx'
+import HistoryPage from './pages/HistoryPage.jsx'
+import HomePage from './pages/HomePage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import NotFoundPage from './pages/NotFoundPage.jsx'
-import AccountPage from './pages/AccountPage.jsx'
-import ReactivationPage from './pages/ReactivationPage.jsx'
-import WalletPage from './pages/WalletPage.jsx'
-import BrokersPage from './pages/BrokersPage.jsx'
-import AssetsPage from './pages/AssetsPage.jsx'
 import OperationsPage from './pages/OperationsPage.jsx'
 import PortfolioPage from './pages/PortfolioPage.jsx'
+import ReactivationPage from './pages/ReactivationPage.jsx'
 import TransfersPage from './pages/TransfersPage.jsx'
-import HistoryPage from './pages/HistoryPage.jsx'
-import DashboardPage from './pages/DashboardPage.jsx'
-import BankPage from './pages/BankPage.jsx'
-import AssetDetailPage from './pages/AssetDetailPage.jsx'
-import HomePage from './pages/HomePage.jsx'
+import WalletPage from './pages/WalletPage.jsx'
 
 const initialForm = { name: '', cpf: '', email: '', password: '' }
 
@@ -73,72 +82,34 @@ function RegisterPage() {
 
   if (createdAccount) return <AccountHome account={createdAccount} onRestart={restart} onGoToLogin={showLogin} />
 
-  return (
-    <main className="page-shell">
-      <section className="brand-panel" aria-labelledby="page-title">
-        <a className="brand" href="/" aria-label="Carteira Clara — início">
-          <span className="brand-mark" aria-hidden="true">C</span><span>Carteira Clara</span>
-        </a>
-        <div className="brand-copy">
-          <p className="eyebrow">Simulação de investimentos</p>
-          <h1 id="page-title">Comece a organizar sua carteira.</h1>
-          <p className="brand-description">Acompanhe seu saldo fictício, posições e resultados em um só lugar.</p>
-        </div>
-        <div className="starting-balance">
-          <span className="balance-icon" aria-hidden="true">↗</span>
-          <div><strong>R$ 10.000,00</strong><span>de saldo inicial para sua simulação</span></div>
-        </div>
-        <p className="academic-note">Ambiente acadêmico · Nenhuma operação envolve dinheiro real</p>
-      </section>
-
-      <section className="form-panel" aria-label="Cadastro de investidor">
-        <div className="form-card">
-          <>
-              <header className="form-header">
-                <p className="eyebrow">Crie sua conta</p><h2>Seus dados de acesso</h2>
-                <p>Preencha os campos abaixo para começar.</p>
-              </header>
-              <button className="text-button top-login" type="button" onClick={showLogin}>Já tenho uma conta</button>
-              {location.state?.fromReactivation && <div className="message registration-context" role="status">Você está criando uma conta independente. A conta anterior continuará inacessível.</div>}
-              {message && <div className="error-banner" role="alert">{message}</div>}
-              <form onSubmit={handleSubmit} noValidate>
-                <FormField label="Nome completo" name="name" error={fieldErrors.name}>
-                  <input id="name" name="name" type="text" autoComplete="name" maxLength="150" value={form.name} onChange={updateField} required aria-invalid={Boolean(fieldErrors.name)} aria-describedby={fieldErrors.name ? 'name-error' : undefined} placeholder="Como aparece no seu documento" />
-                </FormField>
-                <FormField label="CPF" name="cpf" error={fieldErrors.cpf}>
-                  <input id="cpf" name="cpf" type="text" inputMode="numeric" autoComplete="off" value={form.cpf} onChange={updateField} required aria-invalid={Boolean(fieldErrors.cpf)} aria-describedby={fieldErrors.cpf ? 'cpf-error' : undefined} placeholder="000.000.000-00" />
-                </FormField>
-                <FormField label="E-mail" name="email" error={fieldErrors.email}>
-                  <input id="email" name="email" type="email" autoComplete="email" maxLength="254" value={form.email} onChange={updateField} required aria-invalid={Boolean(fieldErrors.email)} aria-describedby={fieldErrors.email ? 'email-error' : undefined} placeholder="voce@exemplo.com" />
-                </FormField>
-                <FormField label="Senha" name="password" error={fieldErrors.password} hint="Mínimo de 8 caracteres, com maiúscula, minúscula, número e símbolo.">
-                  <input id="password" name="password" type="password" autoComplete="new-password" value={form.password} onChange={updateField} required aria-invalid={Boolean(fieldErrors.password)} aria-describedby={fieldErrors.password ? 'password-error' : 'password-hint'} placeholder="Crie uma senha segura" />
-                </FormField>
-                <button className="primary-button" type="submit" disabled={isSubmitting}>{isSubmitting ? 'Criando conta…' : 'Criar minha conta'}</button>
-                <p className="privacy-note">Seus dados são usados apenas neste ambiente local de simulação.</p>
-              </form>
-          </>
-        </div>
-      </section>
-    </main>
-  )
+  return <AuthFrame title="Comece a organizar sua carteira." description="Acompanhe seu saldo fictício, posições e resultados em um só lugar.">
+    <SurfaceCard as="section" className="auth-form-surface" aria-label="Cadastro de investidor">
+      <SectionHeader title="Seus dados de acesso" description="Preencha os campos abaixo para começar." eyebrow="Crie sua conta" />
+      <Button className="auth-link auth-link--top" variant="ghost" type="button" onClick={showLogin}>Já tenho uma conta</Button>
+      {location.state?.fromReactivation && <StatusMessage kind="info" className="registration-context">Você está criando uma conta independente. A conta anterior continuará inacessível.</StatusMessage>}
+      {message && <StatusMessage kind="error" title="Não foi possível criar a conta.">{message}</StatusMessage>}
+      <form className="auth-form" onSubmit={handleSubmit} noValidate>
+        <TextField label="Nome completo" id="name" name="name" type="text" autoComplete="name" maxLength="150" value={form.name} onChange={updateField} required error={fieldErrors.name} placeholder="Como aparece no seu documento" />
+        <TextField label="CPF" id="cpf" name="cpf" type="text" inputMode="numeric" autoComplete="off" value={form.cpf} onChange={updateField} required error={fieldErrors.cpf} placeholder="000.000.000-00" />
+        <TextField label="E-mail" id="email" name="email" type="email" autoComplete="email" maxLength="254" value={form.email} onChange={updateField} required error={fieldErrors.email} placeholder="voce@exemplo.com" />
+        <TextField label="Senha" id="password" name="password" type="password" autoComplete="new-password" value={form.password} onChange={updateField} required error={fieldErrors.password} hint="Mínimo de 8 caracteres, com maiúscula, minúscula, número e símbolo." placeholder="Crie uma senha segura" />
+        <Button className="auth-submit" type="submit" disabled={isSubmitting}>{isSubmitting ? 'Criando conta…' : 'Criar minha conta'}</Button>
+        <p className="privacy-note">Seus dados são usados apenas neste ambiente local de simulação.</p>
+      </form>
+    </SurfaceCard>
+  </AuthFrame>
 }
 
 export default function App() {
-  return <BrowserRouter><AuthProvider><Routes>
+  return <BrowserRouter><AuthProvider><AdminAuthProvider><Routes>
     <Route path="/" element={<Navigate to="/cadastro" replace />} />
     <Route path="/cadastro" element={<PublicRoute><RegisterPage /></PublicRoute>} />
     <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
     <Route path="/reativacao" element={<PublicRoute><ReactivationPage /></PublicRoute>} />
     <Route path="/app" element={<PrivateRoute><AppLayout /></PrivateRoute>}><Route index element={<DashboardPage />} /><Route path="inicio" element={<HomePage />} /><Route path="investimentos" element={<DashboardPage />} /><Route path="banco" element={<BankPage />} /><Route path="bolsa" element={<AssetsPage />} /><Route path="bolsa/:market/:ticker" element={<AssetDetailPage />} /><Route path="dashboard" element={<DashboardPage />} /><Route path="ativos" element={<AssetsPage />} /><Route path="operacoes" element={<PortfolioPage />} /><Route path="negociar" element={<OperationsPage />} /><Route path="transferencias" element={<TransfersPage />} /><Route path="carteira" element={<WalletPage />} /><Route path="historico" element={<HistoryPage />} /><Route path="corretoras" element={<BrokersPage />} /><Route path="conta" element={<AccountPage />} /></Route>
+    <Route path="/admin/login" element={<AdminPublicRoute><AdminLoginPage /></AdminPublicRoute>} />
+    <Route path="/admin" element={<AdminPrivateRoute><AdminLayout /></AdminPrivateRoute>}><Route index element={<AdminDashboardPage />} /><Route path="investors" element={<AdminInvestorsPage />} /></Route>
     <Route path="/404" element={<NotFoundPage />} />
     <Route path="*" element={<Navigate to="/404" replace />} />
-  </Routes></AuthProvider></BrowserRouter>
-}
-
-function FormField({ label, name, error, hint, children }) {
-  return <div className="form-field"><label htmlFor={name}>{label}</label>{children}
-    {error ? <span className="field-error" id={`${name}-error`}>{error.map((item) => <span key={item}>{item}</span>)}</span> : null}
-    {!error && hint ? <span className="field-hint" id={`${name}-hint`}>{hint}</span> : null}
-  </div>
+  </Routes></AdminAuthProvider></AuthProvider></BrowserRouter>
 }

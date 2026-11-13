@@ -20,14 +20,14 @@ describe('wallet API', () => {
     fetch.mockResolvedValueOnce(response({ balance: 10000 }))
 
     await expect(getWalletBalance()).resolves.toEqual({ balance: 10000 })
-    expect(fetch).toHaveBeenCalledWith('/api/wallet', { credentials: 'include' })
+    expect(fetch).toHaveBeenCalledWith('/api/wallet', { credentials: 'include', headers: expect.any(Headers) })
   })
 
   it('consulta e valida o snapshot autenticado de posições', async () => {
     const snapshot = { availableBalance: '9000.00', positions: [{ assetId: 'asset', brokerageId: 'broker', ticker: 'PETR4', market: 'BR', quantity: 10, averagePriceBrl: '20.00', quotePriceBrl: '25.00' }] }
     fetch.mockResolvedValueOnce(response(snapshot))
     await expect(getWalletPositions()).resolves.toEqual(snapshot)
-    expect(fetch).toHaveBeenCalledWith('/api/wallet/positions', { credentials: 'include' })
+    expect(fetch).toHaveBeenCalledWith('/api/wallet/positions', { credentials: 'include', headers: expect.any(Headers) })
   })
 
   it('agrupa posições do mesmo ativo em sequência, independentemente da corretora', async () => {
@@ -56,12 +56,13 @@ describe('wallet API', () => {
 
     await expect(deposit('500.005')).resolves.toEqual({ balance: 10500.01 })
     expect(fetch).toHaveBeenNthCalledWith(1, '/api/csrf', { credentials: 'include' })
-    expect(fetch).toHaveBeenNthCalledWith(2, '/api/wallet/deposits', {
+    expect(fetch).toHaveBeenNthCalledWith(2, '/api/wallet/deposits', expect.objectContaining({
       method: 'POST',
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': 'csrf-wallet' },
+      headers: expect.any(Headers),
       body: JSON.stringify({ amount: '500.005' }),
-    })
+    }))
+    expect(fetch.mock.calls[1][1].headers.get('X-XSRF-TOKEN')).toBe('csrf-wallet')
   })
 
   it('converte erros funcionais com campos e status', async () => {

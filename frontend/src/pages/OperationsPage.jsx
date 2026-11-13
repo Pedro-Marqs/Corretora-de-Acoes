@@ -65,6 +65,10 @@ function OperationModal({ context, brokers, positions, availableBalance, openerR
   const [error, setError] = useState(''); const [sending, setSending] = useState(false)
   const [unitPrice, setUnitPrice] = useState(() => initialNativePrice(context.asset)); const [occurredAt, setOccurredAt] = useState(defaultOperationDate); const [confirmation, setConfirmation] = useState(null)
   const asset = context.asset; const priceBrl = asset.quotePriceBrl ?? asset.priceBrl ?? null
+  const totalNative = calculateOperationTotal(quantity, unitPrice)
+  const totalBrl = calculateOperationTotalBrl(asset, totalNative)
+  const exceedsBalance = totalBrl != null && Number.isFinite(Number(availableBalance))
+    && totalBrl > Number(availableBalance)
   function close() { onClose(); queueMicrotask(() => openerRef.current?.focus()) }
   useEffect(() => { quantityRef.current?.focus() }, [])
   function keyDown(event) {
@@ -102,11 +106,11 @@ function OperationModal({ context, brokers, positions, availableBalance, openerR
     <div className="operation-price"><span>{asset.quoteStale ? 'Preço de fechamento oficial' : 'Preço oficial de referência'}</span><strong>{priceBrl == null ? 'Indisponível' : formatCurrency(priceBrl)}</strong>{asset.quotePrice != null && asset.currency === 'USD' && <small>{formatMoney(asset.quotePrice, 'USD')} na moeda original</small>}{asset.quoteQuotedAt && <small>{asset.quoteStale ? 'Observado em' : 'Cotação de'} {formatBrasiliaDateTime(asset.quoteQuotedAt)}</small>}</div>
     {(asset.quoteStale || asset.exchangeRateStale) && <div className="warning-banner">{asset.quoteStale && <p>Preço de fechamento: cotação do instante informado acima.</p>}{asset.exchangeRateStale && <p>USD/BRL desatualizado.</p>}</div>}
     <div className="operation-modal-grid"><div className="form-field"><label htmlFor="operation-quantity">Quantidade</label><input ref={quantityRef} id="operation-quantity" inputMode="numeric" value={quantity} onChange={(event) => setQuantity(event.target.value.replace(/\D/g, ''))} aria-describedby={error ? 'operation-error' : undefined} /></div><div className="form-field"><label htmlFor="operation-broker">Corretora</label><select id="operation-broker" value={brokerageId} onChange={(event) => setBrokerageId(event.target.value)}><option value="">Selecione</option>{brokers.map((broker) => <option key={broker.associationId} value={broker.associationId}>{broker.tradeName}</option>)}</select></div><div className="form-field"><label htmlFor="operation-price-input">Preço unitário ({asset.currency})</label><input id="operation-price-input" type="number" min="0.01" step="0.01" inputMode="decimal" value={unitPrice} onChange={(event) => setUnitPrice(event.target.value)} aria-describedby={error ? 'operation-error' : undefined} /></div><div className="form-field"><label htmlFor="operation-occurred-at">Data e hora da operação</label><input id="operation-occurred-at" type="datetime-local" value={occurredAt} onChange={(event) => setOccurredAt(event.target.value)} aria-describedby={error ? 'operation-error' : undefined} /></div></div>
-    <dl className="operation-snapshot operation-balance"><div><dt>Saldo disponível</dt><dd>{availableBalance == null ? 'Indisponível' : formatCurrency(availableBalance)}</dd><small>Limite informativo para compra</small></div><div><dt>Preço oficial unitário</dt><dd>{priceBrl == null ? 'Indisponível' : formatCurrency(priceBrl)}</dd><small>O total será calculado pelo servidor</small></div></dl>
+    <dl className="operation-snapshot operation-balance"><div><dt>Saldo disponível</dt><dd>{availableBalance == null ? 'Indisponível' : formatCurrency(availableBalance)}</dd><small>Limite informativo para compra</small></div><div className={exceedsBalance ? 'operation-total operation-total--over-limit' : 'operation-total'}><dt>Total da operação</dt><dd aria-live="polite">{totalNative == null ? 'Indisponível' : formatMoney(totalNative, asset.currency)}</dd><small>{exceedsBalance ? 'Acima do saldo disponível' : 'Quantidade × preço unitário'}</small></div></dl>
     {position && <dl className="operation-snapshot operation-position" aria-label="Posição atual"><div><dt>Corretora da posição</dt><dd>{position.brokerageName}</dd></div><div><dt>Quantidade da posição</dt><dd>{position.quantity}</dd></div><div><dt>Preço médio acumulado</dt><dd>{position.averagePriceBrl == null ? 'Indisponível' : formatCurrency(position.averagePriceBrl)}</dd></div><div><dt>Lucro / perda</dt><dd>{position.unrealizedResultBrl == null ? 'Indisponível' : formatCurrency(position.unrealizedResultBrl)}</dd></div></dl>}
     <p id="operation-error" className="field-error" aria-live="polite">{error}</p>
     <div className="modal-actions"><button type="button" className="secondary-button negative-action" onClick={() => requestOperation('sale')} disabled={sending || priceBrl == null}>Vender</button><button type="button" className="primary-button" onClick={() => requestOperation('purchase')} disabled={sending || priceBrl == null}>{sending ? 'Enviando…' : 'Comprar'}</button></div>
-    {confirmation && <section className="operation-confirmation" role="dialog" aria-modal="true" aria-labelledby="operation-confirmation-title"><h3 id="operation-confirmation-title">Confirmar {confirmation === 'sale' ? 'venda' : 'compra'}</h3><p>{confirmation === 'sale' ? 'Vender' : 'Comprar'} {quantity} unidade(s) de {asset.ticker} por {formatMoney(unitPrice, asset.currency)} cada, em {occurredAt.replace('T', ' ')}?</p><div className="modal-actions"><button className="secondary-button" type="button" onClick={() => setConfirmation(null)} disabled={sending}>Cancelar</button><button className="primary-button" type="button" onClick={() => operate(confirmation)} disabled={sending}>{sending ? 'Enviando…' : 'Confirmar operação'}</button></div></section>}
+    {confirmation && <section className="operation-confirmation" role="dialog" aria-modal="true" aria-labelledby="operation-confirmation-title"><div className="operation-confirmation-card"><h3 id="operation-confirmation-title">Confirmar {confirmation === 'sale' ? 'venda' : 'compra'}</h3><p className="operation-confirmation-copy">Confira os dados antes de confirmar a operação.</p><dl className="operation-confirmation-summary" aria-label="Resumo da operação"><div><dt>Quantidade</dt><dd>{quantity}</dd></div><div><dt>Preço unitário</dt><dd>{formatMoney(unitPrice, asset.currency)}</dd></div><div className={exceedsBalance ? 'operation-total operation-total--over-limit' : 'operation-total'}><dt>Total</dt><dd>{totalNative == null ? 'Indisponível' : formatMoney(totalNative, asset.currency)}</dd></div></dl><p className="operation-confirmation-question">{confirmation === 'sale' ? 'Vender' : 'Comprar'} {quantity} unidade(s) de {asset.ticker} em {occurredAt.replace('T', ' ')}?</p><div className="modal-actions"><button className="secondary-button" type="button" onClick={() => setConfirmation(null)} disabled={sending}>Cancelar</button><button className="primary-button" type="button" onClick={() => operate(confirmation)} disabled={sending}>{sending ? 'Enviando…' : 'Confirmar operação'}</button></div></div></section>}
   </section></div>
 }
 
@@ -115,6 +119,20 @@ function defaultOperationDate() {
   return new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date()).replace(' ', 'T')
 }
 function operationInstant(value) { return value && value + ':00-03:00' }
+function calculateOperationTotal(quantity, unitPrice) {
+  const normalizedQuantity = Number(quantity)
+  const normalizedUnitPrice = Number(unitPrice)
+  return Number.isFinite(normalizedQuantity) && normalizedQuantity >= 0
+    && Number.isFinite(normalizedUnitPrice) && normalizedUnitPrice >= 0
+    ? normalizedQuantity * normalizedUnitPrice
+    : null
+}
+function calculateOperationTotalBrl(asset, totalNative) {
+  if (totalNative == null) return null
+  if (asset.currency !== 'USD') return totalNative
+  const exchangeRate = Number(asset.usdBrlRate)
+  return Number.isFinite(exchangeRate) && exchangeRate > 0 ? totalNative * exchangeRate : null
+}
 function currentPrice(position) { return position.quotePrice == null ? 'Indisponível' : position.market === 'US' ? formatMoney(position.quotePrice, 'USD') : formatCurrency(position.quotePriceBrl) }
 function averagePrice(position) { if (position.averagePriceBrl == null) return 'Indisponível'; if (position.market !== 'US') return formatCurrency(position.averagePriceBrl); const rate = Number(position.usdBrlRate); return rate > 0 ? formatMoney(Number(position.averagePriceBrl) / rate, 'USD') : 'Indisponível' }
-function profitability(position) { const result = Number(position.unrealizedResultBrl); const invested = Number(position.averagePriceBrl) * Number(position.quantity); return Number.isFinite(result) && invested > 0 ? `${(result / invested * 100).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%` : 'Percentual indisponível' }
+function profitability() { return 'Percentual não fornecido pela API' }

@@ -9,6 +9,7 @@ vi.mock('./api/accounts.js', async (importOriginal) => ({
   deleteAccount: vi.fn(),
   getCurrentAccount: vi.fn(),
 }))
+vi.mock('./api/auth.js', async (importOriginal) => ({ ...await importOriginal(), restoreSession: vi.fn().mockResolvedValue('access-1') }))
 
 afterEach(cleanup)
 

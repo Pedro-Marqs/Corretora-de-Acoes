@@ -11,7 +11,7 @@ vi.mock('./api/accounts.js', async (importOriginal) => {
 })
 vi.mock('./api/auth.js', async (importOriginal) => {
   const original = await importOriginal()
-  return { ...original, login: vi.fn(), logout: vi.fn() }
+  return { ...original, login: vi.fn(), logout: vi.fn(), restoreSession: vi.fn().mockResolvedValue('access-1') }
 })
 vi.mock('./routing/PublicRoute.jsx', () => ({ default: ({ children }) => children }))
 

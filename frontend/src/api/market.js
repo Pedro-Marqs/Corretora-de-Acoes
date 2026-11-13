@@ -1,4 +1,4 @@
-import { API_BASE_URL, ApiError, groupFieldErrors, parseJson } from './http.js'
+import { API_BASE_URL, ApiError, authenticatedFetch, groupFieldErrors, parseJson } from './http.js'
 
 export class MarketApiError extends ApiError {
   constructor(message, fieldErrors = {}, status) { super(message, fieldErrors, status); this.name = 'MarketApiError' }
@@ -32,7 +32,7 @@ export async function searchAsset(rawTicker, rawMarket) {
   }
   try {
     const query = new URLSearchParams({ ticker, market })
-    const response = await fetch(`${API_BASE_URL}/api/assets/search?${query}`, { credentials: 'include' })
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/assets/search?${query}`)
     const body = await parseJson(response)
     if (!response.ok) throw new MarketApiError(body?.message ?? 'Não foi possível pesquisar o ativo.', groupFieldErrors(body?.fieldErrors), response.status)
     return requireAsset(body)

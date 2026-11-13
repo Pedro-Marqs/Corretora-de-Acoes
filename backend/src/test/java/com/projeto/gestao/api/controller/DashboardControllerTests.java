@@ -172,7 +172,7 @@ class DashboardControllerTests {
     }
 
     @Test
-    void relativePeriodReturnsPartialCoverageWithoutBoundaryOrIntermediatePoints() throws Exception {
+    void relativePeriodStartsWithLatestOfficialPointBeforeBoundary() throws Exception {
         Account account = account("07548611048", "partial-history@example.com", "10000");
         addPoint(account, NOW.minusDays(40), "9000");
         addPoint(account, NOW.minusDays(20), "10000");
@@ -181,10 +181,23 @@ class DashboardControllerTests {
         mockMvc.perform(get("/api/dashboard").param("period", "4W")
                         .cookie(login(account.getEmail())))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.patrimonyHistory.length()").value(2))
-                .andExpect(jsonPath("$.patrimonyHistory[0].patrimonyBrl").value(10000.00))
-                .andExpect(jsonPath("$.patrimonyHistory[1].patrimonyBrl").value(10500.00))
+                .andExpect(jsonPath("$.patrimonyHistory.length()").value(3))
+                .andExpect(jsonPath("$.patrimonyHistory[0].patrimonyBrl").value(9000.00))
+                .andExpect(jsonPath("$.patrimonyHistory[1].patrimonyBrl").value(10000.00))
+                .andExpect(jsonPath("$.patrimonyHistory[2].patrimonyBrl").value(10500.00))
                 .andExpect(jsonPath("$.investmentHistory.length()").value(3));
+    }
+
+    @Test
+    void relativePeriodStartsWithFirstOfficialPointWhenNoPriorAnchorExists() throws Exception {
+        Account account = account("07548611049", "first-point@example.com", "10000");
+        addPoint(account, NOW.minusDays(3), "10500");
+
+        mockMvc.perform(get("/api/dashboard").param("period", "4W")
+                        .cookie(login(account.getEmail())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.patrimonyHistory.length()").value(1))
+                .andExpect(jsonPath("$.patrimonyHistory[0].patrimonyBrl").value(10500.00));
     }
 
     @Test

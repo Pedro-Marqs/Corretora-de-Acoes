@@ -1,4 +1,4 @@
-import { API_BASE_URL, ApiError, groupFieldErrors, parseJson } from './http.js'
+import { API_BASE_URL, ApiError, authenticatedFetch, groupFieldErrors, parseJson } from './http.js'
 
 export class HistoryApiError extends ApiError {
   constructor(message, fieldErrors = {}, status) {
@@ -36,7 +36,7 @@ export async function getHistory({ page = 0, from, to, type, ticker, brokerId, m
     if (typeof value === 'string' && value.trim()) params.set(name, value.trim())
   }
   try {
-    const response = await fetch(`${API_BASE_URL}/api/history?${params}`, { credentials: 'include' })
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/history?${params}`)
     const body = await parseJson(response)
     if (!response.ok) throw new HistoryApiError(body?.message ?? 'Não foi possível consultar o histórico.', groupFieldErrors(body?.fieldErrors), response.status)
     return requireHistoryPage(body)

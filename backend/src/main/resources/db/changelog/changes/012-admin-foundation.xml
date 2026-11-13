@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+    <changeSet id="v12-admin-foundation" author="project">
+        <sql splitStatements="true" stripComments="false"><![CDATA[
+CREATE TABLE admin_user (
+    id UUID PRIMARY KEY,
+    email VARCHAR(254) NOT NULL,
+    password_hash VARCHAR(100) NOT NULL,
+    status VARCHAR(16) NOT NULL DEFAULT 'ACTIVE',
+    role VARCHAR(16) NOT NULL DEFAULT 'ADMIN',
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    inactivated_at TIMESTAMP WITH TIME ZONE,
+    CONSTRAINT uq_admin_user_email UNIQUE (email),
+    CONSTRAINT ck_admin_user_email_normalized CHECK (
+        email = LOWER(TRIM(email)) AND CHAR_LENGTH(email) > 0
+    ),
+    CONSTRAINT ck_admin_user_password_hash_bcrypt CHECK (
+        CHAR_LENGTH(password_hash) = 60 AND password_hash LIKE '$2%'
+    ),
+    CONSTRAINT ck_admin_user_status CHECK (status IN ('ACTIVE', 'INACTIVE')),
+    CONSTRAINT ck_admin_user_role CHECK (role = 'ADMIN'),
+    CONSTRAINT ck_admin_user_inactivation CHECK (
+        (status = 'ACTIVE' AND inactivated_at IS NULL)
+        OR (status = 'INACTIVE' AND inactivated_at IS NOT NULL)
+    )
+);
+
+CREATE INDEX ix_admin_user_status ON admin_user (status);
+
+CREATE TABLE admin_refresh_token (
+    id UUID PRIMARY KEY,
+    token_hash VARCHAR(64) NOT NULL UNIQUE,
+    admin_user_id UUID NOT NULL,
+    family_id UUID NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    revoked_at TIMESTAMP WITH TIME ZONE,
+    replaced_by_id UUID,
+    CONSTRAINT fk_admin_refresh_token_admin FOREIGN KEY (admin_user_id)
+        REFERENCES admin_user (id) ON DELETE CASCADE,
+    CONSTRAINT ck_admin_refresh_token_hash_length CHECK (CHAR_LENGTH(token_hash) = 43),
+    CONSTRAINT ck_admin_refresh_token_expiry CHECK (expires_at > created_at)
+);
+
+CREATE INDEX ix_admin_refresh_token_admin ON admin_refresh_token (admin_user_id);
+CREATE INDEX ix_admin_refresh_token_family ON admin_refresh_token (family_id);
+
+CREATE TABLE admin_audit_event (
+    id UUID PRIMARY KEY,
+    actor_admin_id UUID,
+    actor_role VARCHAR(16) NOT NULL,
+    action VARCHAR(64) NOT NULL,
+    target_account_id UUID,
+    target_admin_id UUID,
+    occurred_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    outcome VARCHAR(16) NOT NULL,
+    correlation_id UUID NOT NULL,
+    CONSTRAINT fk_admin_audit_actor FOREIGN KEY (actor_admin_id)
+        REFERENCES admin_user (id) ON DELETE SET NULL,
+    CONSTRAINT fk_admin_audit_target_account FOREIGN KEY (target_account_id)
+        REFERENCES account (id) ON DELETE SET NULL,
+    CONSTRAINT fk_admin_audit_target_admin FOREIGN KEY (target_admin_id)
+        REFERENCES admin_user (id) ON DELETE SET NULL,
+    CONSTRAINT ck_admin_audit_actor_role CHECK (actor_role IN ('ADMIN', 'SYSTEM', 'ANONYMOUS')),
+    CONSTRAINT ck_admin_audit_action CHECK (action IN (
+        'BOOTSTRAP', 'LOGIN', 'LOGOUT', 'LIST_INVESTORS',
+        'ACTIVATE_INVESTOR', 'DEACTIVATE_INVESTOR', 'ACCESS_DENIED'
+    )),
+    CONSTRAINT ck_admin_audit_outcome CHECK (outcome IN ('SUCCESS', 'DENIED', 'FAILURE'))
+);
+
+CREATE INDEX ix_admin_audit_actor ON admin_audit_event (actor_admin_id);
+CREATE INDEX ix_admin_audit_occurred ON admin_audit_event (occurred_at);
+CREATE INDEX ix_admin_audit_correlation ON admin_audit_event (correlation_id);
+        ]]></sql>
+        <rollback>
+            <sql splitStatements="true"><![CDATA[
+DROP TABLE admin_audit_event;
+DROP TABLE admin_refresh_token;
+DROP TABLE admin_user;
+            ]]></sql>
+        </rollback>
+    </changeSet>
+    <changeSet id="v12-admin-foundation-token-format-postgresql" author="project" dbms="postgresql">
+        <sql><![CDATA[
+ALTER TABLE admin_refresh_token
+    ADD CONSTRAINT ck_admin_refresh_token_hash_format
+    CHECK (token_hash ~ '^[A-Za-z0-9_-]{43}$');
+        ]]></sql>
+        <rollback>
+            <sql><![CDATA[
+ALTER TABLE admin_refresh_token DROP CONSTRAINT ck_admin_refresh_token_hash_format;
+            ]]></sql>
+        </rollback>
+    </changeSet>
+    <changeSet id="v12-admin-foundation-token-format-h2" author="project" dbms="h2">
+        <sql><![CDATA[
+ALTER TABLE admin_refresh_token
+    ADD CONSTRAINT ck_admin_refresh_token_hash_format
+    CHECK (token_hash REGEXP '^[A-Za-z0-9_-]{43}$');
+        ]]></sql>
+        <rollback>
+            <sql><![CDATA[
+ALTER TABLE admin_refresh_token DROP CONSTRAINT ck_admin_refresh_token_hash_format;
+            ]]></sql>
+        </rollback>
+    </changeSet>
+</databaseChangeLog>
