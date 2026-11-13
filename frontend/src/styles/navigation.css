@@ -97,3 +97,17 @@
 @media (max-width: 40rem) {
   .auth-frame-page { padding: var(--space-3); }.auth-brand-panel { min-height: 17rem; padding: var(--space-5); }.auth-brand__copy { margin-block: var(--space-4); }.auth-brand__copy h1 { font-size: clamp(1.85rem, 10vw, 2.6rem); }.auth-form-surface { padding: var(--space-5); }.reactivation-options { grid-template-columns: 1fr; }.option-card p { min-height: auto; }.session-home { padding-inline: var(--space-4); }.session-header { align-items: flex-start; flex-direction: column; }.session-actions, .session-actions .ui-button { width: 100%; }.admin-topbar { align-items: flex-start; padding-inline: var(--space-4); }.admin-topbar__logout { font-size: var(--font-size-xs); }.admin-content { width: min(100% - 1.5rem, var(--layout-content)); }.topbar-actions { gap: 0; }.account-menu-trigger.ui-button { padding-right: 0; }
 }
+
+/* Desktop: a collapsed sidebar must not leave a dead rail without a reopen control. */
+@media (min-width: 56.3125rem) {
+  .private-layout.sidebar-collapsed { grid-template-columns: minmax(0, 1fr); }
+  .private-layout.sidebar-collapsed .app-sidebar {
+    width: 0;
+    overflow: hidden;
+    transform: translateX(-105%);
+    border-right: 0;
+    transition: width var(--motion-normal), transform var(--motion-normal);
+  }
+  .private-layout.sidebar-collapsed .app-workspace { grid-column: 1; }
+  .private-layout.sidebar-collapsed .mobile-menu-button.ui-button { display: grid; place-items: center; }
+}
