@@ -18,4 +18,5 @@
     <include file="db/changelog/changes/012-admin-foundation.xml"/>
     <include file="db/changelog/changes/013-admin-bcrypt-format.xml"/>
     <include file="db/changelog/changes/014-admin-lifecycle-audit-actions.xml"/>
+    <include file="db/changelog/changes/015-admin-password-reset-audit-action.xml"/>
 </databaseChangeLog>

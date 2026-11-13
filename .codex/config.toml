@@ -1,0 +1,12 @@
+[agents]
+enabled = true
+
+[agents.reviewer]
+description = "Revisão independente de arquitetura, segurança, contratos, transações e conformidade OpenSpec."
+config_file = "agents/reviewer.toml"
+nickname_candidates = ["Reviewer"]
+
+[agents.tester]
+description = "Validação independente e reproduzível de testes, cobertura e regressões."
+config_file = "agents/tester.toml"
+nickname_candidates = ["Tester"]

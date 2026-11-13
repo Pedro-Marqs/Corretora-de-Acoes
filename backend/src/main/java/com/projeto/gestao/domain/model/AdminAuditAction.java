@@ -9,5 +9,6 @@ public enum AdminAuditAction {
     DEACTIVATE_INVESTOR,
     ACTIVATE_ADMIN,
     DEACTIVATE_ADMIN,
+    RESET_ADMIN_PASSWORD,
     ACCESS_DENIED
 }

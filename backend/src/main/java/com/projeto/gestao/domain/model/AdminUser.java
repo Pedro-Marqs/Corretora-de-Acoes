@@ -69,6 +69,10 @@ public class AdminUser {
     public OffsetDateTime getCreatedAt() { return createdAt; }
     public OffsetDateTime getInactivatedAt() { return inactivatedAt; }
 
+    public void changePasswordHash(String passwordHash) {
+        this.passwordHash = requireBcryptHash(passwordHash);
+    }
+
     private static String requireText(String value, String name) {
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException(name + " is required");

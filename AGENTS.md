@@ -47,7 +47,7 @@ Não deve:
 - criar outra especificação para substituir o OpenSpec;
 - alterar requisitos apenas para acomodar a implementação;
 - implementar trabalho fora do change;
-- usar subagentes para duplicar investigação ou implementação;
+- usar subagentes para duplicar investigação ou implementação; revisões e validações independentes só podem usar os agentes personalizados descritos abaixo, em escopo explícito e sem alterar o produto;
 - executar `git push`;
 - executar `git reset --hard`;
 - descartar alterações não relacionadas do usuário;
@@ -55,15 +55,23 @@ Não deve:
 
 ## Reviewer
 
-O reviewer é externo ao Codex e executado pelo OpenCode.
+O reviewer pode ser executado como subagente interno personalizado do Codex, em contexto separado do implementador, quando o usuário solicitar explicitamente. Ele também pode ser executado pelo fluxo externo do OpenCode.
 
-O Codex não precisa criar ou chamar reviewer próprio.
+- Não edita arquivos, não executa testes e não faz staging, commit, push ou archive.
+- Inspeciona diretamente o código rastreado e não rastreado, as specs, as tasks e as evidências.
+- Emite findings com severidade, arquivo/localização, evidência, impacto e correção recomendada.
+- O implementador não pode aprovar o próprio trabalho; o parecer deve ser independente e não fabricado.
+- Quando interno, sua natureza deve ser registrada; não se deve alegar que a revisão foi externa ao Codex.
 
 ## Tester
 
-A suíte final é executada pelo agente tester do OpenCode.
+O tester pode ser executado como subagente interno personalizado do Codex, em contexto separado do implementador, quando o usuário solicitar explicitamente. Ele também pode ser executado pelo fluxo externo do OpenCode.
 
-O Codex deve executar apenas os testes focados necessários durante a implementação.
+- Executa validações reproduzíveis, testes e cobertura sem editar código-fonte ou especificações.
+- Não usa contas ou bancos de desenvolvimento reais, nem faz staging, commit, push ou archive.
+- Não trata testes ignorados como aprovados e não fabrica evidências.
+- Emite relatório com comandos, resultados, limitações e regressões.
+- O implementador não pode aprovar o próprio trabalho.
 
 ## Conclusão
 
@@ -76,6 +84,8 @@ Uma mudança só está concluída quando:
 5. o change é arquivado.
 
 Se existir bloqueio real, interromper com uma descrição objetiva do bloqueio em vez de improvisar comportamento.
+
+Reviewer e tester internos são mecanismos de apoio do Codex e não equivalem a revisão externa. A task 4.3 só pode ser concluída após pareceres reais de contextos separados e aprovação explícita; problemas encontrados retornam ao implementador para correção.
 
 ## graphify
 

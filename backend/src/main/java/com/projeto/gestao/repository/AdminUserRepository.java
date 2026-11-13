@@ -14,6 +14,11 @@ import org.springframework.data.repository.query.Param;
 
 public interface AdminUserRepository extends JpaRepository<AdminUser, UUID> {
     Optional<AdminUser> findByEmailIgnoreCase(String email);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select admin from AdminUser admin where lower(admin.email) = lower(:email)")
+    Optional<AdminUser> findForUpdateByEmailIgnoreCase(@Param("email") String email);
+
     Optional<AdminUser> findFirstByOrderByCreatedAtAsc();
     Optional<AdminUser> findByIdAndStatus(UUID id, AdminStatus status);
     @Lock(LockModeType.PESSIMISTIC_WRITE)
