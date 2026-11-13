@@ -1,8 +1,9 @@
-## Purpose
+# tdd-cobertura-evidencias Specification
 
+## Purpose
 Tornar demonstrável e reproduzível a qualidade das alterações de autenticação, autorização e operações financeiras por meio de TDD, cobertura preservada e evidências auditáveis.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Linha de base de testes e cobertura
 
@@ -84,6 +85,9 @@ O relatório SHALL mapear a seção 21 do material original para evidências do 
 
 #### Scenario: Matriz alinhada ao enunciado
 
+- **WHEN** o relatório da Aula 15 for revisado
+- **THEN** cada critério da seção 21 SHALL apontar para uma evidência verificável ou para uma limitação explicitamente registrada, sem promover regressão ou mutação a ciclo TDD
+
 ### Requirement: Redefinição operacional segura de senha administrativa
 
 O sistema SHALL oferecer uma redefinição de senha administrativa somente por comando CLI explícito, destinada a um administrador já existente, sem criar, substituir ou reativar contas automaticamente.
@@ -116,6 +120,3 @@ O sistema SHALL oferecer uma redefinição de senha administrativa somente por c
 - **AND** nenhum administrador, refresh token, auditoria ou conta financeira SHALL ser alterado
 - **WHEN** nenhum argumento de redefinição é informado
 - **THEN** a inicialização normal SHALL continuar sem exigir o componente de redefinição
-
-- **WHEN** o relatório da Aula 15 for revisado
-- **THEN** cada critério da seção 21 SHALL apontar para uma evidência verificável ou para uma limitação explicitamente registrada, sem promover regressão ou mutação a ciclo TDD
