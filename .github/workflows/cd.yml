@@ -1,4 +1,4 @@
-name: CD - Corretora de Acoes
+name: CD - Corretora de Ações
 
 on:
   workflow_run:
@@ -11,12 +11,12 @@ permissions:
   id-token: write
 
 concurrency:
-  group: production-deploy
+  group: implantacao-producao
   cancel-in-progress: false
 
 jobs:
   deploy:
-    name: Deploy production
+    name: Implantação em produção
     if: >-
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.event == 'push' &&
@@ -36,25 +36,25 @@ jobs:
       DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
 
     steps:
-      - name: Validate deployment configuration
+      - name: Validar a configuração da implantação
         shell: bash
         run: |
           set -euo pipefail
           for name in TS_OAUTH_CLIENT_ID TS_AUDIENCE DEPLOY_HOST DEPLOY_SSH_KEY DEPLOY_KNOWN_HOSTS; do
             if [[ -z "${!name}" ]]; then
-              echo "::error::Required environment setting is missing: $name"
+              echo "::error::Configuração obrigatória ausente: $name"
               exit 1
             fi
           done
 
-      - name: Connect to the private Tailscale network
+      - name: Conectar à rede privada Tailscale
         uses: tailscale/github-action@v4.1.2
         with:
           oauth-client-id: ${{ vars.TS_OAUTH_CLIENT_ID }}
           audience: ${{ vars.TS_AUDIENCE }}
           tags: tag:github-actions
 
-      - name: Deploy the CI-approved commit
+      - name: Implantar o commit aprovado pelo CI
         shell: bash
         run: |
           set -euo pipefail
@@ -81,14 +81,14 @@ jobs:
 
           cd "$repo_dir"
           if ! git diff --quiet || ! git diff --cached --quiet; then
-            echo "Tracked repository changes are present. Deployment stopped."
+            echo "Há alterações rastreadas no repositório. Implantação interrompida."
             exit 1
           fi
 
           git fetch --no-tags origin "$sha"
           git cat-file -e "$sha^{commit}"
           if [[ -n "$(git ls-tree -r --name-only "$sha" -- .env compose.prod.yaml)" ]]; then
-            echo "The target commit contains a VPS-local configuration file. Deployment stopped."
+            echo "O commit contém um arquivo de configuração local da VPS. Implantação interrompida."
             exit 1
           fi
 
@@ -106,5 +106,5 @@ jobs:
           curl --fail --silent --show-error --max-time 15 -o /dev/null http://127.0.0.1:3000/
           curl --fail --silent --show-error --max-time 15 -o /dev/null http://127.0.0.1:8080/api/csrf
 
-          printf 'Deployed SHA: %s\nPrevious SHA: %s\n' "$sha" "$previous_sha"
+          printf 'SHA implantado: %s\nSHA anterior: %s\n' "$sha" "$previous_sha"
           REMOTE
