@@ -1,0 +1,110 @@
+name: CD - Corretora de Ações
+
+on:
+  workflow_run:
+    workflows: ["CI - Corretora de Acoes"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: implantacao-producao
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Implantação em produção
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://corretora.pedromarqs.com.br
+
+    env:
+      DEPLOY_SHA: ${{ github.event.workflow_run.head_sha }}
+      TS_OAUTH_CLIENT_ID: ${{ vars.TS_OAUTH_CLIENT_ID }}
+      TS_AUDIENCE: ${{ vars.TS_AUDIENCE }}
+      DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+      DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+      DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+
+    steps:
+      - name: Validar a configuração da implantação
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in TS_OAUTH_CLIENT_ID TS_AUDIENCE DEPLOY_HOST DEPLOY_SSH_KEY DEPLOY_KNOWN_HOSTS; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::Configuração obrigatória ausente: $name"
+              exit 1
+            fi
+          done
+
+      - name: Conectar à rede privada Tailscale
+        uses: tailscale/github-action@v4.1.2
+        with:
+          oauth-client-id: ${{ vars.TS_OAUTH_CLIENT_ID }}
+          audience: ${{ vars.TS_AUDIENCE }}
+          tags: tag:github-actions
+
+      - name: Implantar o commit aprovado pelo CI
+        shell: bash
+        run: |
+          set -euo pipefail
+          key_file="$RUNNER_TEMP/deploy_key"
+          known_hosts_file="$RUNNER_TEMP/known_hosts"
+          install -m 600 /dev/null "$key_file"
+          install -m 600 /dev/null "$known_hosts_file"
+          printf '%s\n' "$DEPLOY_SSH_KEY" > "$key_file"
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > "$known_hosts_file"
+
+          ssh \
+            -i "$key_file" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$known_hosts_file" \
+            "ubuntu@$DEPLOY_HOST" \
+            "bash -s -- '$DEPLOY_SHA'" <<'REMOTE'
+          set -Eeuo pipefail
+
+          sha="$1"
+          repo_dir="/home/ubuntu/projects/Corretora-de-Acoes"
+          state_dir="/home/ubuntu/.local/state/corretora-deploy"
+
+          cd "$repo_dir"
+          if ! git diff --quiet || ! git diff --cached --quiet; then
+            echo "Há alterações rastreadas no repositório. Implantação interrompida."
+            exit 1
+          fi
+
+          git fetch --no-tags origin "$sha"
+          git cat-file -e "$sha^{commit}"
+          if [[ -n "$(git ls-tree -r --name-only "$sha" -- .env compose.prod.yaml)" ]]; then
+            echo "O commit contém um arquivo de configuração local da VPS. Implantação interrompida."
+            exit 1
+          fi
+
+          previous_sha="$(git rev-parse HEAD)"
+          mkdir -p "$state_dir"
+          printf '%s\n' "$previous_sha" > "$state_dir/previous-sha.tmp"
+          mv "$state_dir/previous-sha.tmp" "$state_dir/previous-sha"
+
+          git checkout --detach "$sha"
+          compose=(docker compose -f compose.yaml -f compose.prod.yaml)
+          "${compose[@]}" config --quiet
+          "${compose[@]}" build backend frontend
+          "${compose[@]}" up -d --no-deps --wait --wait-timeout 120 backend frontend
+
+          curl --fail --silent --show-error --max-time 15 -o /dev/null http://127.0.0.1:3000/
+          curl --fail --silent --show-error --max-time 15 -o /dev/null http://127.0.0.1:8080/api/csrf
+
+          printf 'SHA implantado: %s\nSHA anterior: %s\n' "$sha" "$previous_sha"
+          REMOTE
