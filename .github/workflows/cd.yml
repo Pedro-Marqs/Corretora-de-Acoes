@@ -32,7 +32,6 @@ jobs:
       TS_OAUTH_CLIENT_ID: ${{ vars.TS_OAUTH_CLIENT_ID }}
       TS_AUDIENCE: ${{ vars.TS_AUDIENCE }}
       DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
-      DEPLOY_USER: ${{ vars.DEPLOY_USER }}
       DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
       DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
 
@@ -41,7 +40,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for name in TS_OAUTH_CLIENT_ID TS_AUDIENCE DEPLOY_HOST DEPLOY_USER DEPLOY_SSH_KEY DEPLOY_KNOWN_HOSTS; do
+          for name in TS_OAUTH_CLIENT_ID TS_AUDIENCE DEPLOY_HOST DEPLOY_SSH_KEY DEPLOY_KNOWN_HOSTS; do
             if [[ -z "${!name}" ]]; then
               echo "::error::Required environment setting is missing: $name"
               exit 1
@@ -72,7 +71,7 @@ jobs:
             -o IdentitiesOnly=yes \
             -o StrictHostKeyChecking=yes \
             -o UserKnownHostsFile="$known_hosts_file" \
-            "$DEPLOY_USER@$DEPLOY_HOST" \
+            "ubuntu@$DEPLOY_HOST" \
             "bash -s -- '$DEPLOY_SHA'" <<'REMOTE'
           set -Eeuo pipefail
 
