@@ -78,6 +78,16 @@ jobs:
           sha="$1"
           repo_dir="/home/ubuntu/projects/Corretora-de-Acoes"
           state_dir="/home/ubuntu/.local/state/corretora-deploy"
+          previous_sha_file="$state_dir/previous-sha"
+          last_known_good_sha_file="$state_dir/last-known-good-sha"
+
+          write_state() {
+            local path="$1"
+            local value="$2"
+            local temporary="${path}.tmp"
+            printf '%s\n' "$value" > "$temporary"
+            mv "$temporary" "$path"
+          }
 
           cd "$repo_dir"
           if ! git diff --quiet || ! git diff --cached --quiet; then
@@ -92,10 +102,26 @@ jobs:
             exit 1
           fi
 
-          previous_sha="$(git rev-parse HEAD)"
           mkdir -p "$state_dir"
-          printf '%s\n' "$previous_sha" > "$state_dir/previous-sha.tmp"
-          mv "$state_dir/previous-sha.tmp" "$state_dir/previous-sha"
+          current_sha="$(git rev-parse HEAD)"
+          last_known_good_sha=""
+          if [[ -s "$last_known_good_sha_file" ]]; then
+            last_known_good_sha="$(<"$last_known_good_sha_file")"
+          fi
+
+          if [[ -n "$last_known_good_sha" && "$current_sha" != "$sha" && "$current_sha" == "$last_known_good_sha" ]]; then
+            write_state "$previous_sha_file" "$current_sha"
+          fi
+          if [[ ! -s "$previous_sha_file" ]]; then
+            if [[ "$current_sha" == "$sha" ]]; then
+              echo "Referência de rollback ausente para retry do commit atual. Implantação interrompida."
+              exit 1
+            fi
+            write_state "$previous_sha_file" "$current_sha"
+          fi
+
+          previous_sha="$(<"$previous_sha_file")"
+          git cat-file -e "$previous_sha^{commit}"
 
           git checkout --detach "$sha"
           compose=(docker compose -f compose.yaml -f compose.prod.yaml)
@@ -103,8 +129,14 @@ jobs:
           "${compose[@]}" build backend frontend
           "${compose[@]}" up -d --no-deps --wait --wait-timeout 120 backend frontend
 
-          curl --fail --silent --show-error --max-time 15 -o /dev/null http://127.0.0.1:3000/
-          curl --fail --silent --show-error --max-time 15 -o /dev/null http://127.0.0.1:8080/api/csrf
+          bash .github/scripts/check-http-readiness.sh \
+            --max-wait-seconds 120 \
+            --max-attempts 40 \
+            --interval-seconds 3 \
+            --request-timeout-seconds 15 \
+            --check frontend=http://127.0.0.1:3000/ \
+            --check backend=http://127.0.0.1:8080/api/csrf
 
+          write_state "$last_known_good_sha_file" "$sha"
           printf 'SHA implantado: %s\nSHA anterior: %s\n' "$sha" "$previous_sha"
           REMOTE
