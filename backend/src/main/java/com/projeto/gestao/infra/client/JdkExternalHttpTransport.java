@@ -6,7 +6,9 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Locale;
 
 import com.projeto.gestao.domain.port.ExternalDataFailure;
 
@@ -32,7 +34,10 @@ public final class JdkExternalHttpTransport implements ExternalHttpTransport {
         HttpRequest request = builder.build();
         try {
             HttpResponse<byte[]> response = httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());
-            return new ExternalHttpResponse(response.statusCode(), response.body());
+            Map<String, String> responseHeaders = new HashMap<>();
+            response.headers().map().forEach((name, values) -> responseHeaders.put(
+                    name.toLowerCase(Locale.ROOT), String.join(",", values)));
+            return new ExternalHttpResponse(response.statusCode(), response.body(), responseHeaders);
         } catch (java.net.http.HttpTimeoutException exception) {
             throw new ExternalDataFailure(ExternalDataFailure.Reason.TIMEOUT, source,
                     "Tempo limite excedido ao consultar " + source, exception);

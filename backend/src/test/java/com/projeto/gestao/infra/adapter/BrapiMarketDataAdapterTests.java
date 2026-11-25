@@ -96,13 +96,25 @@ class BrapiMarketDataAdapterTests {
         AtomicInteger calls = new AtomicInteger();
         assertReason(() -> adapter(429, "{}", calls).findQuote("PETR4"),
                 ExternalDataFailure.Reason.RATE_LIMITED);
-        assertThat(calls).hasValue(1);
+        assertThat(calls).hasValue(2);
         calls.set(0);
         assertReason(() -> adapter(503, "{}", calls).findQuote("PETR4"),
                 ExternalDataFailure.Reason.SERVER_ERROR);
         assertThat(calls).hasValue(1);
         assertReason(() -> adapter(200, "not-json", new AtomicInteger()).findQuote("PETR4"),
                 ExternalDataFailure.Reason.INVALID_RESPONSE);
+    }
+
+    @Test
+    void rejectsHttp403WithoutRetry() {
+        AtomicInteger calls = new AtomicInteger();
+
+        assertThatThrownBy(() -> adapter(403, "{}", calls).findQuote("PETR4"))
+                .isInstanceOfSatisfying(ExternalDataFailure.class, failure -> {
+                    assertThat(failure.reason()).isEqualTo(ExternalDataFailure.Reason.AUTHENTICATION);
+                    assertThat(failure.statusCode()).isEqualTo(403);
+                });
+        assertThat(calls).hasValue(1);
     }
 
     @Test

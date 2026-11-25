@@ -7,17 +7,26 @@ public final class ExternalDataFailure extends RuntimeException {
 
     private final Reason reason;
     private final String source;
+    private final Integer statusCode;
 
     public ExternalDataFailure(Reason reason, String source, String message) {
-        super(message);
-        this.reason = reason;
-        this.source = source;
+        this(reason, source, message, null, null);
     }
 
     public ExternalDataFailure(Reason reason, String source, String message, Throwable cause) {
+        this(reason, source, message, null, cause);
+    }
+
+    public ExternalDataFailure(Reason reason, String source, String message, Integer statusCode) {
+        this(reason, source, message, statusCode, null);
+    }
+
+    public ExternalDataFailure(Reason reason, String source, String message,
+            Integer statusCode, Throwable cause) {
         super(message, cause);
         this.reason = reason;
         this.source = source;
+        this.statusCode = statusCode;
     }
 
     public Reason reason() {
@@ -26,6 +35,10 @@ public final class ExternalDataFailure extends RuntimeException {
 
     public String source() {
         return source;
+    }
+
+    public Integer statusCode() {
+        return statusCode;
     }
 
     public enum Reason {

@@ -9,6 +9,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
@@ -105,17 +106,30 @@ class TwelveDataMarketDataAdapterTests {
     @Test
     void interpretsStructuredAuthenticationNotFoundRateLimitAndServerErrors() {
         assertStructured(401, ExternalDataFailure.Reason.AUTHENTICATION);
+        assertStructured(403, ExternalDataFailure.Reason.AUTHENTICATION);
         assertStructured(404, ExternalDataFailure.Reason.NOT_FOUND);
         assertStructured(429, ExternalDataFailure.Reason.RATE_LIMITED);
         assertStructured(503, ExternalDataFailure.Reason.SERVER_ERROR);
     }
 
     @Test
-    void mapsHttpInvalidJsonTimeoutAndTransportWithoutRetry() {
+    void rejectsHttp403WithoutRetry() {
+        AtomicInteger calls = new AtomicInteger();
+
+        assertThatThrownBy(() -> adapter(403, "{}", calls).findQuote("AAPL"))
+                .isInstanceOfSatisfying(ExternalDataFailure.class, failure -> {
+                    assertThat(failure.reason()).isEqualTo(ExternalDataFailure.Reason.AUTHENTICATION);
+                    assertThat(failure.statusCode()).isEqualTo(403);
+                });
+        assertThat(calls).hasValue(1);
+    }
+
+    @Test
+    void mapsHttpInvalidJsonTimeoutAndTransportWithOneLimitedRetry() {
         AtomicInteger calls = new AtomicInteger();
         assertReason(() -> adapter(429, "{}", calls).findQuote("AAPL"),
                 ExternalDataFailure.Reason.RATE_LIMITED);
-        assertThat(calls).hasValue(1);
+        assertThat(calls).hasValue(2);
         calls.set(0);
         assertReason(() -> adapter(502, "{}", calls).findQuote("AAPL"),
                 ExternalDataFailure.Reason.SERVER_ERROR);
@@ -152,9 +166,35 @@ class TwelveDataMarketDataAdapterTests {
                         failure -> assertThat(failure.getMessage()).doesNotContain(secret));
     }
 
+    @Test
+    void sendsConfiguredApiKeyUsingTheDocumentedTwelveDataQueryAuthentication() {
+        AtomicReference<URI> capturedUri = new AtomicReference<>();
+        String secret = "local-twelve-secret";
+        ExternalHttpTransport transport = new ExternalHttpTransport() {
+            @Override
+            public ExternalHttpResponse get(URI uri, Duration timeout) {
+                capturedUri.set(uri);
+                return new ExternalHttpResponse(200,
+                        bytes(quote("AAPL", "Apple Inc.", "NASDAQ", "XNGS", "USD",
+                                "314.58", 1787837400L)));
+            }
+        };
+
+        var result = new TwelveDataMarketDataAdapter(client(transport, secret), CLOCK).findQuote("AAPL");
+
+        assertThat(result.ticker()).isEqualTo("AAPL");
+        assertThat(capturedUri).hasValueSatisfying(uri -> assertThat(uri.getQuery())
+                .contains("symbol=AAPL")
+                .contains("apikey=" + secret));
+    }
+
     private static void assertStructured(int code, ExternalDataFailure.Reason reason) {
         String body = "{\"code\":" + code + ",\"message\":\"provider detail\",\"status\":\"error\"}";
-        assertReason(() -> adapter(200, body, new AtomicInteger()).findQuote("AAPL"), reason);
+        assertThatThrownBy(() -> adapter(200, body, new AtomicInteger()).findQuote("AAPL"))
+                .isInstanceOfSatisfying(ExternalDataFailure.class, failure -> {
+                    assertThat(failure.reason()).isEqualTo(reason);
+                    assertThat(failure.statusCode()).isEqualTo(code);
+                });
     }
 
     private static void assertAccepted(String mic, String exchange) {
@@ -166,7 +206,9 @@ class TwelveDataMarketDataAdapterTests {
     private static TwelveDataMarketDataAdapter adapter(int status, String body, AtomicInteger calls) {
         return new TwelveDataMarketDataAdapter(client((uri, timeout) -> {
             calls.incrementAndGet();
-            return new ExternalHttpResponse(status, bytes(body));
+            return status == 429
+                    ? new ExternalHttpResponse(status, bytes(body), java.util.Map.of("Retry-After", "0"))
+                    : new ExternalHttpResponse(status, bytes(body));
         }, "local-key"), CLOCK);
     }
 

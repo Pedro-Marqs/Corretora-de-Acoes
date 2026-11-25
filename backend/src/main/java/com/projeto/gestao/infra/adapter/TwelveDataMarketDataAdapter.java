@@ -41,7 +41,7 @@ public class TwelveDataMarketDataAdapter implements UsMarketDataPort {
     public MarketQuote findQuote(String ticker) {
         String normalized = normalizeTicker(ticker);
         TwelveDataQuoteResponse response = client.findQuote(normalized);
-        if ("error".equalsIgnoreCase(response.status())) {
+        if ("error".equalsIgnoreCase(response.status()) || response.code() != null) {
             throw structuredFailure(response);
         }
         require(response.symbol(), "symbol");
@@ -80,7 +80,11 @@ public class TwelveDataMarketDataAdapter implements UsMarketDataPort {
                     : ExternalDataFailure.Reason.INVALID_RESPONSE;
         };
         return new ExternalDataFailure(reason, TwelveDataClient.SOURCE,
-                "Erro estruturado recebido da Twelve Data");
+                "Erro estruturado recebido da Twelve Data", statusCode(code));
+    }
+
+    private static Integer statusCode(int code) {
+        return code >= 100 && code <= 599 ? code : null;
     }
 
     private static String normalizeTicker(String ticker) {
