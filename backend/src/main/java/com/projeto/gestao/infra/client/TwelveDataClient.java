@@ -23,21 +23,30 @@ public class TwelveDataClient {
     private final Duration readTimeout;
     private final ExternalHttpTransport transport;
     private final ObjectMapper objectMapper;
+    private final ExternalHttpRetryPolicy retryPolicy;
 
     @Autowired
     public TwelveDataClient(ExternalIntegrationProperties properties, ObjectMapper objectMapper) {
         this(properties.twelveData().baseUrl(), properties.twelveData().apiKey(),
                 properties.twelveData().readTimeout(),
-                new JdkExternalHttpTransport(properties.twelveData().connectTimeout(), SOURCE), objectMapper);
+                new JdkExternalHttpTransport(properties.twelveData().connectTimeout(), SOURCE), objectMapper,
+                new ExternalHttpRetryPolicy());
     }
 
     public TwelveDataClient(URI baseUrl, String apiKey, Duration readTimeout,
             ExternalHttpTransport transport, ObjectMapper objectMapper) {
+        this(baseUrl, apiKey, readTimeout, transport, objectMapper, new ExternalHttpRetryPolicy());
+    }
+
+    TwelveDataClient(URI baseUrl, String apiKey, Duration readTimeout,
+            ExternalHttpTransport transport, ObjectMapper objectMapper,
+            ExternalHttpRetryPolicy retryPolicy) {
         this.baseUrl = baseUrl;
         this.apiKey = apiKey == null ? "" : apiKey;
         this.readTimeout = readTimeout;
         this.transport = transport;
         this.objectMapper = objectMapper;
+        this.retryPolicy = retryPolicy;
     }
 
     public TwelveDataQuoteResponse findQuote(String ticker) {
@@ -47,8 +56,9 @@ public class TwelveDataClient {
         }
         URI uri = URI.create(baseUrl.toString().replaceAll("/+$", "") + "/quote?symbol="
                 + encode(ticker) + "&apikey=" + encode(apiKey));
-        ExternalHttpResponse response = transport.get(uri, readTimeout);
-        ExternalHttpStatusMapper.requireSuccess(response.statusCode(), SOURCE);
+        ExternalHttpResponse response = retryPolicy.execute(
+                () -> transport.get(uri, readTimeout), SOURCE);
+        ExternalHttpStatusMapper.requireSuccess(response, SOURCE);
         try {
             TwelveDataQuoteResponse parsed = objectMapper.readValue(response.body(), TwelveDataQuoteResponse.class);
             if (parsed == null) {

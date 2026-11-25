@@ -1,5 +1,6 @@
 package com.projeto.gestao.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -8,6 +9,10 @@ import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.projeto.gestao.domain.model.Asset;
 import com.projeto.gestao.domain.model.Currency;
@@ -72,6 +77,32 @@ class MarketRefreshServiceTests {
         verify(cache, never()).store(org.mockito.ArgumentMatchers.any(UsdBrlRate.class),
                 org.mockito.ArgumentMatchers.any(MarketDataFreshness.class));
         verify(cache).markExchangeRateStale();
+    }
+
+    @Test
+    void skipsConcurrentExchangeRefreshForSameKey() throws Exception {
+        CountDownLatch started = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        AtomicInteger calls = new AtomicInteger();
+        when(exchangeRates.currentRate()).thenAnswer(invocation -> {
+            calls.incrementAndGet();
+            started.countDown();
+            release.await(2, TimeUnit.SECONDS);
+            return new UsdBrlRate(new BigDecimal("5.20"), NOW, NOW, "awesome");
+        });
+        var executor = Executors.newSingleThreadExecutor();
+        try {
+            var first = executor.submit(service::refreshUsdBrl);
+            assertThat(started.await(1, TimeUnit.SECONDS)).isTrue();
+
+            service.refreshUsdBrl();
+            release.countDown();
+            first.get(2, TimeUnit.SECONDS);
+
+            assertThat(calls).hasValue(1);
+        } finally {
+            executor.shutdownNow();
+        }
     }
 
     private static MarketQuote quote(String ticker, Market market, Currency currency) {

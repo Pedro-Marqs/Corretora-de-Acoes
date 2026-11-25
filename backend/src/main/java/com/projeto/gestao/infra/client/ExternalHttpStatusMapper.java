@@ -11,6 +11,17 @@ public final class ExternalHttpStatusMapper {
         if (status >= 200 && status < 300) {
             return;
         }
+        throw failure(status, source);
+    }
+
+    public static void requireSuccess(ExternalHttpResponse response, String source) {
+        if (response.statusCode() >= 200 && response.statusCode() < 300) {
+            return;
+        }
+        throw failure(response.statusCode(), source);
+    }
+
+    private static ExternalDataFailure failure(int status, String source) {
         ExternalDataFailure.Reason reason = switch (status) {
             case 400 -> ExternalDataFailure.Reason.INVALID_INPUT;
             case 401, 403 -> ExternalDataFailure.Reason.AUTHENTICATION;
@@ -21,6 +32,6 @@ public final class ExternalHttpStatusMapper {
                     : ExternalDataFailure.Reason.INVALID_RESPONSE;
         };
         throw new ExternalDataFailure(reason, source,
-                "Resposta HTTP " + status + " recebida de " + source);
+                "Resposta HTTP " + status + " recebida de " + source, status);
     }
 }

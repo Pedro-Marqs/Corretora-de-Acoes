@@ -8,7 +8,9 @@ import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Map;
 import java.time.ZoneOffset;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
@@ -48,10 +50,10 @@ class AwesomeApiExchangeRateAdapterTests {
     }
 
     @Test
-    void mapsHttpInvalidJsonTimeoutAndTransportWithoutRetry() {
+    void mapsHttpInvalidJsonTimeoutAndTransportWithOneLimitedRetry() {
         AtomicInteger calls = new AtomicInteger();
         assertReason(() -> adapter(429, "{}", calls).currentRate(), ExternalDataFailure.Reason.RATE_LIMITED);
-        assertThat(calls).hasValue(1);
+        assertThat(calls).hasValue(2);
         calls.set(0);
         assertReason(() -> adapter(500, "{}", calls).currentRate(), ExternalDataFailure.Reason.SERVER_ERROR);
         assertThat(calls).hasValue(1);
@@ -85,15 +87,67 @@ class AwesomeApiExchangeRateAdapterTests {
                 failure -> assertThat(failure.getMessage()).doesNotContain(secret));
     }
 
+    @Test
+    void rejectsMissingApiKeyBeforeCallingProvider() {
+        AtomicInteger calls = new AtomicInteger();
+        ExternalHttpTransport transport = new ExternalHttpTransport() {
+            @Override
+            public ExternalHttpResponse get(URI uri, Duration timeout) {
+                calls.incrementAndGet();
+                return new ExternalHttpResponse(200, bytes("{}"));
+            }
+
+            @Override
+            public ExternalHttpResponse get(URI uri, Duration timeout, Map<String, String> headers) {
+                calls.incrementAndGet();
+                return new ExternalHttpResponse(200, bytes("{}"));
+            }
+        };
+
+        assertThatThrownBy(() -> new AwesomeApiClient(URI.create("https://awesome.test"), "",
+                Duration.ofSeconds(1), transport, json()).currentUsdBrl())
+                .isInstanceOfSatisfying(ExternalDataFailure.class,
+                        failure -> assertThat(failure.reason()).isEqualTo(ExternalDataFailure.Reason.AUTHENTICATION));
+        assertThat(calls).hasValue(0);
+    }
+
+    @Test
+    void sendsAwesomeApiKeyHeaderWithoutBearerAuthorization() {
+        String secret = "local-awesome-secret";
+        AtomicReference<Map<String, String>> capturedHeaders = new AtomicReference<>();
+        ExternalHttpTransport transport = new ExternalHttpTransport() {
+            @Override
+            public ExternalHttpResponse get(URI uri, Duration timeout) {
+                return new ExternalHttpResponse(500, bytes("{}"));
+            }
+
+            @Override
+            public ExternalHttpResponse get(URI uri, Duration timeout, Map<String, String> headers) {
+                capturedHeaders.set(headers);
+                return new ExternalHttpResponse(200,
+                        bytes(valid("5.16", "5.17", "USD", "BRL", "1787843133")));
+            }
+        };
+
+        new AwesomeApiClient(URI.create("https://awesome.test"), secret,
+                Duration.ofSeconds(1), transport, json()).currentUsdBrl();
+
+        assertThat(capturedHeaders).hasValueSatisfying(headers -> assertThat(headers)
+                .containsEntry("x-api-key", secret)
+                .doesNotContainKey("Authorization"));
+    }
+
     private static AwesomeApiExchangeRateAdapter adapter(int status, String body, AtomicInteger calls) {
         return new AwesomeApiExchangeRateAdapter(client((uri, timeout) -> {
             calls.incrementAndGet();
-            return new ExternalHttpResponse(status, bytes(body));
+            return status == 429
+                    ? new ExternalHttpResponse(status, bytes(body), Map.of("Retry-After", "0"))
+                    : new ExternalHttpResponse(status, bytes(body));
         }), CLOCK);
     }
 
     private static AwesomeApiClient client(ExternalHttpTransport transport) {
-        return new AwesomeApiClient(URI.create("https://awesome.test"), "", Duration.ofSeconds(1),
+        return new AwesomeApiClient(URI.create("https://awesome.test"), "test-awesome-key", Duration.ofSeconds(1),
                 transport, json());
     }
 

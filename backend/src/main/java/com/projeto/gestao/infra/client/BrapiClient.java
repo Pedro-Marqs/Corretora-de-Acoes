@@ -24,6 +24,7 @@ public class BrapiClient {
     private final Duration readTimeout;
     private final ExternalHttpTransport transport;
     private final ObjectMapper objectMapper;
+    private final ExternalHttpRetryPolicy retryPolicy;
 
     @Autowired
     public BrapiClient(ExternalIntegrationProperties properties, ObjectMapper objectMapper) {
@@ -33,11 +34,18 @@ public class BrapiClient {
 
     public BrapiClient(URI baseUrl, String token, Duration readTimeout,
             ExternalHttpTransport transport, ObjectMapper objectMapper) {
+        this(baseUrl, token, readTimeout, transport, objectMapper, new ExternalHttpRetryPolicy());
+    }
+
+    BrapiClient(URI baseUrl, String token, Duration readTimeout,
+            ExternalHttpTransport transport, ObjectMapper objectMapper,
+            ExternalHttpRetryPolicy retryPolicy) {
         this.baseUrl = baseUrl;
         this.token = token == null ? "" : token;
         this.readTimeout = readTimeout;
         this.transport = transport;
         this.objectMapper = objectMapper;
+        this.retryPolicy = retryPolicy;
     }
 
     public BrapiQuoteResponse findQuote(String ticker) {
@@ -45,7 +53,8 @@ public class BrapiClient {
         Map<String, String> headers = token.isBlank()
                 ? Map.of()
                 : Map.of("Authorization", "Bearer " + token);
-        ExternalHttpResponse response = transport.get(uri, readTimeout, headers);
+        ExternalHttpResponse response = retryPolicy.execute(
+                () -> transport.get(uri, readTimeout, headers), SOURCE);
         ExternalHttpStatusMapper.requireSuccess(response.statusCode(), SOURCE);
         try {
             BrapiQuoteResponse parsed = objectMapper.readValue(response.body(), BrapiQuoteResponse.class);
